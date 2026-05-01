@@ -50,6 +50,37 @@ body{font-family:'DM Sans',sans-serif;background:var(--negro);color:var(--negro)
 .cierre-resumen{background:#f8f4ee;border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:12px;}
 .cierre-resumen-row{display:flex;justify-content:space-between;padding:3px 0;}
 
+
+/* ── REPORTES / GRAFICAS ── */
+.rep-card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);border:1px solid #ece6db;}
+.rep-title{font-size:13px;font-weight:700;color:#1F4E79;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:6px;}
+.bar-wrap{display:flex;flex-direction:column;gap:6px;}
+.bar-row{display:flex;align-items:center;gap:8px;font-size:11px;}
+.bar-label{min-width:110px;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bar-track{flex:1;height:14px;background:#f0ece4;border-radius:7px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:7px;transition:width .6s ease;}
+.bar-val{min-width:36px;text-align:right;font-weight:700;color:#111;font-size:11px;}
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.kpi-box{background:#fff;border-radius:12px;padding:12px;border:1px solid #ece6db;text-align:center;}
+.kpi-val{font-size:22px;font-weight:700;color:#1F4E79;}
+.kpi-lbl{font-size:10px;color:#888;margin-top:2px;}
+/* PRECIOS / MÁRGENES */
+.precio-row{display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid #f0ece4;font-size:12px;}
+.precio-row:last-child{border-bottom:none;}
+.precio-nom{flex:1;color:#333;}
+.precio-inp{width:68px;border:1px solid #ddd;border-radius:8px;padding:4px 6px;font-size:12px;text-align:right;font-family:inherit;}
+.precio-inp:focus{outline:none;border-color:#1F4E79;}
+.margen-badge{min-width:52px;text-align:right;font-weight:700;font-size:11px;padding:2px 6px;border-radius:10px;}
+.margen-ok{background:#C6EFCE;color:#1E5631;}
+.margen-med{background:#FFF3CD;color:#856404;}
+.margen-low{background:#FFCCCC;color:#B71C1C;}
+/* NOTIFICACIONES STOCK */
+.notif-bar{background:#E65100;color:#fff;padding:10px 14px;border-radius:12px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer;}
+.notif-bar.verde{background:#1E5631;}
+/* WHATSAPP REPORT */
+.wa-btn{display:flex;align-items:center;gap:8px;background:#25D366;color:#fff;border:none;border-radius:12px;padding:12px 18px;font-size:13px;font-weight:700;cursor:pointer;width:100%;justify-content:center;margin-top:10px;font-family:inherit;}
+.wa-btn:active{opacity:.85;}
+
 /* ── SPLASH ── */
 #splash{position:fixed;inset:0;background:var(--negro);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;}
 .splash-logo{font-family:'Playfair Display',serif;font-size:56px;font-weight:900;color:var(--dorado);letter-spacing:4px;text-shadow:0 0 40px rgba(212,168,67,.3);}
@@ -394,6 +425,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--negro);color:var(--negro)
       <div class="chips" id="chips-mermas"></div>
       <div id="lista-mermas"></div>
     </div>
+    <!-- REPORTES -->
+    <div id="tab-reportes" class="tab-panel">
+      <div class="sec-hdr">📊 Reportes & <span>Analítica</span></div>
+      <div id="reportes-content" style="padding:0 0 120px"></div>
+    </div>
     <!-- CIERRE DIARIO -->
     <div id="tab-cierre" class="tab-panel">
       <div class="sec-hdr">📅 Cierre <span>Diario</span></div>
@@ -414,6 +450,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--negro);color:var(--negro)
   <button class="nav-btn" id="nav-terminados" onclick="goTab('terminados')"><span class="nav-wrap"><span class="nav-icon">🛍</span><span class="nbadge" id="badge-prod">0</span></span>Productos</button>
   <button class="nav-btn" id="nav-mermas" onclick="goTab('mermas')"><span class="nav-icon">⚠️</span>Mermas</button>
   <button class="nav-btn" id="nav-bitacora" onclick="goTab('bitacora')"><span class="nav-icon">📋</span>Bitácora</button>
+  <button class="nav-btn" id="nav-reportes" onclick="goTab('reportes')"><span class="nav-icon">📊</span>Reportes</button>
   <button class="nav-btn" id="nav-cierre" onclick="goTab('cierre')"><span class="nav-icon">📅</span>Cierre</button>
   <button class="nav-btn" id="nav-historial" onclick="goTab('historial')"><span class="nav-icon">📆</span>Historial</button>
   <button class="nav-btn" id="nav-usuarios" onclick="goTab('usuarios')" style="display:none"><span class="nav-icon">👥</span>Usuarios</button>
@@ -1117,6 +1154,7 @@ window.goTab = function(tab){
   if(tab==='bitacora') renderLog();
   if(tab==='usuarios') renderUsuariosMgmt();
   if(tab==='cierre') renderCierre();
+  if(tab==='reportes') renderReportes();
   if(tab==='historial') renderHistorial();
   // Show/hide usuarios nav button based on role
   const unav = document.getElementById('nav-usuarios');
@@ -1723,6 +1761,318 @@ window.showToast=function(msg){
 
 // ── INICIO ───────────────────────────────────────────────────────────────────
 initDB();
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FEATURE 1: REPORTES & GRÁFICAS
+// ══════════════════════════════════════════════════════════════════════════════
+function renderReportes(){
+  const el = document.getElementById('reportes-content');
+  const prod = S.productos;
+  const ins  = S.insumos;
+  const mermas = S.mermas || [];
+  const hoyStr = new Date().toDateString();
+
+  // KPIs
+  const totalVend   = prod.reduce((s,p)=>s+p.vend,0);
+  const totalIngreso= prod.reduce((s,p)=>s+(p.vend*(p.precio||0)),0);
+  const totalCostoIns = ins.reduce((s,i)=>s+(i.cant*(i.costo||0)),0);
+  const mermasHoy   = mermas.filter(m=>new Date(m.ts).toDateString()===hoyStr);
+  const perdidaHoy  = mermasHoy.reduce((s,m)=>s+(m.perdidaTotal||0),0);
+  const bajosIns    = ins.filter(i=>stIns(i)==='reponer');
+  const bajosProd   = prod.filter(p=>stProd(p)==='reponer');
+
+  // Top productos vendidos
+  const topProd = [...prod].sort((a,b)=>b.vend-a.vend).slice(0,8);
+  const maxVend = topProd[0]?.vend||1;
+
+  // Top insumos por valor
+  const topIns = [...ins].filter(i=>i.costo>0).sort((a,b)=>(b.cant*b.costo)-(a.cant*a.costo)).slice(0,6);
+  const maxInsVal = topIns[0] ? topIns[0].cant*topIns[0].costo : 1;
+
+  // Mermas por categoría
+  const mCat = {};
+  mermas.forEach(m=>{ mCat[m.tipo||'Otro']=(mCat[m.tipo||'Otro']||0)+1; });
+  const mCatArr = Object.entries(mCat).sort((a,b)=>b[1]-a[1]);
+  const maxMCat = mCatArr[0]?.[1]||1;
+
+  el.innerHTML = `
+  <div style="padding:12px 0">
+
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi-box"><div class="kpi-val">${totalVend}</div><div class="kpi-lbl">Unidades vendidas</div></div>
+      <div class="kpi-box"><div class="kpi-val" style="color:#1E5631">${fmt$(totalIngreso)}</div><div class="kpi-lbl">Ingresos estimados</div></div>
+      <div class="kpi-box"><div class="kpi-val" style="color:#E65100">${perdidaHoy>0?fmt$(perdidaHoy):'$0'}</div><div class="kpi-lbl">Pérdida hoy</div></div>
+      <div class="kpi-box"><div class="kpi-val" style="color:#B71C1C">${bajosIns.length+bajosProd.length}</div><div class="kpi-lbl">Alertas de stock</div></div>
+    </div>
+
+    <!-- Gráfica: Top productos vendidos -->
+    <div class="rep-card">
+      <div class="rep-title">🛍 Productos más vendidos</div>
+      <div class="bar-wrap">
+        ${topProd.length===0?'<div style="color:#999;font-size:12px;text-align:center">Sin datos de ventas aún</div>':
+          topProd.map((p,i)=>{
+            const pct = Math.round((p.vend/maxVend)*100);
+            const clrs=['#1F4E79','#2E75B6','#4490C8','#5DAADA','#1E5631','#2E7D32','#E65100','#B71C1C'];
+            return `<div class="bar-row">
+              <span class="bar-label" title="${p.nombre} · ${p.variante}">${p.nombre}</span>
+              <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${clrs[i%clrs.length]}"></div></div>
+              <span class="bar-val">${p.vend}</span>
+            </div>`;
+          }).join('')}
+      </div>
+    </div>
+
+    <!-- Gráfica: Insumos por valor de inventario -->
+    <div class="rep-card">
+      <div class="rep-title">📦 Valor en inventario de insumos</div>
+      <div class="bar-wrap">
+        ${topIns.length===0?'<div style="color:#999;font-size:12px;text-align:center">Agrega costos a los insumos para ver esta gráfica</div>':
+          topIns.map(i=>{
+            const val=i.cant*i.costo;
+            const pct=Math.round((val/maxInsVal)*100);
+            return `<div class="bar-row">
+              <span class="bar-label" title="${i.nombre}">${i.nombre}</span>
+              <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:#1E5631"></div></div>
+              <span class="bar-val">${fmt$(val)}</span>
+            </div>`;
+          }).join('')}
+      </div>
+    </div>
+
+    <!-- Gráfica: Mermas por tipo -->
+    <div class="rep-card">
+      <div class="rep-title">⚠️ Mermas por tipo</div>
+      <div class="bar-wrap">
+        ${mCatArr.length===0?'<div style="color:#999;font-size:12px;text-align:center">Sin mermas registradas</div>':
+          mCatArr.map(([cat,n])=>{
+            const pct=Math.round((n/maxMCat)*100);
+            return `<div class="bar-row">
+              <span class="bar-label">${cat}</span>
+              <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:#B71C1C"></div></div>
+              <span class="bar-val">${n}</span>
+            </div>`;
+          }).join('')}
+      </div>
+    </div>
+
+    <!-- Botón reporte WhatsApp -->
+    <div class="rep-card">
+      <div class="rep-title">📲 Reporte semanal</div>
+      <p style="font-size:12px;color:#555;margin-bottom:8px">Genera un resumen del inventario y envíalo por WhatsApp al dueño o supervisor.</p>
+      <button class="wa-btn" onclick="enviarReporteWhatsApp()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.089.534 4.05 1.47 5.765L0 24l6.395-1.44A11.935 11.935 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-5.007-1.37l-.36-.214-3.724.838.879-3.629-.234-.373A9.818 9.818 0 1112 21.818z"/></svg>
+        Enviar por WhatsApp
+      </button>
+    </div>
+
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FEATURE 2: REPORTE WHATSAPP SEMANAL
+// ══════════════════════════════════════════════════════════════════════════════
+function enviarReporteWhatsApp(){
+  const prod = S.productos;
+  const ins  = S.insumos;
+  const mermas = S.mermas || [];
+  const fecha = new Date().toLocaleDateString('es-VE',{weekday:'long',day:'numeric',month:'long'});
+  const totalVend = prod.reduce((s,p)=>s+p.vend,0);
+  const totalIng  = prod.reduce((s,p)=>s+(p.vend*(p.precio||0)),0);
+  const bajosIns  = ins.filter(i=>stIns(i)==='reponer');
+  const bajosProd = prod.filter(p=>stProd(p)==='reponer');
+  const hoyStr    = new Date().toDateString();
+  const mermasHoy = mermas.filter(m=>new Date(m.ts).toDateString()===hoyStr);
+  const perdida   = mermasHoy.reduce((s,m)=>s+(m.perdidaTotal||0),0);
+
+  const topVend = [...prod].sort((a,b)=>b.vend-a.vend).slice(0,3);
+
+  let msg = `🦐 *DON CAMARÓN — Reporte de Inventario*
+`;
+  msg += `📅 ${fecha}
+
+`;
+  msg += `📊 *RESUMEN GENERAL*
+`;
+  msg += `• Unidades vendidas: *${totalVend}*
+`;
+  msg += `• Ingresos estimados: *${fmt$(totalIng)}*
+`;
+  msg += `• Mermas hoy: *${mermasHoy.length}* (pérdida: *${fmt$(perdida)}*)
+
+`;
+
+  if(topVend.length>0){
+    msg += `🏆 *TOP PRODUCTOS*
+`;
+    topVend.forEach((p,i)=>{ msg += `${i+1}. ${p.nombre} · ${p.variante}: *${p.vend} uds*
+`; });
+    msg += '
+';
+  }
+
+  if(bajosIns.length>0||bajosProd.length>0){
+    msg += `⚠️ *ALERTAS DE STOCK BAJO*
+`;
+    bajosIns.slice(0,5).forEach(i=>{ msg += `• 📦 ${i.nombre}: *${i.cant} ${i.unidad}* (mín ${i.min})
+`; });
+    bajosProd.slice(0,5).forEach(p=>{ msg += `• 🛍 ${p.nombre} · ${p.variante}: stock *${Math.max(0,p.prod-p.vend)}* (mín ${p.min})
+`; });
+    msg += '
+';
+  } else {
+    msg += `✅ *Todo el stock en niveles normales*
+
+`;
+  }
+
+  msg += `_Generado por el sistema Don Camarón_`;
+
+  const encoded = encodeURIComponent(msg);
+  window.open(`https://wa.me/?text=${encoded}`, '_blank');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FEATURE 3: CONTROL DE PRECIOS Y MÁRGENES
+// ══════════════════════════════════════════════════════════════════════════════
+function renderPrecios(){
+  // Inject into reportes tab as a section
+  const existing = document.getElementById('precios-section');
+  if(existing) { existing.remove(); }
+  const repEl = document.getElementById('reportes-content');
+  if(!repEl) return;
+
+  const prod = S.productos;
+  const div = document.createElement('div');
+  div.id = 'precios-section';
+  div.innerHTML = `
+  <div class="rep-card">
+    <div class="rep-title">
+      💰 Precios y márgenes
+      <button onclick="guardarPrecios()" style="padding:5px 12px;border-radius:8px;border:none;background:#1F4E79;color:#fff;font-size:11px;cursor:pointer;font-family:inherit">Guardar</button>
+    </div>
+    <div style="font-size:11px;color:#888;margin-bottom:8px">Precio venta · Costo unitario · Margen</div>
+    ${prod.map(p=>{
+      const margen = p.precio>0&&p.costo>0 ? Math.round(((p.precio-p.costo)/p.precio)*100) : null;
+      const mClass = margen===null?'':'margen-badge '+(margen>=40?'margen-ok':margen>=20?'margen-med':'margen-low');
+      return `<div class="precio-row">
+        <span class="precio-nom">${p.nombre}<br><span style="font-size:10px;color:#999">${p.variante}</span></span>
+        <input class="precio-inp" id="pr-p-${p.id}" type="number" value="${p.precio||0}" placeholder="Precio" min="0" step="0.01" oninput="actualizarMargen('${p.id}')">
+        <input class="precio-inp" id="pr-c-${p.id}" type="number" value="${p.costo||0}" placeholder="Costo" min="0" step="0.01" oninput="actualizarMargen('${p.id}')">
+        <span class="${mClass}" id="mg-${p.id}">${margen!==null?margen+'%':'—'}</span>
+      </div>`;
+    }).join('')}
+  </div>`;
+  repEl.prepend(div);
+}
+
+function actualizarMargen(id){
+  const precio = parseFloat(document.getElementById('pr-p-'+id)?.value)||0;
+  const costo  = parseFloat(document.getElementById('pr-c-'+id)?.value)||0;
+  const el = document.getElementById('mg-'+id);
+  if(!el) return;
+  if(precio>0&&costo>0){
+    const m = Math.round(((precio-costo)/precio)*100);
+    el.textContent = m+'%';
+    el.className = 'margen-badge '+(m>=40?'margen-ok':m>=20?'margen-med':'margen-low');
+  } else {
+    el.textContent = '—';
+    el.className = 'margen-badge';
+  }
+}
+
+async function guardarPrecios(){
+  const prod = S.productos;
+  for(const p of prod){
+    const ep = document.getElementById('pr-p-'+p.id);
+    const ec = document.getElementById('pr-c-'+p.id);
+    if(ep) p.precio = parseFloat(ep.value)||0;
+    if(ec) p.costo  = parseFloat(ec.value)||0;
+    if(db) await firebase.database().ref('inventario/productos/'+p.id).update({precio:p.precio,costo:p.costo});
+  }
+  showToast('✅ Precios guardados');
+  renderReportes();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FEATURE 4: NOTIFICACIONES DE STOCK BAJO
+// ══════════════════════════════════════════════════════════════════════════════
+function checkNotificaciones(){
+  const bajosIns  = S.insumos.filter(i=>stIns(i)==='reponer');
+  const bajosProd = S.productos.filter(p=>stProd(p)==='reponer');
+  const total = bajosIns.length + bajosProd.length;
+
+  // Show persistent banner in dashboard if stock is low
+  const banner = document.getElementById('stock-banner');
+  if(banner){
+    if(total>0){
+      banner.innerHTML = `⚠️ ${total} item${total>1?'s':''} con stock bajo — <b>toca para ver</b>`;
+      banner.className = 'notif-bar';
+      banner.style.display = 'flex';
+      banner.onclick = ()=>{ goTab('insumos'); };
+    } else {
+      banner.innerHTML = `✅ Todo el stock en niveles normales`;
+      banner.className = 'notif-bar verde';
+      banner.style.display = 'flex';
+      setTimeout(()=>{ if(banner) banner.style.display='none'; }, 3000);
+    }
+  }
+
+  // Browser notification (if permission granted)
+  if(total>0 && 'Notification' in window && Notification.permission==='granted'){
+    new Notification('🦐 Don Camarón — Stock bajo', {
+      body: `${total} producto${total>1?'s':''} necesitan reposición`,
+      icon: 'https://leonetguerrero22-commits.github.io/inventario/favicon.ico'
+    });
+  }
+}
+
+function pedirPermisNotificaciones(){
+  if(!('Notification' in window)){ showToast('Tu navegador no soporta notificaciones'); return; }
+  Notification.requestPermission().then(p=>{
+    if(p==='granted') showToast('✅ Notificaciones activadas');
+    else showToast('❌ Notificaciones bloqueadas');
+  });
+}
+
+// Patch renderDash to inject stock banner and check notifications
+const _origRenderDash = renderDash;
+renderDash = function(){
+  _origRenderDash();
+  // Inject banner if not present
+  const dashEl = document.getElementById('tab-dashboard');
+  if(dashEl && !document.getElementById('stock-banner')){
+    const banner = document.createElement('div');
+    banner.id = 'stock-banner';
+    banner.style.display = 'none';
+    banner.className = 'notif-bar';
+    // Insert after sec-hdr
+    const hdr = dashEl.querySelector('.sec-hdr');
+    if(hdr) hdr.parentNode.insertBefore(banner, hdr.nextSibling);
+    else dashEl.prepend(banner);
+  }
+  // Inject notif permission button if not present
+  const dashContent = document.getElementById('alertas-dash');
+  if(dashContent && !document.getElementById('btn-notif')){
+    const btn = document.createElement('button');
+    btn.id = 'btn-notif';
+    btn.innerHTML = '🔔 Activar notificaciones de stock bajo';
+    btn.style.cssText = 'display:block;width:100%;margin-top:10px;padding:10px;border:1px dashed #ccc;border-radius:12px;background:transparent;color:#555;font-size:12px;cursor:pointer;font-family:inherit;';
+    btn.onclick = pedirPermisNotificaciones;
+    dashContent.parentNode.insertBefore(btn, dashContent.nextSibling);
+  }
+  checkNotificaciones();
+  // Also inject precios section in reportes if tab is active
+  if(currentTab==='reportes') renderPrecios();
+};
+
+// Patch renderReportes to show precios after
+const _origRenderReportes = renderReportes;
+renderReportes = function(){
+  _origRenderReportes();
+  setTimeout(renderPrecios, 50);
+};
+
 </script>
 </body>
 </html>
