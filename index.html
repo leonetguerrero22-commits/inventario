@@ -23,6 +23,33 @@
 html,body{height:100%;overflow:hidden;}
 body{font-family:'DM Sans',sans-serif;background:var(--negro);color:var(--negro);overscroll-behavior:none;}
 
+
+/* ── CIERRE DIARIO ── */
+.cierre-card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);border:1px solid #ece6db;}
+.cierre-title{font-size:13px;font-weight:700;color:#1F4E79;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.cierre-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f0ece4;font-size:12px;}
+.cierre-row:last-child{border-bottom:none;}
+.cierre-label{color:#555;flex:1;}
+.cierre-inp{width:80px;text-align:right;border:1px solid #ddd;border-radius:8px;padding:4px 8px;font-size:12px;font-family:inherit;background:#fafafa;}
+.cierre-inp:focus{outline:none;border-color:#1F4E79;background:#fff;}
+.cierre-val{font-weight:600;color:#111;min-width:60px;text-align:right;}
+.btn-cierre{width:100%;padding:14px;border-radius:14px;border:none;background:#1F4E79;color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;font-family:inherit;transition:opacity .2s;}
+.btn-cierre:active{opacity:.8;}
+.btn-cierre.verde{background:#1E5631;}
+.hist-day{background:#fff;border-radius:14px;margin-bottom:10px;overflow:hidden;border:1px solid #ece6db;}
+.hist-day-hdr{padding:12px 14px;background:#1F4E79;color:#fff;font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
+.hist-day-body{padding:12px 14px;display:none;}
+.hist-day-body.open{display:block;}
+.hist-stat{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid #f0ece4;}
+.hist-stat:last-child{border-bottom:none;}
+.turno-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-right:6px;}
+.turno-a{background:#BDD7EE;color:#1F4E79;}
+.turno-c{background:#C6EFCE;color:#1E5631;}
+.fecha-selector{display:flex;gap:8px;margin-bottom:14px;align-items:center;}
+.fecha-selector input{flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:10px;font-size:13px;font-family:inherit;}
+.cierre-resumen{background:#f8f4ee;border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:12px;}
+.cierre-resumen-row{display:flex;justify-content:space-between;padding:3px 0;}
+
 /* ── SPLASH ── */
 #splash{position:fixed;inset:0;background:var(--negro);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;}
 .splash-logo{font-family:'Playfair Display',serif;font-size:56px;font-weight:900;color:var(--dorado);letter-spacing:4px;text-shadow:0 0 40px rgba(212,168,67,.3);}
@@ -367,6 +394,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--negro);color:var(--negro)
       <div class="chips" id="chips-mermas"></div>
       <div id="lista-mermas"></div>
     </div>
+    <!-- CIERRE DIARIO -->
+    <div id="tab-cierre" class="tab-panel">
+      <div class="sec-hdr">📅 Cierre <span>Diario</span></div>
+      <div id="cierre-content" style="padding:0 0 120px"></div>
+    </div>
+    <!-- HISTORIAL -->
+    <div id="tab-historial" class="tab-panel">
+      <div class="sec-hdr">📆 Historial <span>por Fecha</span></div>
+      <div id="historial-content" style="padding:0 0 120px"></div>
+    </div>
   </div>
 </div>
 
@@ -377,6 +414,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--negro);color:var(--negro)
   <button class="nav-btn" id="nav-terminados" onclick="goTab('terminados')"><span class="nav-wrap"><span class="nav-icon">🛍</span><span class="nbadge" id="badge-prod">0</span></span>Productos</button>
   <button class="nav-btn" id="nav-mermas" onclick="goTab('mermas')"><span class="nav-icon">⚠️</span>Mermas</button>
   <button class="nav-btn" id="nav-bitacora" onclick="goTab('bitacora')"><span class="nav-icon">📋</span>Bitácora</button>
+  <button class="nav-btn" id="nav-cierre" onclick="goTab('cierre')"><span class="nav-icon">📅</span>Cierre</button>
+  <button class="nav-btn" id="nav-historial" onclick="goTab('historial')"><span class="nav-icon">📆</span>Historial</button>
   <button class="nav-btn" id="nav-usuarios" onclick="goTab('usuarios')" style="display:none"><span class="nav-icon">👥</span>Usuarios</button>
 </div>
 
@@ -491,6 +530,233 @@ const CAT_CLR = {
   'Harina':'#ff9800','Acompañantes':'#4caf50','Conservas':'#795548','Aceites':'#FFA000',
 };
 const ACT_ICO = {add:'➕',edit:'✏️',del:'🗑️',reset:'🔄',login:'🔐',logout:'👋'};
+
+// ── CIERRE DIARIO & HISTORIAL ─────────────────────────────────────────────────
+
+function hoy(){ return new Date().toISOString().split('T')[0]; }
+function fmtFecha(d){ return new Date(d+'T00:00:00').toLocaleDateString('es-VE',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); }
+
+function renderCierre(){
+  const el = document.getElementById('cierre-content');
+  const fecha = hoy();
+  const ins = S.insumos;
+  const prod = S.productos;
+  const mermasHoy = (S.mermas||[]).filter(m=>m.fecha===fecha);
+  const perdidaHoy = mermasHoy.reduce((s,m)=>s+(m.perdidaTotal||0),0);
+
+  // Check if cierre already done today
+  const cierres = S.cierres || {};
+  const cierreHoy = cierres[fecha.replace(/-/g,'_')];
+
+  el.innerHTML = `
+    <div style="padding:12px 0 0">
+      <div class="cierre-card">
+        <div class="cierre-title">📅 ${fmtFecha(fecha)}</div>
+        <div class="cierre-resumen">
+          <div class="cierre-resumen-row"><span>Mermas registradas hoy</span><span><b>${mermasHoy.length}</b></span></div>
+          <div class="cierre-resumen-row"><span>Pérdida estimada hoy</span><span><b style="color:#B71C1C">${fmt$(perdidaHoy)}</b></span></div>
+          <div class="cierre-resumen-row"><span>Items bajo stock mínimo</span><span><b>${ins.filter(i=>i.cant<=i.min).length} insumos / ${prod.filter(p=>(p.prod-p.vend)<=p.min).length} productos</b></span></div>
+        </div>
+        ${cierreHoy ? `<div style="background:#C6EFCE;border-radius:10px;padding:10px;text-align:center;font-size:13px;color:#1E5631;font-weight:700;margin-bottom:8px">✅ Cierre de apertura registrado · ${cierreHoy.usuario || ''}</div>` : ''}
+      </div>
+
+      <!-- APERTURA / TURNO MAÑANA -->
+      <div class="cierre-card">
+        <div class="cierre-title">🌅 Registro de Apertura (Turno mañana)</div>
+        <div id="rows-apertura">
+          ${ins.slice(0,8).map(i=>`
+          <div class="cierre-row">
+            <span class="cierre-label">${i.nombre}</span>
+            <input class="cierre-inp" id="ap-${i.id}" type="number" placeholder="${i.cant}" min="0" value="">
+            <span style="font-size:10px;color:#999;margin-left:4px">${i.unidad}</span>
+          </div>`).join('')}
+          <div style="text-align:center;margin-top:6px">
+            <button onclick="toggleAperturaFull()" id="btn-ver-mas" style="background:none;border:1px solid #ddd;border-radius:8px;padding:5px 14px;font-size:12px;cursor:pointer;color:#555">Ver todos los insumos ▼</button>
+          </div>
+          <div id="apertura-extra" style="display:none">
+            ${ins.slice(8).map(i=>`
+            <div class="cierre-row">
+              <span class="cierre-label">${i.nombre}</span>
+              <input class="cierre-inp" id="ap-${i.id}" type="number" placeholder="${i.cant}" min="0" value="">
+              <span style="font-size:10px;color:#999;margin-left:4px">${i.unidad}</span>
+            </div>`).join('')}
+          </div>
+        </div>
+        <input id="ap-obs" placeholder="Observaciones de apertura..." style="width:100%;border:1px solid #ddd;border-radius:10px;padding:8px 12px;font-size:12px;margin-top:10px;font-family:inherit;">
+        <button class="btn-cierre" onclick="guardarApertura()">💾 Guardar Apertura</button>
+      </div>
+
+      <!-- CIERRE / TURNO TARDE -->
+      <div class="cierre-card">
+        <div class="cierre-title">🌙 Registro de Cierre (Turno tarde)</div>
+        ${prod.map(p=>`
+        <div class="cierre-row">
+          <span class="cierre-label">${p.nombre}<br><span style="font-size:10px;color:#999">${p.variante}</span></span>
+          <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+            <input class="cierre-inp" id="ci-prod-${p.id}" type="number" placeholder="Prod: ${p.prod}" min="0" value="" title="Producido">
+            <input class="cierre-inp" id="ci-vend-${p.id}" type="number" placeholder="Vend: ${p.vend}" min="0" value="" title="Vendido">
+          </div>
+        </div>`).join('')}
+        <div style="font-size:10px;color:#999;text-align:center;margin:4px 0 8px">Primer campo = producido · Segundo = vendido</div>
+        <input id="ci-obs" placeholder="Observaciones de cierre..." style="width:100%;border:1px solid #ddd;border-radius:10px;padding:8px 12px;font-size:12px;margin-top:4px;font-family:inherit;">
+        <button class="btn-cierre verde" onclick="guardarCierre()">✅ Registrar Cierre del Día</button>
+      </div>
+    </div>`;
+}
+
+function toggleAperturaFull(){
+  const ex = document.getElementById('apertura-extra');
+  const btn = document.getElementById('btn-ver-mas');
+  if(ex.style.display==='none'){ex.style.display='block';btn.textContent='Ver menos ▲';}
+  else{ex.style.display='none';btn.textContent='Ver todos los insumos ▼';}
+}
+
+async function guardarApertura(){
+  const fecha = hoy();
+  const key = fecha.replace(/-/g,'_');
+  const snap = {};
+  S.insumos.forEach(i=>{
+    const el = document.getElementById('ap-'+i.id);
+    if(el && el.value!=='') snap[i.id]={nombre:i.nombre,unidad:i.unidad,cantidad:parseFloat(el.value)};
+  });
+  const obs = document.getElementById('ap-obs')?.value || '';
+  const data = {
+    fecha, turno:'apertura',
+    usuario: currentUser?.nombre || 'Desconocido',
+    timestamp: Date.now(),
+    insumos: snap,
+    observaciones: obs,
+  };
+  const ref = db ? firebase.database().ref('cierres/'+key+'/apertura') : null;
+  if(ref) await ref.set(data);
+  // Also save locally
+  if(!S.cierres) S.cierres = {};
+  if(!S.cierres[key]) S.cierres[key] = {};
+  S.cierres[key].apertura = data;
+  S.cierres[key].usuario = currentUser?.nombre;
+  // Log
+  logAction('cierre_apertura', `Apertura registrada para ${fecha}`);
+  alert('✅ Apertura guardada correctamente');
+  renderCierre();
+}
+
+async function guardarCierre(){
+  const fecha = hoy();
+  const key = fecha.replace(/-/g,'_');
+  const snapProd = {};
+  S.productos.forEach(p=>{
+    const ep = document.getElementById('ci-prod-'+p.id);
+    const ev = document.getElementById('ci-vend-'+p.id);
+    const prod = ep && ep.value!=='' ? parseFloat(ep.value) : p.prod;
+    const vend = ev && ev.value!=='' ? parseFloat(ev.value) : p.vend;
+    snapProd[p.id]={nombre:p.nombre,variante:p.variante,prod,vend,stock:prod-vend};
+    // Update live stock
+    p.prod = prod; p.vend = vend;
+  });
+  const mermasHoy = (S.mermas||[]).filter(m=>m.fecha===fecha);
+  const perdidaHoy = mermasHoy.reduce((s,m)=>s+(m.perdidaTotal||0),0);
+  const obs = document.getElementById('ci-obs')?.value || '';
+  const data = {
+    fecha, turno:'cierre',
+    usuario: currentUser?.nombre || 'Desconocido',
+    timestamp: Date.now(),
+    productos: snapProd,
+    mermasCount: mermasHoy.length,
+    perdidaTotal: perdidaHoy,
+    observaciones: obs,
+    stockInsumos: Object.fromEntries(S.insumos.map(i=>[i.id,{nombre:i.nombre,cant:i.cant,unidad:i.unidad}])),
+  };
+  const ref = db ? firebase.database().ref('cierres/'+key+'/cierre') : null;
+  if(ref) await ref.set(data);
+  if(!S.cierres) S.cierres = {};
+  if(!S.cierres[key]) S.cierres[key] = {};
+  S.cierres[key].cierre = data;
+  // Update productos in firebase
+  if(db){ S.productos.forEach(p=>{ firebase.database().ref('productos/'+p.id).update({prod:p.prod,vend:p.vend}); }); }
+  logAction('cierre_dia', `Cierre del día ${fecha} registrado`);
+  alert('✅ Cierre del día guardado. ¡Buen trabajo!');
+  renderCierre();
+}
+
+// ── HISTORIAL ─────────────────────────────────────────────────────────────────
+async function renderHistorial(){
+  const el = document.getElementById('historial-content');
+  el.innerHTML = `<div style="padding:12px 0">
+    <div class="fecha-selector">
+      <input type="month" id="hist-mes" value="${hoy().slice(0,7)}" onchange="filtrarHistorial()">
+      <button onclick="filtrarHistorial()" style="padding:8px 14px;border-radius:10px;border:1px solid #ddd;background:#1F4E79;color:#fff;font-size:13px;cursor:pointer">Buscar</button>
+    </div>
+    <div id="hist-lista">Cargando historial...</div>
+  </div>`;
+
+  // Load from firebase
+  let cierres = S.cierres || {};
+  if(db){
+    try{
+      const snap = await firebase.database().ref('cierres').once('value');
+      cierres = snap.val() || {};
+      S.cierres = cierres;
+    }catch(e){}
+  }
+  renderHistorialLista(cierres, hoy().slice(0,7));
+}
+
+function filtrarHistorial(){
+  const mes = document.getElementById('hist-mes')?.value || hoy().slice(0,7);
+  renderHistorialLista(S.cierres || {}, mes);
+}
+
+function renderHistorialLista(cierres, mes){
+  const lista = document.getElementById('hist-lista');
+  if(!lista) return;
+  const keys = Object.keys(cierres)
+    .filter(k => k.startsWith(mes.replace('-','_')))
+    .sort().reverse();
+  if(!keys.length){
+    lista.innerHTML = `<div class="empty"><div class="empty-ico">📅</div><div class="empty-txt">Sin registros para este mes</div></div>`;
+    return;
+  }
+  lista.innerHTML = keys.map(k=>{
+    const d = cierres[k];
+    const fecha = k.replace(/_/g,'-');
+    const ap = d.apertura;
+    const ci = d.cierre;
+    const totalVend = ci ? Object.values(ci.productos||{}).reduce((s,p)=>s+p.vend,0) : '-';
+    const perdida = ci ? fmt$(ci.perdidaTotal||0) : '-';
+    return `
+    <div class="hist-day">
+      <div class="hist-day-hdr" onclick="toggleHistDay('${k}')">
+        <span>${fmtFecha(fecha)}</span>
+        <span style="font-size:11px;opacity:.8">${ci?'Cierre ✅':ap?'Apertura 🌅':'Sin datos'}</span>
+      </div>
+      <div class="hist-day-body" id="hd-${k}">
+        ${ap?`<div style="margin-bottom:8px"><span class="turno-badge turno-a">APERTURA</span><span style="font-size:11px;color:#555">por ${ap.usuario}</span>
+          ${ap.observaciones?`<div style="font-size:11px;color:#777;margin-top:3px;font-style:italic">"${ap.observaciones}"</div>`:''}
+          <div style="margin-top:6px">
+            ${Object.values(ap.insumos||{}).slice(0,5).map(i=>`
+            <div class="hist-stat"><span>${i.nombre}</span><span><b>${i.cantidad} ${i.unidad}</b></span></div>`).join('')}
+            ${Object.keys(ap.insumos||{}).length>5?`<div style="font-size:11px;color:#999;text-align:center">+${Object.keys(ap.insumos).length-5} más</div>`:''}
+          </div>
+        </div>`:'<div style="font-size:12px;color:#999;margin-bottom:6px">Sin apertura registrada</div>'}
+        ${ci?`<div><span class="turno-badge turno-c">CIERRE</span><span style="font-size:11px;color:#555">por ${ci.usuario}</span>
+          <div class="hist-stat" style="margin-top:6px"><span>Total vendido</span><span><b>${totalVend} unidades</b></span></div>
+          <div class="hist-stat"><span>Mermas</span><span><b>${ci.mermasCount} registros</b></span></div>
+          <div class="hist-stat"><span>Pérdida estimada</span><span><b style="color:#B71C1C">${perdida}</b></span></div>
+          ${ci.observaciones?`<div style="font-size:11px;color:#777;margin-top:4px;font-style:italic">"${ci.observaciones}"</div>`:''}
+          <div style="margin-top:8px;font-size:11px;font-weight:700;color:#1F4E79">Stock de productos al cierre:</div>
+          ${Object.values(ci.productos||{}).map(p=>`
+          <div class="hist-stat"><span>${p.nombre} · ${p.variante}</span><span>Prod:<b>${p.prod}</b> Vend:<b>${p.vend}</b> Stock:<b>${p.stock}</b></span></div>`).join('')}
+        </div>`:'<div style="font-size:12px;color:#999">Sin cierre registrado</div>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleHistDay(k){
+  const el = document.getElementById('hd-'+k);
+  if(el) el.classList.toggle('open');
+}
+
 </script>
 
 <!-- Firebase via jsDelivr CDN — funciona en GitHub Pages, Safari y Chrome -->
@@ -702,6 +968,12 @@ function subscribeAll(){
     if(currentTab==='mermas') renderMermas();
     if(currentTab==='dashboard') renderDash();
   }));
+  // Cierres diarios
+  listeners.push(onValue(ref(db,'cierres'), snap=>{
+    S.cierres = snap.exists() ? snap.val() : {};
+    if(currentTab==='historial') renderHistorial();
+    if(currentTab==='cierre') renderCierre();
+  }));
 }
 
 async function fbSet(path, val){
@@ -844,6 +1116,8 @@ window.goTab = function(tab){
   if(tab==='mermas') renderMermas();
   if(tab==='bitacora') renderLog();
   if(tab==='usuarios') renderUsuariosMgmt();
+  if(tab==='cierre') renderCierre();
+  if(tab==='historial') renderHistorial();
   // Show/hide usuarios nav button based on role
   const unav = document.getElementById('nav-usuarios');
   const utab = document.getElementById('tab-btn-usuarios');
