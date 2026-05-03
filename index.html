@@ -272,6 +272,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--negro);color:var(--negro)
 .notif-bar{background:#E65100;color:#fff;padding:10px 14px;border-radius:12px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer}
 .notif-bar.verde{background:#1E5631}
 
+
+body.rol-empleado .precio-field { display: none !important; }
+body.rol-empleado .costo-field  { display: none !important; }
+body.rol-empleado .money-hide   { filter: blur(5px); pointer-events: none; }
 </style>
 </head>
 <body>
@@ -718,6 +722,7 @@ async function loadFromFirebase(){
     if(currentTab==='dashboard') renderDash();
     if(currentTab==='viveres') renderViveres();
     if(currentTab==='reportes') renderReportes();
+    applyRoleUI();
     updateBadges();
   }
 }
@@ -753,6 +758,7 @@ function subscribeAll(){
     if(currentTab==='dashboard') renderDash();
     if(currentTab==='viveres') renderViveres();
     if(currentTab==='reportes') renderReportes();
+    applyRoleUI();
     updateBadges();
     updateBadges();
   }));
@@ -859,6 +865,8 @@ function enterApp(){
   document.getElementById('pill-role').textContent=ROL_LBL[currentUser.rol];
   goTab('dashboard');
   pushMissingToFirebase();
+  applyRoleUI();
+  document.body.className = 'rol-' + (currentUser.rol||'empleado');
 }
 
 window.logout = function(){
@@ -891,6 +899,9 @@ window.saveNewUser = async function(){
 
 // ── TAB ───────────────────────────────────────────────────────────────────────
 window.goTab = function(tab){
+  if(typeof getRoleTabs === 'function' && typeof currentUser !== 'undefined' && currentUser){
+    if(getRoleTabs().indexOf(tab) === -1){ showToast('Sin acceso'); return; }
+  }
   currentTab=tab;
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -905,6 +916,7 @@ window.goTab = function(tab){
     if(S.insumos.length===0) S.insumos=JSON.parse(JSON.stringify(DEF_INS));
     if(S.productos.length===0) S.productos=JSON.parse(JSON.stringify(DEF_PROD));
     renderDash();
+    setTimeout(maskDashForEmpleado, 100);
   }
   if(tab==='insumos'){
     if(S.insumos.length===0) S.insumos=JSON.parse(JSON.stringify(DEF_INS));
@@ -1916,6 +1928,64 @@ function pushMissingToFirebase(){
     });
   });
 }
+
+/* ══ CONTROL DE ACCESO POR ROL ══════════════════════════════════════════════ */
+var ADMIN_TABS   = ['dashboard','terminados','viveres','mermas','bitacora','reportes','cierre','historial','usuarios'];
+var SUPERV_TABS  = ['dashboard','terminados','viveres','mermas','bitacora','reportes','cierre','historial'];
+var EMPLEADO_TABS= ['dashboard','terminados','viveres','mermas'];
+
+function getRoleTabs(){
+  if(!currentUser) return EMPLEADO_TABS;
+  if(currentUser.rol==='admin')       return ADMIN_TABS;
+  if(currentUser.rol==='supervisor')  return SUPERV_TABS;
+  return EMPLEADO_TABS;
+}
+
+function isEmpleado(){
+  return currentUser && currentUser.rol==='empleado';
+}
+
+function applyRoleUI(){
+  var allowed = getRoleTabs();
+  /* Nav buttons */
+  var navMap = {
+    'dashboard':'nav-inicio','terminados':'nav-terminados','mermas':'nav-mermas',
+    'bitacora':'nav-bitacora','viveres':'nav-viveres','reportes':'nav-reportes',
+    'cierre':'nav-cierre','historial':'nav-historial','usuarios':'nav-usuarios'
+  };
+  Object.keys(navMap).forEach(function(tab){
+    var btn = document.getElementById(navMap[tab]);
+    if(!btn) return;
+    btn.style.display = allowed.indexOf(tab) !== -1 ? 'flex' : 'none';
+  });
+  /* Top tab bar buttons */
+  var topMap = {
+    'bitacora':'tab-btn-bitacora','usuarios':'tab-btn-usuarios',
+    'reportes':'tab-btn-reportes','cierre':'tab-btn-cierre','historial':'tab-btn-historial'
+  };
+  Object.keys(topMap).forEach(function(tab){
+    var btn = document.getElementById(topMap[tab]);
+    if(!btn) return;
+    btn.style.display = allowed.indexOf(tab) !== -1 ? '' : 'none';
+  });
+  /* If current tab is not allowed, redirect to dashboard */
+  if(typeof currentTab !== 'undefined' && allowed.indexOf(currentTab) === -1){
+    goTab('dashboard');
+  }
+}
+
+/* Empleado dashboard: hide money figures */
+function maskDashForEmpleado(){
+  if(!isEmpleado()) return;
+  /* Hide any element with class 'money-val' or containing $ signs in stat cards */
+  document.querySelectorAll('.stat-val, .kpi-val, .dash-num').forEach(function(el){
+    if(el.textContent.indexOf('$') !== -1 || el.textContent.indexOf('%') !== -1){
+      el.textContent = '---';
+      el.style.filter = 'blur(4px)';
+    }
+  });
+}
+
 </script>
 </body>
 </html>
