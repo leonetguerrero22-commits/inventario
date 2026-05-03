@@ -23,64 +23,6 @@
 html,body{height:100%;overflow:hidden;}
 body{font-family:'DM Sans',sans-serif;background:var(--negro);color:var(--negro);overscroll-behavior:none;}
 
-
-/* ── CIERRE DIARIO ── */
-.cierre-card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);border:1px solid #ece6db;}
-.cierre-title{font-size:13px;font-weight:700;color:#1F4E79;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
-.cierre-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f0ece4;font-size:12px;}
-.cierre-row:last-child{border-bottom:none;}
-.cierre-label{color:#555;flex:1;}
-.cierre-inp{width:80px;text-align:right;border:1px solid #ddd;border-radius:8px;padding:4px 8px;font-size:12px;font-family:inherit;background:#fafafa;}
-.cierre-inp:focus{outline:none;border-color:#1F4E79;background:#fff;}
-.cierre-val{font-weight:600;color:#111;min-width:60px;text-align:right;}
-.btn-cierre{width:100%;padding:14px;border-radius:14px;border:none;background:#1F4E79;color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;font-family:inherit;transition:opacity .2s;}
-.btn-cierre:active{opacity:.8;}
-.btn-cierre.verde{background:#1E5631;}
-.hist-day{background:#fff;border-radius:14px;margin-bottom:10px;overflow:hidden;border:1px solid #ece6db;}
-.hist-day-hdr{padding:12px 14px;background:#1F4E79;color:#fff;font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
-.hist-day-body{padding:12px 14px;display:none;}
-.hist-day-body.open{display:block;}
-.hist-stat{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid #f0ece4;}
-.hist-stat:last-child{border-bottom:none;}
-.turno-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-right:6px;}
-.turno-a{background:#BDD7EE;color:#1F4E79;}
-.turno-c{background:#C6EFCE;color:#1E5631;}
-.fecha-selector{display:flex;gap:8px;margin-bottom:14px;align-items:center;}
-.fecha-selector input{flex:1;padding:8px 12px;border:1px solid #ddd;border-radius:10px;font-size:13px;font-family:inherit;}
-.cierre-resumen{background:#f8f4ee;border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:12px;}
-.cierre-resumen-row{display:flex;justify-content:space-between;padding:3px 0;}
-
-
-/* ── REPORTES / GRAFICAS ── */
-.rep-card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);border:1px solid #ece6db;}
-.rep-title{font-size:13px;font-weight:700;color:#1F4E79;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:6px;}
-.bar-wrap{display:flex;flex-direction:column;gap:6px;}
-.bar-row{display:flex;align-items:center;gap:8px;font-size:11px;}
-.bar-label{min-width:110px;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.bar-track{flex:1;height:14px;background:#f0ece4;border-radius:7px;overflow:hidden;}
-.bar-fill{height:100%;border-radius:7px;transition:width .6s ease;}
-.bar-val{min-width:36px;text-align:right;font-weight:700;color:#111;font-size:11px;}
-.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
-.kpi-box{background:#fff;border-radius:12px;padding:12px;border:1px solid #ece6db;text-align:center;}
-.kpi-val{font-size:22px;font-weight:700;color:#1F4E79;}
-.kpi-lbl{font-size:10px;color:#888;margin-top:2px;}
-/* PRECIOS / MÁRGENES */
-.precio-row{display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid #f0ece4;font-size:12px;}
-.precio-row:last-child{border-bottom:none;}
-.precio-nom{flex:1;color:#333;}
-.precio-inp{width:68px;border:1px solid #ddd;border-radius:8px;padding:4px 6px;font-size:12px;text-align:right;font-family:inherit;}
-.precio-inp:focus{outline:none;border-color:#1F4E79;}
-.margen-badge{min-width:52px;text-align:right;font-weight:700;font-size:11px;padding:2px 6px;border-radius:10px;}
-.margen-ok{background:#C6EFCE;color:#1E5631;}
-.margen-med{background:#FFF3CD;color:#856404;}
-.margen-low{background:#FFCCCC;color:#B71C1C;}
-/* NOTIFICACIONES STOCK */
-.notif-bar{background:#E65100;color:#fff;padding:10px 14px;border-radius:12px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer;}
-.notif-bar.verde{background:#1E5631;}
-/* WHATSAPP REPORT */
-.wa-btn{display:flex;align-items:center;gap:8px;background:#25D366;color:#fff;border:none;border-radius:12px;padding:12px 18px;font-size:13px;font-weight:700;cursor:pointer;width:100%;justify-content:center;margin-top:10px;font-family:inherit;}
-.wa-btn:active{opacity:.85;}
-
 /* ── SPLASH ── */
 #splash{position:fixed;inset:0;background:var(--negro);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;}
 .splash-logo{font-family:'Playfair Display',serif;font-size:56px;font-weight:900;color:var(--dorado);letter-spacing:4px;text-shadow:0 0 40px rgba(212,168,67,.3);}
@@ -287,6 +229,49 @@ body{font-family:'DM Sans',sans-serif;background:var(--negro);color:var(--negro)
 .mrv.red{color:#ef9a9a;}.mrv.amber{color:var(--dorado2);}
 .btn-merma{width:100%;padding:14px;border-radius:13px;border:2px solid var(--ambar-l);background:var(--ambar-l);color:var(--ambar);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:10px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
 .btn-merma:active{background:var(--ambar);color:#fff;}
+
+.cierre-card{background:var(--color-background-primary);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);border:1px solid var(--color-border-tertiary)}
+.cierre-title{font-size:13px;font-weight:500;color:var(--dorado);margin-bottom:10px}
+.cierre-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--color-border-tertiary);font-size:12px}
+.cierre-row:last-child{border-bottom:none}
+.cierre-label{color:var(--color-text-secondary);flex:1}
+.cierre-inp{width:80px;text-align:right;border:1px solid var(--color-border-secondary);border-radius:8px;padding:4px 8px;font-size:12px;font-family:inherit;background:var(--color-background-secondary)}
+.btn-cierre{width:100%;padding:14px;border-radius:14px;border:none;background:var(--azul);color:#fff;font-size:14px;font-weight:500;cursor:pointer;margin-top:8px;font-family:inherit}
+.btn-cierre.verde{background:#1E5631}
+.cierre-resumen{background:var(--color-background-secondary);border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:12px}
+.cierre-resumen-row{display:flex;justify-content:space-between;padding:3px 0;color:var(--color-text-secondary)}
+.hist-day{background:var(--color-background-primary);border-radius:14px;margin-bottom:10px;overflow:hidden;border:1px solid var(--color-border-tertiary)}
+.hist-day-hdr{padding:12px 14px;background:var(--azul);color:#fff;font-size:13px;font-weight:500;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.hist-day-body{padding:12px 14px;display:none}
+.hist-day-body.open{display:block}
+.hist-stat{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid var(--color-border-tertiary);color:var(--color-text-secondary)}
+.hist-stat:last-child{border-bottom:none}
+.turno-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500;margin-right:6px}
+.turno-a{background:#BDD7EE;color:#1F4E79}.turno-c{background:#C6EFCE;color:#1E5631}
+.fecha-selector{display:flex;gap:8px;margin-bottom:14px;align-items:center}
+.fecha-selector input{flex:1;padding:8px 12px;border:1px solid var(--color-border-secondary);border-radius:10px;font-size:13px;font-family:inherit;background:var(--color-background-primary);color:var(--color-text-primary)}
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.kpi-box{background:var(--color-background-primary);border-radius:12px;padding:12px;border:1px solid var(--color-border-tertiary);text-align:center}
+.kpi-val{font-size:22px;font-weight:500;color:var(--azul)}
+.kpi-lbl{font-size:10px;color:var(--color-text-tertiary);margin-top:2px}
+.rep-card{background:var(--color-background-primary);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);border:1px solid var(--color-border-tertiary)}
+.rep-title{font-size:13px;font-weight:500;color:var(--azul);margin-bottom:12px}
+.bar-wrap{display:flex;flex-direction:column;gap:6px}
+.bar-row{display:flex;align-items:center;gap:8px;font-size:11px}
+.bar-label{min-width:110px;color:var(--color-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;height:14px;background:var(--color-background-secondary);border-radius:7px;overflow:hidden}
+.bar-fill{height:100%;border-radius:7px;transition:width .6s}
+.bar-val{min-width:50px;text-align:right;font-weight:500;color:var(--color-text-primary);font-size:11px}
+.precio-row{display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid var(--color-border-tertiary);font-size:12px}
+.precio-row:last-child{border-bottom:none}
+.precio-nom{flex:1;color:var(--color-text-secondary)}
+.precio-inp{width:68px;border:1px solid var(--color-border-secondary);border-radius:8px;padding:4px 6px;font-size:12px;text-align:right;font-family:inherit;background:var(--color-background-secondary);color:var(--color-text-primary)}
+.margen-badge{min-width:52px;text-align:right;font-weight:500;font-size:11px;padding:2px 6px;border-radius:10px}
+.margen-ok{background:#C6EFCE;color:#1E5631}.margen-med{background:#FFF3CD;color:#856404}.margen-low{background:#FFCCCC;color:#B71C1C}
+.wa-btn{display:flex;align-items:center;gap:8px;background:#25D366;color:#fff;border:none;border-radius:12px;padding:12px 18px;font-size:13px;font-weight:500;cursor:pointer;width:100%;justify-content:center;margin-top:10px;font-family:inherit}
+.notif-bar{background:#E65100;color:#fff;padding:10px 14px;border-radius:12px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer}
+.notif-bar.verde{background:#1E5631}
+
 </style>
 </head>
 <body>
@@ -363,7 +348,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--negro);color:var(--negro)
     </div>
     <div class="tabs">
       <button class="tab active" onclick="goTab('dashboard')">📊 Inicio</button>
-      <button class="tab" onclick="goTab('insumos')">📦 Insumos</button>
+      
       <button class="tab" onclick="goTab('terminados')">🛍 Productos</button>
       <button class="tab" onclick="goTab('mermas')">⚠️ Mermas</button>
       <button class="tab" onclick="goTab('bitacora')">📋 Bitácora</button>
@@ -405,6 +390,24 @@ body{font-family:'DM Sans',sans-serif;background:var(--negro);color:var(--negro)
       <div class="chips" id="chips-prod"></div>
       <div id="lista-prod"></div>
     </div>
+    <!-- VIVERES -->
+    <div id="tab-viveres" class="tab-panel">
+      <div class="search-wrap"><span class="s-ico">&#128269;</span><input type="text" id="srch-viv" placeholder="Buscar viveres, salsas..." oninput="renderViveres()"></div>
+      <div class="chips" id="chips-viv"></div>
+      <div id="lista-viv"></div>
+    </div>
+    <!-- CIERRE DIARIO -->
+    <div id="tab-cierre" class="tab-panel">
+      <div id="cierre-content"><div style="text-align:center;padding:40px;color:#999">Cargando...</div></div>
+    </div>
+    <!-- HISTORIAL -->
+    <div id="tab-historial" class="tab-panel">
+      <div id="historial-content"><div style="text-align:center;padding:40px;color:#999">Cargando...</div></div>
+    </div>
+    <!-- REPORTES -->
+    <div id="tab-reportes" class="tab-panel">
+      <div id="reportes-content"><div style="text-align:center;padding:40px;color:#999">Cargando...</div></div>
+    </div>
     <!-- BITÁCORA -->
     <!-- USUARIOS -->
     <div id="tab-usuarios" class="tab-panel">
@@ -425,31 +428,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--negro);color:var(--negro)
       <div class="chips" id="chips-mermas"></div>
       <div id="lista-mermas"></div>
     </div>
-    <!-- REPORTES -->
-    <div id="tab-reportes" class="tab-panel">
-      <div class="sec-hdr">📊 Reportes & <span>Analítica</span></div>
-      <div id="reportes-content" style="padding:0 0 120px"></div>
-    </div>
-    <!-- CIERRE DIARIO -->
-    <div id="tab-cierre" class="tab-panel">
-      <div class="sec-hdr">📅 Cierre <span>Diario</span></div>
-      <div id="cierre-content" style="padding:0 0 120px"></div>
-    </div>
-    <!-- HISTORIAL -->
-    <div id="tab-historial" class="tab-panel">
-      <div class="sec-hdr">📆 Historial <span>por Fecha</span></div>
-      <div id="historial-content" style="padding:0 0 120px"></div>
-    </div>
   </div>
 </div>
 
 <button class="fab" id="fab" onclick="openAddModal()">＋</button>
 <div class="bottom-nav" id="bnav" style="display:none">
   <button class="nav-btn active" id="nav-dashboard" onclick="goTab('dashboard')"><span class="nav-icon">📊</span>Inicio</button>
-  <button class="nav-btn" id="nav-insumos" onclick="goTab('insumos')"><span class="nav-wrap"><span class="nav-icon">📦</span><span class="nbadge" id="badge-ins">0</span></span>Insumos</button>
+  <button class="nav-btn" id="nav-insumos" onclick="goTab('insumos')" style="display:none"><span class="nav-wrap"><span class="nav-icon">📦</span><span class="nbadge" id="badge-ins">0</span></span>Insumos</button>
   <button class="nav-btn" id="nav-terminados" onclick="goTab('terminados')"><span class="nav-wrap"><span class="nav-icon">🛍</span><span class="nbadge" id="badge-prod">0</span></span>Productos</button>
   <button class="nav-btn" id="nav-mermas" onclick="goTab('mermas')"><span class="nav-icon">⚠️</span>Mermas</button>
   <button class="nav-btn" id="nav-bitacora" onclick="goTab('bitacora')"><span class="nav-icon">📋</span>Bitácora</button>
+  <button class="nav-btn" id="nav-viveres" onclick="goTab('viveres')"><span class="nav-wrap"><span class="nav-icon">🛒</span><span class="nbadge" id="badge-viv">0</span></span>Viveres</button>
   <button class="nav-btn" id="nav-reportes" onclick="goTab('reportes')"><span class="nav-icon">📊</span>Reportes</button>
   <button class="nav-btn" id="nav-cierre" onclick="goTab('cierre')"><span class="nav-icon">📅</span>Cierre</button>
   <button class="nav-btn" id="nav-historial" onclick="goTab('historial')"><span class="nav-icon">📆</span>Historial</button>
@@ -562,238 +551,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--negro);color:var(--negro)
 const ROL_CLR = {admin:'#B71C1C',supervisor:'#1565C0',empleado:'#2E7D32'};
 const ROL_LBL = {admin:'👑 Admin',supervisor:'🔑 Supervisor',empleado:'👷 Empleado'};
 const CAT_CLR = {
-  'Mariscos':'#0D47A1','Pescado':'#1565C0','Salsas':'#E65100','Empaque':'#607d8b',
-  'Congelados':'#00838F','Limpieza':'#00bcd4','Surimi':'#9c27b0','Bebidas':'#2196f3',
-  'Harina':'#ff9800','Acompañantes':'#4caf50','Conservas':'#795548','Aceites':'#FFA000',
-};
-const ACT_ICO = {add:'➕',edit:'✏️',del:'🗑️',reset:'🔄',login:'🔐',logout:'👋'};
-
-// ── CIERRE DIARIO & HISTORIAL ─────────────────────────────────────────────────
-
-function hoy(){ return new Date().toISOString().split('T')[0]; }
-function fmtFecha(d){ return new Date(d+'T00:00:00').toLocaleDateString('es-VE',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); }
-
-function renderCierre(){
-  const el = document.getElementById('cierre-content');
-  const fecha = hoy();
-  const ins = S.insumos;
-  const prod = S.productos;
-  const mermasHoy = (S.mermas||[]).filter(m=>m.fecha===fecha);
-  const perdidaHoy = mermasHoy.reduce((s,m)=>s+(m.perdidaTotal||0),0);
-
-  // Check if cierre already done today
-  const cierres = S.cierres || {};
-  const cierreHoy = cierres[fecha.replace(/-/g,'_')];
-
-  el.innerHTML = `
-    <div style="padding:12px 0 0">
-      <div class="cierre-card">
-        <div class="cierre-title">📅 ${fmtFecha(fecha)}</div>
-        <div class="cierre-resumen">
-          <div class="cierre-resumen-row"><span>Mermas registradas hoy</span><span><b>${mermasHoy.length}</b></span></div>
-          <div class="cierre-resumen-row"><span>Pérdida estimada hoy</span><span><b style="color:#B71C1C">${fmt$(perdidaHoy)}</b></span></div>
-          <div class="cierre-resumen-row"><span>Items bajo stock mínimo</span><span><b>${ins.filter(i=>i.cant<=i.min).length} insumos / ${prod.filter(p=>(p.prod-p.vend)<=p.min).length} productos</b></span></div>
-        </div>
-        ${cierreHoy ? `<div style="background:#C6EFCE;border-radius:10px;padding:10px;text-align:center;font-size:13px;color:#1E5631;font-weight:700;margin-bottom:8px">✅ Cierre de apertura registrado · ${cierreHoy.usuario || ''}</div>` : ''}
-      </div>
-
-      <!-- APERTURA / TURNO MAÑANA -->
-      <div class="cierre-card">
-        <div class="cierre-title">🌅 Registro de Apertura (Turno mañana)</div>
-        <div id="rows-apertura">
-          ${ins.slice(0,8).map(i=>`
-          <div class="cierre-row">
-            <span class="cierre-label">${i.nombre}</span>
-            <input class="cierre-inp" id="ap-${i.id}" type="number" placeholder="${i.cant}" min="0" value="">
-            <span style="font-size:10px;color:#999;margin-left:4px">${i.unidad}</span>
-          </div>`).join('')}
-          <div style="text-align:center;margin-top:6px">
-            <button onclick="toggleAperturaFull()" id="btn-ver-mas" style="background:none;border:1px solid #ddd;border-radius:8px;padding:5px 14px;font-size:12px;cursor:pointer;color:#555">Ver todos los insumos ▼</button>
-          </div>
-          <div id="apertura-extra" style="display:none">
-            ${ins.slice(8).map(i=>`
-            <div class="cierre-row">
-              <span class="cierre-label">${i.nombre}</span>
-              <input class="cierre-inp" id="ap-${i.id}" type="number" placeholder="${i.cant}" min="0" value="">
-              <span style="font-size:10px;color:#999;margin-left:4px">${i.unidad}</span>
-            </div>`).join('')}
-          </div>
-        </div>
-        <input id="ap-obs" placeholder="Observaciones de apertura..." style="width:100%;border:1px solid #ddd;border-radius:10px;padding:8px 12px;font-size:12px;margin-top:10px;font-family:inherit;">
-        <button class="btn-cierre" onclick="guardarApertura()">💾 Guardar Apertura</button>
-      </div>
-
-      <!-- CIERRE / TURNO TARDE -->
-      <div class="cierre-card">
-        <div class="cierre-title">🌙 Registro de Cierre (Turno tarde)</div>
-        ${prod.map(p=>`
-        <div class="cierre-row">
-          <span class="cierre-label">${p.nombre}<br><span style="font-size:10px;color:#999">${p.variante}</span></span>
-          <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
-            <input class="cierre-inp" id="ci-prod-${p.id}" type="number" placeholder="Prod: ${p.prod}" min="0" value="" title="Producido">
-            <input class="cierre-inp" id="ci-vend-${p.id}" type="number" placeholder="Vend: ${p.vend}" min="0" value="" title="Vendido">
-          </div>
-        </div>`).join('')}
-        <div style="font-size:10px;color:#999;text-align:center;margin:4px 0 8px">Primer campo = producido · Segundo = vendido</div>
-        <input id="ci-obs" placeholder="Observaciones de cierre..." style="width:100%;border:1px solid #ddd;border-radius:10px;padding:8px 12px;font-size:12px;margin-top:4px;font-family:inherit;">
-        <button class="btn-cierre verde" onclick="guardarCierre()">✅ Registrar Cierre del Día</button>
-      </div>
-    </div>`;
-}
-
-function toggleAperturaFull(){
-  const ex = document.getElementById('apertura-extra');
-  const btn = document.getElementById('btn-ver-mas');
-  if(ex.style.display==='none'){ex.style.display='block';btn.textContent='Ver menos ▲';}
-  else{ex.style.display='none';btn.textContent='Ver todos los insumos ▼';}
-}
-
-async function guardarApertura(){
-  const fecha = hoy();
-  const key = fecha.replace(/-/g,'_');
-  const snap = {};
-  S.insumos.forEach(i=>{
-    const el = document.getElementById('ap-'+i.id);
-    if(el && el.value!=='') snap[i.id]={nombre:i.nombre,unidad:i.unidad,cantidad:parseFloat(el.value)};
-  });
-  const obs = document.getElementById('ap-obs')?.value || '';
-  const data = {
-    fecha, turno:'apertura',
-    usuario: currentUser?.nombre || 'Desconocido',
-    timestamp: Date.now(),
-    insumos: snap,
-    observaciones: obs,
-  };
-  const ref = db ? firebase.database().ref('cierres/'+key+'/apertura') : null;
-  if(ref) await ref.set(data);
-  // Also save locally
-  if(!S.cierres) S.cierres = {};
-  if(!S.cierres[key]) S.cierres[key] = {};
-  S.cierres[key].apertura = data;
-  S.cierres[key].usuario = currentUser?.nombre;
-  // Log
-  logAction('cierre_apertura', `Apertura registrada para ${fecha}`);
-  alert('✅ Apertura guardada correctamente');
-  renderCierre();
-}
-
-async function guardarCierre(){
-  const fecha = hoy();
-  const key = fecha.replace(/-/g,'_');
-  const snapProd = {};
-  S.productos.forEach(p=>{
-    const ep = document.getElementById('ci-prod-'+p.id);
-    const ev = document.getElementById('ci-vend-'+p.id);
-    const prod = ep && ep.value!=='' ? parseFloat(ep.value) : p.prod;
-    const vend = ev && ev.value!=='' ? parseFloat(ev.value) : p.vend;
-    snapProd[p.id]={nombre:p.nombre,variante:p.variante,prod,vend,stock:prod-vend};
-    // Update live stock
-    p.prod = prod; p.vend = vend;
-  });
-  const mermasHoy = (S.mermas||[]).filter(m=>m.fecha===fecha);
-  const perdidaHoy = mermasHoy.reduce((s,m)=>s+(m.perdidaTotal||0),0);
-  const obs = document.getElementById('ci-obs')?.value || '';
-  const data = {
-    fecha, turno:'cierre',
-    usuario: currentUser?.nombre || 'Desconocido',
-    timestamp: Date.now(),
-    productos: snapProd,
-    mermasCount: mermasHoy.length,
-    perdidaTotal: perdidaHoy,
-    observaciones: obs,
-    stockInsumos: Object.fromEntries(S.insumos.map(i=>[i.id,{nombre:i.nombre,cant:i.cant,unidad:i.unidad}])),
-  };
-  const ref = db ? firebase.database().ref('cierres/'+key+'/cierre') : null;
-  if(ref) await ref.set(data);
-  if(!S.cierres) S.cierres = {};
-  if(!S.cierres[key]) S.cierres[key] = {};
-  S.cierres[key].cierre = data;
-  // Update productos in firebase
-  if(db){ S.productos.forEach(p=>{ firebase.database().ref('productos/'+p.id).update({prod:p.prod,vend:p.vend}); }); }
-  logAction('cierre_dia', `Cierre del día ${fecha} registrado`);
-  alert('✅ Cierre del día guardado. ¡Buen trabajo!');
-  renderCierre();
-}
-
-// ── HISTORIAL ─────────────────────────────────────────────────────────────────
-async function renderHistorial(){
-  const el = document.getElementById('historial-content');
-  el.innerHTML = `<div style="padding:12px 0">
-    <div class="fecha-selector">
-      <input type="month" id="hist-mes" value="${hoy().slice(0,7)}" onchange="filtrarHistorial()">
-      <button onclick="filtrarHistorial()" style="padding:8px 14px;border-radius:10px;border:1px solid #ddd;background:#1F4E79;color:#fff;font-size:13px;cursor:pointer">Buscar</button>
-    </div>
-    <div id="hist-lista">Cargando historial...</div>
-  </div>`;
-
-  // Load from firebase
-  let cierres = S.cierres || {};
-  if(db){
-    try{
-      const snap = await firebase.database().ref('cierres').once('value');
-      cierres = snap.val() || {};
-      S.cierres = cierres;
-    }catch(e){}
-  }
-  renderHistorialLista(cierres, hoy().slice(0,7));
-}
-
-function filtrarHistorial(){
-  const mes = document.getElementById('hist-mes')?.value || hoy().slice(0,7);
-  renderHistorialLista(S.cierres || {}, mes);
-}
-
-function renderHistorialLista(cierres, mes){
-  const lista = document.getElementById('hist-lista');
-  if(!lista) return;
-  const keys = Object.keys(cierres)
-    .filter(k => k.startsWith(mes.replace('-','_')))
-    .sort().reverse();
-  if(!keys.length){
-    lista.innerHTML = `<div class="empty"><div class="empty-ico">📅</div><div class="empty-txt">Sin registros para este mes</div></div>`;
-    return;
-  }
-  lista.innerHTML = keys.map(k=>{
-    const d = cierres[k];
-    const fecha = k.replace(/_/g,'-');
-    const ap = d.apertura;
-    const ci = d.cierre;
-    const totalVend = ci ? Object.values(ci.productos||{}).reduce((s,p)=>s+p.vend,0) : '-';
-    const perdida = ci ? fmt$(ci.perdidaTotal||0) : '-';
-    return `
-    <div class="hist-day">
-      <div class="hist-day-hdr" onclick="toggleHistDay('${k}')">
-        <span>${fmtFecha(fecha)}</span>
-        <span style="font-size:11px;opacity:.8">${ci?'Cierre ✅':ap?'Apertura 🌅':'Sin datos'}</span>
-      </div>
-      <div class="hist-day-body" id="hd-${k}">
-        ${ap?`<div style="margin-bottom:8px"><span class="turno-badge turno-a">APERTURA</span><span style="font-size:11px;color:#555">por ${ap.usuario}</span>
-          ${ap.observaciones?`<div style="font-size:11px;color:#777;margin-top:3px;font-style:italic">"${ap.observaciones}"</div>`:''}
-          <div style="margin-top:6px">
-            ${Object.values(ap.insumos||{}).slice(0,5).map(i=>`
-            <div class="hist-stat"><span>${i.nombre}</span><span><b>${i.cantidad} ${i.unidad}</b></span></div>`).join('')}
-            ${Object.keys(ap.insumos||{}).length>5?`<div style="font-size:11px;color:#999;text-align:center">+${Object.keys(ap.insumos).length-5} más</div>`:''}
-          </div>
-        </div>`:'<div style="font-size:12px;color:#999;margin-bottom:6px">Sin apertura registrada</div>'}
-        ${ci?`<div><span class="turno-badge turno-c">CIERRE</span><span style="font-size:11px;color:#555">por ${ci.usuario}</span>
-          <div class="hist-stat" style="margin-top:6px"><span>Total vendido</span><span><b>${totalVend} unidades</b></span></div>
-          <div class="hist-stat"><span>Mermas</span><span><b>${ci.mermasCount} registros</b></span></div>
-          <div class="hist-stat"><span>Pérdida estimada</span><span><b style="color:#B71C1C">${perdida}</b></span></div>
-          ${ci.observaciones?`<div style="font-size:11px;color:#777;margin-top:4px;font-style:italic">"${ci.observaciones}"</div>`:''}
-          <div style="margin-top:8px;font-size:11px;font-weight:700;color:#1F4E79">Stock de productos al cierre:</div>
-          ${Object.values(ci.productos||{}).map(p=>`
-          <div class="hist-stat"><span>${p.nombre} · ${p.variante}</span><span>Prod:<b>${p.prod}</b> Vend:<b>${p.vend}</b> Stock:<b>${p.stock}</b></span></div>`).join('')}
-        </div>`:'<div style="font-size:12px;color:#999">Sin cierre registrado</div>'}
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function toggleHistDay(k){
-  const el = document.getElementById('hd-'+k);
-  if(el) el.classList.toggle('open');
-}
-
+  'Mariscos':'#0D47A1','Pescado':'#1565C0','Congelados':'#00838F',
+  'Salsas':'#6A1B9A','Viveres':'#E65100','Empaque':'#607d8b','Limpieza':'#00ACC1',
+};const ACT_ICO = {add:'➕',edit:'✏️',del:'🗑️',reset:'🔄',login:'🔐',logout:'👋'};
 </script>
 
 <!-- Firebase via jsDelivr CDN — funciona en GitHub Pages, Safari y Chrome -->
@@ -838,80 +598,70 @@ const DEF_USUARIOS = [
   {id:'u2',nombre:'Supervisor',rol:'supervisor',emoji:'🔑',pin:'5678',color:'#1565C0'},
   {id:'u3',nombre:'Empleado 1',rol:'empleado',emoji:'🦐',pin:'0000',color:'#2E7D32'},
 ];
-const DEF_INS = [
-  // Salsas
-  {id:'i1',nombre:"Salsa de soya verde 148ml",cat:"Salsas",unidad:"Und",min:5,max:30,cant:0,costo:0},
-  {id:'i2',nombre:"Salsa de soya roja 148ml",cat:"Salsas",unidad:"Und",min:5,max:30,cant:0,costo:0},
-  {id:'i3',nombre:"Salsa de soya verde 290ml",cat:"Salsas",unidad:"Und",min:5,max:20,cant:0,costo:0},
-  {id:'i4',nombre:"Salsa de soya roja 290ml",cat:"Salsas",unidad:"Und",min:5,max:20,cant:0,costo:0},
-  {id:'i5',nombre:"Salsa sriracha",cat:"Salsas",unidad:"Und",min:3,max:12,cant:0,costo:0},
-  {id:'i6',nombre:"Salsa de soya de litro",cat:"Salsas",unidad:"Und",min:3,max:10,cant:0,costo:0},
-  {id:'i7',nombre:"Salsa de tilapia",cat:"Salsas",unidad:"Und",min:2,max:8,cant:0,costo:0},
-  // Conservas / Complementos
-  {id:'i8',nombre:"Hojas de nori",cat:"Conservas",unidad:"Paq",min:3,max:12,cant:0,costo:0},
-  {id:'i9',nombre:"Arroz para sushi",cat:"Conservas",unidad:"Kg",min:5,max:20,cant:0,costo:0},
-  {id:'i10',nombre:"Caldo de pescado",cat:"Conservas",unidad:"Und",min:3,max:10,cant:0,costo:0},
-  {id:'i11',nombre:"Crema de coco pequeña",cat:"Conservas",unidad:"Und",min:4,max:15,cant:0,costo:0},
-  {id:'i12',nombre:"Crema de coco grande",cat:"Conservas",unidad:"Und",min:2,max:8,cant:0,costo:0},
-  {id:'i13',nombre:"Chivo de soya de litro",cat:"Salsas",unidad:"Und",min:2,max:8,cant:0,costo:0},
-  // Acompañantes
-  {id:'i14',nombre:"Canchitas",cat:"Acompañantes",unidad:"Paq",min:5,max:20,cant:0,costo:0},
-  {id:'i15',nombre:"Bolsas de papas",cat:"Acompañantes",unidad:"Paq",min:5,max:20,cant:0,costo:0},
-  {id:'i16',nombre:"Harina PAN",cat:"Harina",unidad:"Kg",min:5,max:20,cant:0,costo:0},
-  {id:'i17',nombre:"Massago",cat:"Conservas",unidad:"Und",min:2,max:8,cant:0,costo:0},
-  {id:'i18',nombre:"Wakame",cat:"Conservas",unidad:"Paq",min:2,max:8,cant:0,costo:0},
-  // Empaque
-  {id:'i19',nombre:"Bolsas para llevar",cat:"Empaque",unidad:"Paq",min:5,max:20,cant:0,costo:0},
-  {id:'i20',nombre:"Bandojas de plástico",cat:"Empaque",unidad:"Paq",min:5,max:20,cant:0,costo:0},
-  {id:'i21',nombre:"Film plástico / Vinipel",cat:"Empaque",unidad:"Rollo",min:2,max:6,cant:0,costo:0},
-  {id:'i22',nombre:"Papel encerado",cat:"Empaque",unidad:"Rollo",min:2,max:6,cant:0,costo:0},
-  {id:'i23',nombre:"Bolsas al vacío",cat:"Empaque",unidad:"Paq",min:3,max:10,cant:0,costo:0},
-  {id:'i24',nombre:"Etiquetas",cat:"Empaque",unidad:"Rollo",min:2,max:6,cant:0,costo:0},
-  // Limpieza
-  {id:'i25',nombre:"Desengrasante",cat:"Limpieza",unidad:"Litro",min:2,max:6,cant:0,costo:0},
-  {id:'i26',nombre:"Cloro",cat:"Limpieza",unidad:"Litro",min:2,max:6,cant:0,costo:0},
-  {id:'i27',nombre:"Jabón de manos",cat:"Limpieza",unidad:"Botella",min:2,max:6,cant:0,costo:0},
-  {id:'i28',nombre:"Guantes desechables",cat:"Limpieza",unidad:"Caja",min:2,max:6,cant:0,costo:0},
-  {id:'i29',nombre:"Esponja / estropajo",cat:"Limpieza",unidad:"Paq",min:3,max:10,cant:0,costo:0},
-  {id:'i30',nombre:"Hielo",cat:"Congelados",unidad:"Kg",min:10,max:50,cant:0,costo:0},
-  // Surimi
-  {id:'i31',nombre:"Surimi / Kanikama",cat:"Surimi",unidad:"Paq",min:5,max:20,cant:0,costo:0},
-  // Aceites
-  {id:'i32',nombre:"Aceite vegetal",cat:"Aceites",unidad:"Litro",min:3,max:10,cant:0,costo:0},
-  {id:'i33',nombre:"Aceite de oliva",cat:"Aceites",unidad:"Litro",min:1,max:4,cant:0,costo:0},
-];
+const DEF_INS = []; // Sin insumos — pescadería de venta directa
 const DEF_PROD = [
-  // Mariscos frescos
-  {id:'p1',nombre:"Conchas",cat:"Mariscos",variante:"Frescas",min:5,prod:0,vend:0,precio:0},
-  {id:'p2',nombre:"Almejas limpias",cat:"Mariscos",variante:"Limpias",min:3,prod:0,vend:0,precio:0},
-  {id:'p3',nombre:"Mejillón importado",cat:"Mariscos",variante:"Importado",min:3,prod:0,vend:0,precio:0},
-  {id:'p4',nombre:"Mejillón nacional",cat:"Mariscos",variante:"Nacional",min:3,prod:0,vend:0,precio:0},
-  {id:'p5',nombre:"Pulpitos",cat:"Mariscos",variante:"Enteros",min:3,prod:0,vend:0,precio:0},
-  {id:'p6',nombre:"Pulpo baby",cat:"Mariscos",variante:"Pequeño",min:3,prod:0,vend:0,precio:0},
-  {id:'p7',nombre:"Pulpo entero",cat:"Mariscos",variante:"Entero",min:2,prod:0,vend:0,precio:0},
-  {id:'p8',nombre:"Aros de calamar",cat:"Mariscos",variante:"Aros",min:5,prod:0,vend:0,precio:0},
-  {id:'p9',nombre:"Coronilla de calamar",cat:"Mariscos",variante:"Coronilla",min:3,prod:0,vend:0,precio:0},
-  {id:'p10',nombre:"Mixtura de mariscos",cat:"Mariscos",variante:"Mixtura",min:5,prod:0,vend:0,precio:0},
-  {id:'p11',nombre:"Bandoja de cazuela",cat:"Mariscos",variante:"Cazuela",min:3,prod:0,vend:0,precio:0},
-  {id:'p12',nombre:"Langostinos",cat:"Mariscos",variante:"Enteros",min:3,prod:0,vend:0,precio:0},
-  {id:'p13',nombre:"Camarones",cat:"Mariscos",variante:"Enteros",min:5,prod:0,vend:0,precio:0},
-  {id:'p14',nombre:"Cangrejos",cat:"Mariscos",variante:"Enteros",min:3,prod:0,vend:0,precio:0},
-  {id:'p15',nombre:"Langosta",cat:"Mariscos",variante:"Entera",min:1,prod:0,vend:0,precio:0},
-  // Pescados
-  {id:'p16',nombre:"Filet de tilapia",cat:"Pescado",variante:"Filete",min:5,prod:0,vend:0,precio:0},
-  {id:'p17',nombre:"Filet de panga/zuzo",cat:"Pescado",variante:"Filete",min:5,prod:0,vend:0,precio:0},
-  {id:'p18',nombre:"Salmón en porciones",cat:"Pescado",variante:"Porción",min:3,prod:0,vend:0,precio:0},
-  {id:'p19',nombre:"Trucha salmonada",cat:"Pescado",variante:"Entera",min:3,prod:0,vend:0,precio:0},
-  {id:'p20',nombre:"Panga de salmón",cat:"Pescado",variante:"Filete",min:3,prod:0,vend:0,precio:0},
-  {id:'p21',nombre:"Atún rojo",cat:"Pescado",variante:"Filete",min:2,prod:0,vend:0,precio:0},
-  {id:'p22',nombre:"Bagre",cat:"Pescado",variante:"Entero",min:3,prod:0,vend:0,precio:0},
-  {id:'p23',nombre:"Cachama",cat:"Pescado",variante:"Entera",min:3,prod:0,vend:0,precio:0},
-  // Congelados / Procesados
-  {id:'p24',nombre:"Paquete de surimi",cat:"Congelados",variante:"Paquete",min:5,prod:0,vend:0,precio:0},
-  {id:'p25',nombre:"Desmechado de camarón",cat:"Congelados",variante:"Empacado",min:3,prod:0,vend:0,precio:0},
-  {id:'p26',nombre:"Tender de pollo",cat:"Congelados",variante:"Porción",min:5,prod:0,vend:0,precio:0},
-  {id:'p27',nombre:"Vienns / Salchichas",cat:"Congelados",variante:"Paquete",min:3,prod:0,vend:0,precio:0},
-  {id:'p28',nombre:"Canchitas",cat:"Congelados",variante:"Paquete",min:5,prod:0,vend:0,precio:0},
+  // MARISCOS FRESCOS
+  {id:'p1', nombre:"Conchas",              cat:"Mariscos",  unidad:"Kg",   min:2,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'p2', nombre:"Almejas limpias",      cat:"Mariscos",  unidad:"Kg",   min:1,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'p3', nombre:"Mejillon importado",   cat:"Mariscos",  unidad:"Kg",   min:2,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'p4', nombre:"Mejillon nacional",    cat:"Mariscos",  unidad:"Kg",   min:2,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'p5', nombre:"Pulpitos",             cat:"Mariscos",  unidad:"Kg",   min:1,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'p6', nombre:"Pulpo baby",           cat:"Mariscos",  unidad:"Kg",   min:1,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'p7', nombre:"Pulpo entero",         cat:"Mariscos",  unidad:"Kg",   min:1,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'p8', nombre:"Aros de calamar",      cat:"Mariscos",  unidad:"Kg",   min:2,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'p9', nombre:"Coronilla de calamar", cat:"Mariscos",  unidad:"Kg",   min:1,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'p10',nombre:"Mixtura de mariscos",  cat:"Mariscos",  unidad:"Kg",   min:2,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'p11',nombre:"Bandoja de cazuela",   cat:"Mariscos",  unidad:"Und",  min:3,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'p12',nombre:"Langostinos",          cat:"Mariscos",  unidad:"Kg",   min:2,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'p13',nombre:"Camarones",            cat:"Mariscos",  unidad:"Kg",   min:3,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'p14',nombre:"Cangrejos",            cat:"Mariscos",  unidad:"Kg",   min:2,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'p15',nombre:"Langosta",             cat:"Mariscos",  unidad:"Kg",   min:0.5, stock:0, entrada:0, salida:0, precio:0, costo:0},
+  // PESCADOS
+  {id:'p16',nombre:"Filet de tilapia",     cat:"Pescado",   unidad:"Kg",   min:3,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'p17',nombre:"Filet de panga/zuzo",  cat:"Pescado",   unidad:"Kg",   min:3,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'p18',nombre:"Salmon en porciones",  cat:"Pescado",   unidad:"Kg",   min:2,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'p19',nombre:"Trucha salmonada",     cat:"Pescado",   unidad:"Kg",   min:2,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'p20',nombre:"Panga de salmon",      cat:"Pescado",   unidad:"Kg",   min:2,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'p21',nombre:"Atun rojo",            cat:"Pescado",   unidad:"Kg",   min:1,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'p22',nombre:"Bagre",                cat:"Pescado",   unidad:"Kg",   min:2,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'p23',nombre:"Cachama",              cat:"Pescado",   unidad:"Kg",   min:2,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  // CONGELADOS
+  {id:'p24',nombre:"Paquete de surimi",    cat:"Congelados",unidad:"Paq",  min:5,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'p25',nombre:"Desmechado camaron",   cat:"Congelados",unidad:"Kg",   min:2,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'p26',nombre:"Tender de pollo",      cat:"Congelados",unidad:"Kg",   min:3,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'p27',nombre:"Vienns Salchichas",    cat:"Congelados",unidad:"Paq",  min:3,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'p28',nombre:"Canchitas",            cat:"Congelados",unidad:"Paq",  min:5,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  // SALSAS
+  {id:'v1', nombre:"Salsa soya verde 148ml",cat:"Salsas",  unidad:"Und",  min:5,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'v2', nombre:"Salsa soya roja 148ml", cat:"Salsas",  unidad:"Und",  min:5,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'v3', nombre:"Salsa soya verde 290ml",cat:"Salsas",  unidad:"Und",  min:5,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'v4', nombre:"Salsa soya roja 290ml", cat:"Salsas",  unidad:"Und",  min:5,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'v5', nombre:"Salsa sriracha",        cat:"Salsas",  unidad:"Und",  min:3,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'v6', nombre:"Salsa soya de litro",   cat:"Salsas",  unidad:"Und",  min:3,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'v7', nombre:"Salsa de tilapia",      cat:"Salsas",  unidad:"Und",  min:2,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'v8', nombre:"Massago",               cat:"Salsas",  unidad:"Und",  min:2,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  // VIVERES
+  {id:'v9', nombre:"Arroz para sushi",      cat:"Viveres", unidad:"Kg",   min:5,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'v10',nombre:"Hojas de nori",         cat:"Viveres", unidad:"Paq",  min:3,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'v11',nombre:"Crema de coco pequeña", cat:"Viveres", unidad:"Und",  min:4,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'v12',nombre:"Crema de coco grande",  cat:"Viveres", unidad:"Und",  min:2,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'v13',nombre:"Caldo de pescado",      cat:"Viveres", unidad:"Und",  min:3,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'v14',nombre:"Wakame",                cat:"Viveres", unidad:"Paq",  min:2,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'v15',nombre:"Chivo de soya litro",   cat:"Viveres", unidad:"Und",  min:2,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'v16',nombre:"Harina PAN",            cat:"Viveres", unidad:"Kg",   min:5,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'v17',nombre:"Bolsas de papas",       cat:"Viveres", unidad:"Paq",  min:5,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  // EMPAQUE
+  {id:'v18',nombre:"Bolsas para llevar",    cat:"Empaque", unidad:"Paq",  min:5,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'v19',nombre:"Bandojas plastico",     cat:"Empaque", unidad:"Paq",  min:5,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'v20',nombre:"Film plastico Vinipel", cat:"Empaque", unidad:"Rollo",min:2,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'v21',nombre:"Bolsas al vacio",       cat:"Empaque", unidad:"Paq",  min:3,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'v22',nombre:"Etiquetas",             cat:"Empaque", unidad:"Rollo",min:2,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  // LIMPIEZA
+  {id:'v23',nombre:"Desengrasante",         cat:"Limpieza",unidad:"Litro",min:2,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'v24',nombre:"Cloro",                 cat:"Limpieza",unidad:"Litro",min:2,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'v25',nombre:"Jabon de manos",        cat:"Limpieza",unidad:"Und",  min:2,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'v26',nombre:"Guantes desechables",   cat:"Limpieza",unidad:"Caja", min:2,   stock:0, entrada:0, salida:0, precio:0, costo:0},
+  {id:'v27',nombre:"Hielo",                 cat:"Limpieza",unidad:"Kg",   min:10,  stock:0, entrada:0, salida:0, precio:0, costo:0},
 ];
 
 // ── STATE ────────────────────────────────────────────────────────────────────
@@ -987,7 +737,7 @@ function subscribeAll(){
   // Productos
   listeners.push(onValue(ref(db,'inventario/productos'), snap=>{
     const fromDB = snap.exists() ? Object.values(snap.val()) : [];
-    S.productos = fromDB.length > 0 ? fromDB : JSON.parse(JSON.stringify(DEF_PROD));
+    S.productos = fromDB.length > 0 ? fromDB.map(migrarProducto) : JSON.parse(JSON.stringify(DEF_PROD));
     if(currentTab==='terminados') renderProd();
     if(currentTab==='dashboard') renderDash();
     updateBadges();
@@ -1005,9 +755,8 @@ function subscribeAll(){
     if(currentTab==='mermas') renderMermas();
     if(currentTab==='dashboard') renderDash();
   }));
-  // Cierres diarios
   listeners.push(onValue(ref(db,'cierres'), snap=>{
-    S.cierres = snap.exists() ? snap.val() : {};
+    S.cierres=snap.exists()?snap.val():{};
     if(currentTab==='historial') renderHistorial();
     if(currentTab==='cierre') renderCierre();
   }));
@@ -1085,7 +834,7 @@ window.pe = function(){
 };
 
 function enterApp(){
-  fbLog('login',`${currentUser.nombre} inició sesión`);
+  fbLog('login',currentUser.nombre+' inicio sesion');
   document.getElementById('screen-login').style.display='none';
   document.getElementById('screen-app').style.display='flex';
   document.getElementById('bnav').style.display='flex';
@@ -1098,8 +847,8 @@ function enterApp(){
 }
 
 window.logout = function(){
-  if(!confirm(`¿Cerrar sesión de ${currentUser.nombre}?`)) return;
-  fbLog('logout',`${currentUser.nombre} cerró sesión`);
+  if(!confirm('Cerrar sesion de '+currentUser.nombre+'?')) return;
+  fbLog('logout',currentUser.nombre+' cerro sesion');
   currentUser=null; selUserId=null; pinBuf=''; updDots();
   document.getElementById('pin-section').style.display='none';
   document.getElementById('screen-app').style.display='none';
@@ -1118,11 +867,11 @@ window.saveNewUser = async function(){
   if(!/^\d{4}$/.test(pin)){showToast('⚠ PIN debe ser 4 dígitos');return;}
   const id='u'+Date.now();
   const newU={id,nombre,rol,emoji,pin,color:ROL_CLR[rol]};
-  await fbSet(`inventario/usuarios/${id}`,newU);
+  await fbSet('inventario/usuarios/'+id,newU);
   closeModal('modal-new-user');
   document.getElementById('nu-nom').value='';
   document.getElementById('nu-pin').value='';
-  showToast(`✅ Usuario ${nombre} creado`);
+  showToast('Usuario '+nombre+' creado');
 };
 
 // ── TAB ───────────────────────────────────────────────────────────────────────
@@ -1131,10 +880,10 @@ window.goTab = function(tab){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById(`tab-${tab}`)?.classList.add('active');
+  var _tel=document.getElementById('tab-'+tab);if(_tel)_tel.classList.add('active');
   const tabs=['dashboard','insumos','terminados','mermas','bitacora'];
   document.querySelectorAll('.tab')[tabs.indexOf(tab)]?.classList.add('active');
-  document.getElementById(`nav-${tab}`)?.classList.add('active');
+  var _nel=document.getElementById('nav-'+tab);if(_nel)_nel.classList.add('active');
   document.getElementById('fab').style.display=(tab==='insumos'||tab==='terminados')?'flex':'none';
   document.getElementById('content').scrollTop=0;
   if(tab==='dashboard'){
@@ -1153,9 +902,10 @@ window.goTab = function(tab){
   if(tab==='mermas') renderMermas();
   if(tab==='bitacora') renderLog();
   if(tab==='usuarios') renderUsuariosMgmt();
+  if(tab==='viveres') renderViveres();
   if(tab==='cierre') renderCierre();
-  if(tab==='reportes') renderReportes();
   if(tab==='historial') renderHistorial();
+  if(tab==='reportes') renderReportes();
   // Show/hide usuarios nav button based on role
   const unav = document.getElementById('nav-usuarios');
   const utab = document.getElementById('tab-btn-usuarios');
@@ -1168,20 +918,20 @@ window.goTab = function(tab){
 function fmt$(n){ return '$'+parseFloat(n||0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
 function catClr(c){ return CAT_CLR[c]||'#999'; }
 function stIns(i){ return !i.cant&&i.cant!==0?'empty':i.cant<=0?'empty':i.cant<=i.min?'reponer':'ok'; }
-function stProd(p){ const d=p.prod-p.vend; return p.prod===0?'empty':d<=p.min?'reponer':'ok'; }
+function stProd(p){ return stMar(p); }
 function nowStr(){ return new Date().toLocaleString('es-VE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
 function canEdit(){ return !!currentUser; }
 function canDelete(){ return currentUser&&(currentUser.rol==='admin'||currentUser.rol==='supervisor'); }
 function fmtTs(ts){
   const d=new Date(ts), now=Date.now(), diff=now-ts;
   if(diff<60000) return 'Hace un momento';
-  if(diff<3600000) return `Hace ${Math.floor(diff/60000)} min`;
-  if(diff<86400000) return `Hace ${Math.floor(diff/3600000)} h`;
+  if(diff<3600000) return 'Hace '+Math.floor(diff/60000)+' min';
+  if(diff<86400000) return 'Hace '+Math.floor(diff/3600000)+' h';
   return d.toLocaleDateString('es-VE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
 }
 function modStr(item){
   if(!item.mod) return null;
-  return `${item.mod.emoji||'👤'} ${item.mod.userName} · ${item.mod.time}`;
+  return (item.mod.emoji||'👤')+' '+item.mod.userName+' · '+item.mod.time;
 }
 function updateBadges(){
   const bI=S.insumos.filter(i=>stIns(i)==='reponer').length;
@@ -1190,131 +940,122 @@ function updateBadges(){
   const bp=document.getElementById('badge-prod');
   if(bi){bi.textContent=bI;bi.style.display=bI>0?'flex':'none';}
   if(bp){bp.textContent=bP;bp.style.display=bP>0?'flex':'none';}
+  if(typeof updateBadgeViv === "function") updateBadgeViv();
+  if(typeof checkNotificaciones === "function") setTimeout(checkNotificaciones, 200);
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
+
+// ── INSUMOS ───────────────────────────────────────────────────────────────────
 function renderDash(){
   document.getElementById('fecha-hoy').textContent=
     new Date().toLocaleDateString('es-VE',{weekday:'long',day:'numeric',month:'long'});
-  const ins=S.insumos,prod=S.productos;
-  const bIns=ins.filter(i=>stIns(i)==='reponer').length;
-  const bProd=prod.filter(p=>stProd(p)==='reponer').length;
-  document.getElementById('k-ins-tot').textContent=ins.length;
-  document.getElementById('k-ins-bajo').textContent=bIns;
-  document.getElementById('k-ins-ok').textContent=ins.filter(i=>stIns(i)==='ok').length;
-  document.getElementById('k-ins-val').textContent=fmt$(ins.reduce((s,i)=>s+(i.cant*i.costo),0));
-  document.getElementById('k-prod-tot').textContent=prod.length;
-  document.getElementById('k-prod-bajo').textContent=bProd;
-  document.getElementById('k-vend').textContent=prod.reduce((s,p)=>s+p.vend,0);
-  document.getElementById('k-ingreso').textContent=fmt$(prod.reduce((s,p)=>s+(p.vend*p.precio),0));
-  // Mermas hoy
-  const hoy=new Date().toDateString();
-  const mermasHoy=(S.mermas||[]).filter(m=>new Date(m.ts).toDateString()===hoy);
-  const perdidaHoy=mermasHoy.reduce((s,m)=>s+(m.perdidaTotal||0),0);
-  const kMH=document.getElementById('k-mermas-hoy');
-  const kPH=document.getElementById('k-perdida-hoy');
-  if(kMH) kMH.textContent=mermasHoy.length;
-  if(kPH) kPH.textContent=fmt$(perdidaHoy);
-  const aEl=document.getElementById('alertas-dash');
-  const all=[
-    ...ins.filter(i=>stIns(i)==='reponer').map(i=>({ico:'📦',name:i.nombre,det:`${i.cant} ${i.unidad} — mín ${i.min}`})),
-    ...prod.filter(p=>stProd(p)==='reponer').map(p=>({ico:'🛍',name:`${p.nombre} · ${p.variante}`,det:`Disp: ${Math.max(0,p.prod-p.vend)} — mín ${p.min}`})),
-  ];
-  if(!all.length){
-    aEl.innerHTML=`<div class="empty"><div class="empty-ico">✅</div><div class="empty-txt">Sin alertas · Todo en orden</div></div>`;
+  var ins=S.insumos,prod=S.productos;
+  var bIns=ins.filter(function(i){return stIns(i)==='reponer';}).length;
+  var bProd=prod.filter(function(p){return stProd(p)==='reponer'||stProd(p)==='empty';}).length;
+  var el;
+  el=document.getElementById('k-ins-tot');if(el)el.textContent=ins.length;
+  el=document.getElementById('k-ins-bajo');if(el)el.textContent=bIns;
+  el=document.getElementById('k-ins-ok');if(el)el.textContent=ins.filter(function(i){return stIns(i)==='ok';}).length;
+  el=document.getElementById('k-ins-val');if(el)el.textContent=fmt$(ins.reduce(function(s,i){return s+(i.cant*(i.costo||0));},0));
+  el=document.getElementById('k-prod-tot');if(el)el.textContent=prod.length;
+  el=document.getElementById('k-prod-bajo');if(el)el.textContent=bProd;
+  el=document.getElementById('k-vend');if(el)el.textContent=prod.reduce(function(s,p){return s+(p.salida||0);},0);
+  el=document.getElementById('k-ingreso');if(el)el.textContent=fmt$(prod.reduce(function(s,p){return s+((p.salida||0)*(p.precio||0));},0));
+  var hoyStr=new Date().toDateString();
+  var mermasHoy=(S.mermas||[]).filter(function(m){return new Date(m.ts).toDateString()===hoyStr;});
+  var perdidaHoy=mermasHoy.reduce(function(s,m){return s+(m.perdidaTotal||0);},0);
+  el=document.getElementById('k-mermas-hoy');if(el)el.textContent=mermasHoy.length;
+  el=document.getElementById('k-perdida-hoy');if(el)el.textContent=fmt$(perdidaHoy);
+  var aEl=document.getElementById('alertas-dash');if(!aEl){updateBadges();return;}
+  var alertas=[];
+  ins.filter(function(i){return stIns(i)==='reponer';}).forEach(function(i){
+    alertas.push({ico:'📦',name:i.nombre,det:i.cant+' '+i.unidad+' — min '+i.min});
+  });
+  prod.filter(function(p){return stProd(p)==='reponer'||stProd(p)==='empty';}).forEach(function(p){
+    alertas.push({ico:'🛍',name:p.nombre,det:'Stock: '+(p.stock||0)+' '+(p.unidad||'')+' — min '+(p.min||0)});
+  });
+  if(!alertas.length){
+    aEl.innerHTML='<div class="empty"><div class="empty-ico">✅</div><div class="empty-txt">Sin alertas · Todo en orden</div></div>';
   } else {
-    aEl.innerHTML=all.map(a=>`
-      <div class="alert-card">
-        <div class="alert-ico">${a.ico}</div>
-        <div><div class="alert-name">${a.name}</div><div class="alert-det">${a.det}</div></div>
-      </div>`).join('');
+    aEl.innerHTML=alertas.map(function(a){
+      return '<div class="alert-card"><div class="alert-ico">'+a.ico+'</div><div><div class="alert-name">'+a.name+'</div><div class="alert-det">'+a.det+'</div></div></div>';
+    }).join('');
   }
   updateBadges();
 }
 
-// ── INSUMOS ───────────────────────────────────────────────────────────────────
 function renderIns(){
-  const cats=['Todos',...new Set(S.insumos.map(i=>i.cat))];
-  document.getElementById('chips-ins').innerHTML=cats.map(c=>
-    `<button class="chip ${fIns===c?'active':''}" onclick="setFIns('${c}')">${c}</button>`).join('');
-  const q=document.getElementById('srch-ins').value.toLowerCase();
-  let items=S.insumos;
-  if(fIns!=='Todos') items=items.filter(i=>i.cat===fIns);
-  if(q) items=items.filter(i=>i.nombre.toLowerCase().includes(q));
-  const el=document.getElementById('lista-ins');
-  if(!items.length){el.innerHTML=`<div class="empty"><div class="empty-ico">🔍</div><div class="empty-txt">Sin resultados</div></div>`;return;}
-  el.innerHTML=items.map(item=>{
-    const st=stIns(item);
-    const pct=item.max?Math.min(100,Math.round(item.cant/item.max*100)):0;
-    const bc=st==='ok'?'#2E7D32':st==='reponer'?'#C62828':'#ccc';
-    const isOpen=expIns===item.id;
-    const mod=modStr(item);
-    const locked=!canEdit();
-    return `
-    <div class="item-card ${st}" id="ic-${item.id}">
-      <div class="item-head" onclick="togIns('${item.id}')">
-        <div class="cat-dot" style="background:${catClr(item.cat)}"></div>
-        <div class="item-inf">
-          <div class="item-name">${item.nombre}</div>
-          <div class="item-meta">${item.cat} · ${item.unidad}</div>
-        </div>
-        <div class="ibadge ${st==='ok'?'bOK':st==='reponer'?'bWARN':'bEMPTY'}">
-          ${st==='ok'?'✅ OK':st==='reponer'?'⚠ REPONER':'Sin datos'}
-        </div>
-      </div>
-      <div class="expand-body ${isOpen?'open':''}" id="ie-${item.id}">
-        <div class="sbar-wrap">
-          <div class="sbar-lbl"><span>${item.cant} ${item.unidad}</span><span>${pct}% del máx</span></div>
-          <div class="sbar-bg"><div class="sbar-fill" style="width:${pct}%;background:${bc}"></div></div>
-        </div>
-        <div class="field-row">
-          <div class="field-col"><div class="flabel">🟡 Cantidad actual</div>
-            <input class="finput yellow" type="number" min="0" step="0.5" value="${item.cant}" ${locked?'disabled':''} id="ic-cant-${item.id}"></div>
-          <div class="field-col"><div class="flabel">🟡 Costo unit. ($)</div>
-            <input class="finput yellow" type="number" min="0" step="0.01" value="${item.costo}" ${locked?'disabled':''} id="ic-costo-${item.id}"></div>
-        </div>
-        <div class="field-row">
-          <div class="field-col"><div class="flabel">Stock mínimo</div>
-            <input class="finput" type="number" min="0" value="${item.min}" ${locked?'disabled':''} id="ic-min-${item.id}"></div>
-          <div class="field-col"><div class="flabel">Stock máximo</div>
-            <input class="finput" type="number" min="0" value="${item.max}" ${locked?'disabled':''} id="ic-max-${item.id}"></div>
-        </div>
-        <div class="calc-row">
-          <span class="clabel">💲 Valor total</span>
-          <span class="cval">${fmt$(item.cant*item.costo)}</span>
-        </div>
-        ${mod?`<div class="last-mod">✏️ ${mod}</div>`:''}
-        ${!locked?`<div class="action-row">
-          <button class="btn-save" onclick="saveIns('${item.id}')">💾 Guardar</button>
-          ${canDelete()?`<button class="btn-del" onclick="delIns('${item.id}')">🗑</button>`:''}
-        </div>`:'<div style="font-size:11px;color:var(--gris3);margin-top:8px;text-align:center">🔒 Solo lectura</div>'}
-      </div>
-    </div>`;
+  var ins=S.insumos;
+  var cats=['Todos'].concat(Array.from(new Set(ins.map(function(i){return i.cat;}))));
+  document.getElementById('chips-ins').innerHTML=cats.map(function(cc){
+    return '<button class="chip '+(fIns===cc?'active':'')+'" onclick="setFIns(this.textContent)">'+cc+'</button>';
+  }).join('');
+  var q=document.getElementById('srch-ins')?document.getElementById('srch-ins').value.toLowerCase():'';
+  var items=ins;
+  if(fIns!=='Todos')items=items.filter(function(i){return i.cat===fIns;});
+  if(q)items=items.filter(function(i){return i.nombre.toLowerCase().includes(q);});
+  var el=document.getElementById('lista-ins');
+  if(!items.length){el.innerHTML='<div class="empty"><div class="empty-ico">🔍</div><div class="empty-txt">Sin resultados</div></div>';return;}
+  el.innerHTML=items.map(function(item){
+    var st=stIns(item);
+    var pct=item.max>0?Math.min(100,Math.round(item.cant/item.max*100)):0;
+    var bc=st==='ok'?'#2E7D32':st==='reponer'?'#C62828':'#ccc';
+    var isOpen=expIns===item.id;
+    var mod=modStr(item);
+    var locked=!canEdit();
+    var h='<div class="item-card '+st+'" id="ic-'+item.id+'" data-iid="'+item.id+'">';
+    h+='<div class="item-head" onclick="togIns(this.parentNode.dataset.iid)">';
+    h+='<div class="cat-dot" style="background:'+catClr(item.cat)+'"></div>';
+    h+='<div class="item-inf"><div class="item-name">'+item.nombre+'</div>';
+    h+='<div class="item-meta">'+item.cat+' · '+item.unidad+'</div></div>';
+    h+='<div class="ibadge '+(st==='ok'?'bOK':st==='reponer'?'bWARN':'bEMPTY')+'">';
+    h+=(st==='ok'?'✅ '+item.cant+' '+item.unidad:st==='reponer'?'⚠ '+item.cant+' '+item.unidad:'Sin stock');
+    h+='</div></div>';
+    h+='<div class="expand-body '+(isOpen?'open':'')+'" id="ie-'+item.id+'">';
+    h+='<div class="sbar-wrap"><div class="sbar-lbl"><span>'+item.cant+' '+item.unidad+'</span><span>Min: '+item.min+' Max: '+item.max+'</span></div>';
+    h+='<div class="sbar-bg"><div class="sbar-fill" style="width:'+pct+'%;background:'+bc+'"></div></div></div>';
+    h+='<div class="field-row"><div class="field-col"><div class="flabel">Cantidad</div>';
+    h+='<input class="finput yellow" type="number" min="0" step="0.01" value="'+item.cant+'" '+(locked?'disabled':'')+' id="ic-cant-'+item.id+'"></div>';
+    h+='<div class="field-col"><div class="flabel">Costo unitario</div>';
+    h+='<input class="finput" type="number" min="0" step="0.01" value="'+(item.costo||0)+'" '+(locked?'disabled':'')+' id="ic-costo-'+item.id+'"></div></div>';
+    h+='<div class="field-row"><div class="field-col"><div class="flabel">Stock min</div>';
+    h+='<input class="finput" type="number" min="0" step="0.01" value="'+(item.min||0)+'" '+(locked?'disabled':'')+' id="ic-min-'+item.id+'"></div>';
+    h+='<div class="field-col"><div class="flabel">Stock max</div>';
+    h+='<input class="finput" type="number" min="0" step="0.01" value="'+(item.max||0)+'" '+(locked?'disabled':'')+' id="ic-max-'+item.id+'"></div></div>';
+    if(mod)h+='<div class="last-mod">'+mod+'</div>';
+    if(!locked){
+      h+='<div class="action-row" data-iid="'+item.id+'"><button class="btn-save" onclick="saveIns(this.parentNode.dataset.iid)">💾 Guardar</button>';
+      if(canDelete())h+='<button class="btn-del" onclick="delIns(this.parentNode.dataset.iid)">🗑</button>';
+      h+='</div>';
+    }else{h+='<div style="font-size:11px;color:var(--gris3);margin-top:8px;text-align:center">🔒 Solo lectura</div>';}
+    h+='</div></div>';
+    return h;
   }).join('');
 }
 
 window.togIns=function(id){ expIns=expIns===id?null:id; renderIns();
-  if(expIns) setTimeout(()=>document.getElementById(`ic-${id}`)?.scrollIntoView({behavior:'smooth',block:'nearest'}),100); };
+  if(expIns) setTimeout(function(){var el=document.getElementById('ic-'+id);if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'});},100); };
 window.setFIns=function(c){ fIns=c; renderIns(); };
 
 window.saveIns=async function(id){
   const item=S.insumos.find(i=>i.id===id); if(!item) return;
-  const cant=parseFloat(document.getElementById(`ic-cant-${id}`)?.value)||0;
-  const costo=parseFloat(document.getElementById(`ic-costo-${id}`)?.value)||0;
-  const min=parseFloat(document.getElementById(`ic-min-${id}`)?.value)||0;
-  const max=parseFloat(document.getElementById(`ic-max-${id}`)?.value)||0;
+  const cant=parseFloat(document.getElementById('ic-cant-'+id)?.value)||0;
+  const costo=parseFloat(document.getElementById('ic-costo-'+id)?.value)||0;
+  const min=parseFloat(document.getElementById('ic-min-'+id)?.value)||0;
+  const max=parseFloat(document.getElementById('ic-max-'+id)?.value)||0;
   const updated={...item,cant,costo,min,max,mod:{userId:currentUser.id,userName:currentUser.nombre,emoji:currentUser.emoji,time:nowStr()}};
-  await fbSet(`inventario/insumos/${id}`,updated);
-  fbLog('edit',`Editó insumo: ${item.nombre} → ${cant} ${item.unidad}, costo: ${fmt$(costo)}`);
+  await fbSet('inventario/insumos/'+id,updated);
+  fbLog('edit','Edito insumo: '+item.nombre+' cant:'+cant+' '+item.unidad);
   expIns=null; showToast('✅ Guardado y sincronizado');
 };
 
 window.delIns=async function(id){
   if(!canDelete()){showToast('🔒 Sin permiso');return;}
   const item=S.insumos.find(i=>i.id===id);
-  if(!confirm(`¿Eliminar "${item?.nombre}"?`)) return;
-  await fbRemove(`inventario/insumos/${id}`);
-  fbLog('del',`Eliminó insumo: ${item.nombre}`);
+  if(!confirm('Eliminar '+item?.nombre+'?')) return;
+  await fbRemove('inventario/insumos/'+id);
+  fbLog('del','Elimino insumo: '+item.nombre);
   expIns=null; showToast('🗑 Eliminado');
 };
 
@@ -1322,105 +1063,84 @@ window.delIns=async function(id){
 function renderProd(){
   const cats=['Todos',...new Set(S.productos.map(p=>p.cat))];
   document.getElementById('chips-prod').innerHTML=cats.map(c=>
-    `<button class="chip ${fProd===c?'active':''}" onclick="setFProd('${c}')">${c}</button>`).join('');
+    '<button class="chip '+(fProd===cc?'active':'')+' " onclick="setFProd(this.textContent)">'+cc+'</button>').join('');
   const q=document.getElementById('srch-prod').value.toLowerCase();
   let items=S.productos;
   if(fProd!=='Todos') items=items.filter(p=>p.cat===fProd);
   if(q) items=items.filter(p=>p.nombre.toLowerCase().includes(q)||p.variante.toLowerCase().includes(q));
   const el=document.getElementById('lista-prod');
   if(!items.length){el.innerHTML=`<div class="empty"><div class="empty-ico">🔍</div><div class="empty-txt">Sin resultados</div></div>`;return;}
-  el.innerHTML=items.map(item=>{
-    const disp=Math.max(0,item.prod-item.vend);
-    const st=stProd(item);
-    const pct=item.prod>0?Math.min(100,Math.round(disp/item.prod*100)):0;
-    const bc=st==='ok'?'#2E7D32':st==='reponer'?'#C62828':'#ccc';
-    const isOpen=expProd===item.id;
-    const mod=modStr(item);
-    const locked=!canEdit();
-    return `
-    <div class="item-card ${st}" id="pc-${item.id}">
-      <div class="item-head" onclick="togProd('${item.id}')">
-        <div class="cat-dot" style="background:${catClr(item.cat)}"></div>
-        <div class="item-inf">
-          <div class="item-name">${item.nombre}</div>
-          <div class="item-meta">${item.cat} · ${item.variante}</div>
-        </div>
-        <div class="ibadge ${st==='ok'?'bOK':st==='reponer'?'bWARN':'bEMPTY'}">
-          ${st==='ok'?`✅ ${disp}`:st==='reponer'?`⚠ ${disp}`:'Sin prod.'}
-        </div>
-      </div>
-      <div class="expand-body ${isOpen?'open':''}" id="pe-${item.id}">
-        <div class="sbar-wrap">
-          <div class="sbar-lbl"><span>Disp: ${disp}/${item.prod}</span><span>Vend: ${item.vend}</span></div>
-          <div class="sbar-bg"><div class="sbar-fill" style="width:${pct}%;background:${bc}"></div></div>
-        </div>
-        <div class="field-row">
-          <div class="field-col"><div class="flabel">🟡 Producidos</div>
-            <input class="finput yellow" type="number" min="0" value="${item.prod}" ${locked?'disabled':''} id="pc-prod-${item.id}"></div>
-          <div class="field-col"><div class="flabel">🟡 Vendidos</div>
-            <input class="finput yellow" type="number" min="0" value="${item.vend}" ${locked?'disabled':''} id="pc-vend-${item.id}"></div>
-        </div>
-        <div class="field-row">
-          <div class="field-col"><div class="flabel">🟡 Precio ($)</div>
-            <input class="finput yellow" type="number" min="0" step="0.01" value="${item.precio}" ${locked?'disabled':''} id="pc-precio-${item.id}"></div>
-          <div class="field-col"><div class="flabel">Stock mínimo</div>
-            <input class="finput" type="number" min="0" value="${item.min}" ${locked?'disabled':''} id="pc-min-${item.id}"></div>
-        </div>
-        <div class="calc-row"><span class="clabel">🔵 Disponibles</span><span class="cval">${disp}</span></div>
-        <div class="calc-row"><span class="clabel">💰 Ingreso est.</span><span class="cval">${fmt$(item.vend*item.precio)}</span></div>
-        ${mod?`<div class="last-mod">✏️ ${mod}</div>`:''}
-        ${!locked?`<div class="action-row">
-          <button class="btn-save" onclick="saveProd('${item.id}')">💾 Guardar</button>
-          ${canDelete()?`<button class="btn-del" onclick="delProd('${item.id}')">🗑</button>`:''}
-        </div>`:'<div style="font-size:11px;color:var(--gris3);margin-top:8px;text-align:center">🔒 Solo lectura</div>'}
-      </div>
-    </div>`;
-  }).join('');
+  el.innerHTML=items.map(function(item){
+    var disp=item.stock||0,st=stProd(item);
+    var pct=item.entrada>0?Math.min(100,Math.round(disp/item.entrada*100)):0;
+    var bc=st==='ok'?'#2E7D32':st==='reponer'?'#C62828':'#ccc';
+    var isOpen=expProd===item.id,locked=!canEdit();
+    var uopts=['Kg','Gr','Lt','Ml','Und','Paq','Caja','Rollo'].map(function(u){return '<option '+(item.unidad===u?'selected':'')+'>'+u+'</option>';}).join('');
+    var mod=modStr(item);
+    var h='<div class="item-card '+st+'" id="pc-'+item.id+'" data-pid="'+item.id+'">';
+    h+='<div class="item-head" onclick="togProd(this.parentNode.dataset.pid)">';
+    h+='<div class="cat-dot" style="background:'+catClr(item.cat)+'"></div>';
+    h+='<div class="item-inf"><div class="item-name">'+item.nombre+'</div><div class="item-meta">'+item.cat+' · '+item.unidad+'</div></div>';
+    h+='<div class="ibadge '+(st==='ok'?'bOK':st==='reponer'?'bWARN':'bEMPTY')+'">'+(st==='ok'?'OK '+disp+' '+item.unidad:st==='reponer'?'Bajo '+disp+' '+item.unidad:'Sin stock')+'</div></div>';
+    h+='<div class="expand-body '+(isOpen?'open':'')+'" id="pe-'+item.id+'">';
+    h+='<div class="sbar-wrap"><div class="sbar-lbl"><span>Stock: '+disp+' '+item.unidad+'</span><span>Min: '+item.min+'</span></div>';
+    h+='<div class="sbar-bg"><div class="sbar-fill" style="width:'+pct+'%;background:'+bc+'"></div></div></div>';
+    h+='<div class="field-row"><div class="field-col"><div class="flabel">Entrada</div><input class="finput yellow" type="number" min="0" step="0.01" value="'+(item.entrada||0)+'" '+(locked?'disabled':'')+' id="pc-ent-'+item.id+'"></div>';
+    h+='<div class="field-col"><div class="flabel">Salida</div><input class="finput yellow" type="number" min="0" step="0.01" value="'+(item.salida||0)+'" '+(locked?'disabled':'')+' id="pc-sal-'+item.id+'"></div></div>';
+    h+='<div class="field-row"><div class="field-col"><div class="flabel">Unidad</div><select class="finput" '+(locked?'disabled':'')+' id="pc-uni-'+item.id+'">'+uopts+'</select></div>';
+    h+='<div class="field-col"><div class="flabel">Min</div><input class="finput" type="number" min="0" step="0.01" value="'+item.min+'" '+(locked?'disabled':'')+' id="pc-min-'+item.id+'"></div></div>';
+    h+='<div class="field-row"><div class="field-col"><div class="flabel">Precio</div><input class="finput yellow" type="number" min="0" step="0.01" value="'+(item.precio||0)+'" '+(locked?'disabled':'')+' id="pc-precio-'+item.id+'"></div>';
+    h+='<div class="field-col"><div class="flabel">Costo</div><input class="finput" type="number" min="0" step="0.01" value="'+(item.costo||0)+'" '+(locked?'disabled':'')+' id="pc-costo-'+item.id+'"></div></div>';
+    h+='<div class="calc-row"><span class="clabel">Stock</span><span class="cval">'+disp+' '+item.unidad+'</span></div>';
+    if(mod)h+='<div class="last-mod">'+mod+'</div>';
+    if(!locked){h+='<div class="action-row" data-pid="'+item.id+'"><button class="btn-save" onclick="saveProd(this.parentNode.dataset.pid)">Guardar</button>';
+      if(canDelete())h+='<button class="btn-del" onclick="delProd(this.parentNode.dataset.pid)">Del</button>';h+='</div>';}
+    else h+='<div style="font-size:11px;color:var(--gris3);margin-top:8px;text-align:center">Solo lectura</div>';
+    h+='</div></div>';return h;
+  }).join('');;
 }
 
 window.togProd=function(id){ expProd=expProd===id?null:id; renderProd();
-  if(expProd) setTimeout(()=>document.getElementById(`pc-${id}`)?.scrollIntoView({behavior:'smooth',block:'nearest'}),100); };
+  if(expProd) setTimeout(function(){var _el=document.getElementById('pc-'+id);if(_el)_el.scrollIntoView({behavior:'smooth',block:'nearest'});},100); };
 window.setFProd=function(c){ fProd=c; renderProd(); };
 
 window.saveProd=async function(id){
   const item=S.productos.find(p=>p.id===id); if(!item) return;
-  const prod=parseFloat(document.getElementById(`pc-prod-${id}`)?.value)||0;
-  const vend=parseFloat(document.getElementById(`pc-vend-${id}`)?.value)||0;
-  const precio=parseFloat(document.getElementById(`pc-precio-${id}`)?.value)||0;
-  const min=parseFloat(document.getElementById(`pc-min-${id}`)?.value)||0;
-  const updated={...item,prod,vend,precio,min,mod:{userId:currentUser.id,userName:currentUser.nombre,emoji:currentUser.emoji,time:nowStr()}};
-  await fbSet(`inventario/productos/${id}`,updated);
-  fbLog('edit',`Editó producto: ${item.nombre} · ${item.variante} → Prod:${prod} Vend:${vend} Precio:${fmt$(precio)}`);
+  var prod_v=parseFloat(document.getElementById('pc-prod-'+id)?.value)||0;
+  var vend_v=parseFloat(document.getElementById('pc-vend-'+id)?.value)||0;
+  var precio_v=parseFloat(document.getElementById('pc-precio-'+id)?.value)||0;
+  var min_v=parseFloat(document.getElementById('pc-min-'+id)?.value)||0;
+  var updated=Object.assign({},item,{prod:prod_v,vend:vend_v,precio:precio_v,min:min_v,mod:{userId:currentUser.id,userName:currentUser.nombre,emoji:currentUser.emoji,time:nowStr()}});
+  await fbSet('inventario/productos/'+id,updated);
+  fbLog('edit','Edito prod: '+item.nombre);
   expProd=null; showToast('✅ Guardado y sincronizado');
 };
 
 window.delProd=async function(id){
   if(!canDelete()){showToast('🔒 Sin permiso');return;}
   const item=S.productos.find(p=>p.id===id);
-  if(!confirm(`¿Eliminar "${item?.nombre} · ${item?.variante}"?`)) return;
-  await fbRemove(`inventario/productos/${id}`);
-  fbLog('del',`Eliminó producto: ${item.nombre} · ${item.variante}`);
+  if(!confirm('Eliminar '+item?.nombre+'?')) return;
+  await fbRemove('inventario/productos/'+id);
+  fbLog('del','Elimino prod: '+item.nombre);
   expProd=null; showToast('🗑 Eliminado');
 };
 
 // ── BITÁCORA ──────────────────────────────────────────────────────────────────
 function renderLog(){
-  const users=['Todos',...new Set(S.bitacora.map(l=>l.userName))];
-  document.getElementById('chips-log').innerHTML=users.map(u=>
-    `<button class="chip ${fLog===u?'active':''}" onclick="setFLog('${u}')">${u}</button>`).join('');
-  let logs=S.bitacora;
-  if(fLog!=='Todos') logs=logs.filter(l=>l.userName===fLog);
-  const el=document.getElementById('lista-log');
-  if(!logs.length){el.innerHTML=`<div class="empty"><div class="empty-ico">📋</div><div class="empty-txt">Sin registros aún</div></div>`;return;}
-  el.innerHTML=logs.map(l=>`
-    <div class="log-item ${l.tipo}">
-      <div class="log-top">
-        <div class="log-av" style="background:${l.userColor}">${l.userEmoji}</div>
-        <div class="log-who">${l.userName}</div>
-        <div class="log-time">${fmtTs(l.ts)}</div>
-      </div>
-      <div class="log-action">${ACT_ICO[l.tipo]||'•'} ${l.descripcion}</div>
-    </div>`).join('');
+  var users=['Todos'].concat(Array.from(new Set(S.bitacora.map(function(l){return l.userName;}))));
+  document.getElementById('chips-log').innerHTML=users.map(function(u){return '<button class="chip '+(fLog===u?'active':'')+' " onclick="setFLog(this.textContent)">'+u+'</button>';}).join('');
+  var logs=S.bitacora.slice();
+  if(fLog!=='Todos') logs=logs.filter(function(l){return l.userName===fLog;});
+  var el=document.getElementById('lista-log');
+  if(!logs.length){el.innerHTML='<div class="empty"><div class="empty-ico">📋</div><div class="empty-txt">Sin registros</div></div>';return;}
+  el.innerHTML=logs.map(function(l){
+    var h='<div class="log-item '+l.tipo+'">';
+    h+='<div class="log-top"><div class="log-av" style="background:'+(l.userColor||'#888')+'">'+( l.userEmoji||'👤')+'</div>';
+    h+='<div class="log-who">'+(l.userName||'')+'</div>';
+    h+='<div class="log-time">'+fmtTs(l.ts)+'</div></div>';
+    h+='<div class="log-det">'+(l.detalle||l.msg||'')+'</div></div>';
+    return h;
+  }).join('')
 }
 window.setFLog=function(u){ fLog=u; renderLog(); };
 
@@ -1431,44 +1151,29 @@ window.openAddModal = function(){
   const cats_i=[...new Set(S.insumos.map(i=>i.cat))];
   const cats_p=[...new Set(S.productos.map(p=>p.cat))];
   if(addMode==='insumo'){
-    document.getElementById('modal-add-body').innerHTML=`
-      <div class="field-col"><div class="flabel">Nombre del insumo</div>
-        <input class="finput" id="an-nom" placeholder="Ej: Leche de coco"></div>
-      <div class="field-row" style="margin-top:10px">
-        <div class="field-col"><div class="flabel">Categoría</div>
-          <select class="fselect" id="an-cat">
-            ${cats_i.map(c=>`<option>${c}</option>`).join('')}
-            <option value="__new__">+ Nueva...</option>
-          </select></div>
-        <div class="field-col"><div class="flabel">Unidad</div>
-          <input class="finput" id="an-und" placeholder="Kg, Lt, Paq..."></div>
-      </div>
-      <div class="field-row" style="margin-top:10px">
-        <div class="field-col"><div class="flabel">Stock mínimo</div>
-          <input class="finput yellow" type="number" id="an-min" value="1"></div>
-        <div class="field-col"><div class="flabel">Stock máximo</div>
-          <input class="finput yellow" type="number" id="an-max" value="10"></div>
-      </div>
-      <button class="btn-primary" onclick="saveNewIns()">✅ Agregar Insumo</button>`;
+    document.getElementById('modal-add-body').innerHTML=
+    '<div class="field-col"><div class="flabel">Nombre</div><input class="finput" id="new-nombre" placeholder="Ej: Sal marina"></div>'
+    +'<div class="field-row">'
+    +'<div class="field-col"><div class="flabel">Categoría</div><select class="finput" id="new-cat"><option>Carnes</option><option>Lácteos</option><option>Vegetales</option><option>Condimentos</option><option>Bebidas</option><option>Otro</option></select></div>'
+    +'<div class="field-col"><div class="flabel">Unidad</div><select class="finput" id="new-uni"><option>Kg</option><option>Gr</option><option>Lt</option><option>Ml</option><option>Und</option><option>Paq</option></select></div></div>'
+    +'<div class="field-row">'
+    +'<div class="field-col"><div class="flabel">Cantidad inicial</div><input class="finput yellow" type="number" id="new-cant" min="0" step="0.01" value="0"></div>'
+    +'<div class="field-col"><div class="flabel">Mínimo</div><input class="finput" type="number" id="new-min" min="0" step="0.01" value="1"></div></div>'
+    +'<div class="field-col"><div class="flabel">Costo unitario</div><input class="finput" type="number" id="new-costo" min="0" step="0.01" value="0"></div>'
+    +'<button class="btn-primary" onclick="saveNewIns()">✅ Agregar Insumo</button>'
   } else {
-    document.getElementById('modal-add-body').innerHTML=`
-      <div class="field-col"><div class="flabel">Nombre del producto</div>
-        <input class="finput" id="an-nom" placeholder="Ej: Camarón al ajillo"></div>
-      <div class="field-row" style="margin-top:10px">
-        <div class="field-col"><div class="flabel">Categoría</div>
-          <select class="fselect" id="an-cat">
-            ${cats_p.map(c=>`<option>${c}</option>`).join('')}
-          </select></div>
-        <div class="field-col"><div class="flabel">Variante</div>
-          <input class="finput" id="an-var" placeholder="Ej: Nutella"></div>
-      </div>
-      <div class="field-row" style="margin-top:10px">
-        <div class="field-col"><div class="flabel">Precio ($)</div>
-          <input class="finput yellow" type="number" id="an-precio" value="0" step="0.01"></div>
-        <div class="field-col"><div class="flabel">Stock mínimo</div>
-          <input class="finput yellow" type="number" id="an-min" value="2"></div>
-      </div>
-      <button class="btn-primary" onclick="saveNewProd()">✅ Agregar Producto</button>`;
+    document.getElementById('modal-add-body').innerHTML=
+    '<div class="field-col"><div class="flabel">Nombre</div><input class="finput" id="new-nombre" placeholder="Ej: Filet de salmón"></div>'
+    +'<div class="field-row">'
+    +'<div class="field-col"><div class="flabel">Categoría</div><select class="finput" id="new-cat"><option>Mariscos</option><option>Pescado</option><option>Congelados</option><option>Salsas</option><option>Viveres</option><option>Empaque</option><option>Limpieza</option></select></div>'
+    +'<div class="field-col"><div class="flabel">Unidad</div><select class="finput" id="new-uni"><option>Kg</option><option>Gr</option><option>Lt</option><option>Und</option><option>Paq</option></select></div></div>'
+    +'<div class="field-row">'
+    +'<div class="field-col"><div class="flabel">Entrada inicial</div><input class="finput yellow" type="number" id="new-entrada" min="0" step="0.01" value="0"></div>'
+    +'<div class="field-col"><div class="flabel">Mínimo</div><input class="finput" type="number" id="new-min" min="0" step="0.01" value="1"></div></div>'
+    +'<div class="field-row">'
+    +'<div class="field-col"><div class="flabel">Precio venta</div><input class="finput yellow" type="number" id="new-precio" min="0" step="0.01" value="0"></div>'
+    +'<div class="field-col"><div class="flabel">Costo</div><input class="finput" type="number" id="new-costo" min="0" step="0.01" value="0"></div></div>'
+    +'<button class="btn-primary" onclick="saveNewProd()">✅ Agregar Producto</button>'
   }
   openModal('modal-add');
 };
@@ -1485,8 +1190,8 @@ window.saveNewIns=async function(){
     max:parseFloat(document.getElementById('an-max').value)||10,
     cant:0,costo:0,
     mod:{userId:currentUser.id,userName:currentUser.nombre,emoji:currentUser.emoji,time:nowStr()}};
-  await fbSet(`inventario/insumos/${id}`,item);
-  fbLog('add',`Agregó insumo: ${nom} (${cat})`);
+  await fbSet('inventario/insumos/'+id,item);
+  fbLog('add','Agrego ins: '+nom);
   closeModal('modal-add'); showToast('✅ Insumo agregado y sincronizado');
 };
 
@@ -1501,8 +1206,8 @@ window.saveNewProd=async function(){
     precio:parseFloat(document.getElementById('an-precio').value)||0,
     prod:0,vend:0,
     mod:{userId:currentUser.id,userName:currentUser.nombre,emoji:currentUser.emoji,time:nowStr()}};
-  await fbSet(`inventario/productos/${id}`,item);
-  fbLog('add',`Agregó producto: ${nom} · ${vari} (${cat})`);
+  await fbSet('inventario/productos/'+id,item);
+  fbLog('add','Agrego prod: '+nom);
   closeModal('modal-add'); showToast('✅ Producto agregado y sincronizado');
 };
 
@@ -1525,11 +1230,11 @@ window.updateMermaItems = function(){
   const sel  = document.getElementById('m-item');
   if(tipo === 'producto'){
     sel.innerHTML = S.productos.map(p=>
-      `<option value="${p.id}">${p.nombre} · ${p.variante} (Disp: ${Math.max(0,p.prod-p.vend)})</option>`
+      ('<option value="'+p.id+'">'+ p.nombre +' (Stock: '+(p.stock||0)+' '+p.unidad+')</option>')
     ).join('');
   } else {
     sel.innerHTML = S.insumos.map(i=>
-      `<option value="${i.id}">${i.nombre} (${i.cant} ${i.unidad})</option>`
+      '<option value="'+i.id+'">'+i.nombre+' ('+i.cant+' '+i.unidad+')</option>'
     ).join('');
   }
   calcPerdida();
@@ -1567,15 +1272,15 @@ window.guardarMerma = async function(){
     // Descontar del stock
     const nuevaCant = Math.max(0, item.cant - cant);
     const updated = {...item, cant:nuevaCant, mod:{userId:currentUser.id,userName:currentUser.nombre,emoji:currentUser.emoji,time:nowStr()}};
-    await fbSet(`inventario/insumos/${itemId}`, updated);
+    await fbSet('inventario/insumos/'+itemId,updated);
   } else {
     const item = S.productos.find(p=>p.id===itemId);
     if(!item){ showToast('⚠ Selecciona un producto'); return; }
-    itemNombre = `${item.nombre} · ${item.variante}`; itemUnidad = 'unid'; costoUnit = item.precio||0;
+    itemNombre = item.nombre; itemUnidad = item.unidad||'Und'; costoUnit = item.precio||0;
     // Descontar del disponible (aumentar vendidos como merma)
-    const nuevoProd = Math.max(0, item.prod - cant);
-    const updated = {...item, prod:nuevoProd, mod:{userId:currentUser.id,userName:currentUser.nombre,emoji:currentUser.emoji,time:nowStr()}};
-    await fbSet(`inventario/productos/${itemId}`, updated);
+    const nuevoStock = Math.max(0, (item.stock||0) - cant);
+    const updated = {...item, stock:nuevoStock, salida:(item.salida||0)+cant, mod:{userId:currentUser.id,userName:currentUser.nombre,emoji:currentUser.emoji,time:nowStr()}};
+    await fbSet('inventario/productos/'+itemId, updated);
   }
 
   const perdidaTotal = costoUnit * cant;
@@ -1591,11 +1296,11 @@ window.guardarMerma = async function(){
     fecha: nowStr(),
   };
   await push(ref(db,'inventario/mermas'), entrada);
-  fbLog('del', `⚠️ Merma registrada: ${cant} ${itemUnidad} de "${itemNombre}" — Motivo: ${MOTIVO_LBL[motivo]} — Pérdida: ${fmt$(perdidaTotal)}`);
+  fbLog('del','Merma registrada');
   closeModal('modal-merma');
   document.getElementById('m-cant').value='1';
   document.getElementById('m-desc').value='';
-  showToast(`⚠️ Merma registrada — ${fmt$(perdidaTotal)} de pérdida`);
+  showToast('Merma: '+fmt$(perdidaTotal)+' de perdida');
 };
 
 function renderMermas(){
@@ -1620,62 +1325,52 @@ function renderMermas(){
     <button class="btn-merma" onclick="openMermaModal()">⚠️ Registrar nueva pérdida / merma</button>`;
 
   // Chips filtro
-  const users=['Todos',...new Set(S.mermas.map(m=>m.userName))];
-  document.getElementById('chips-mermas').innerHTML=users.map(u=>
-    `<button class="chip ${fMerma===u?'active':''}" onclick="setFMerma('${u}')">${u}</button>`).join('');
+  var musers=['Todos'].concat(Array.from(new Set(S.mermas.map(function(m){return m.userName;}))));
+  document.getElementById('chips-mermas').innerHTML=musers.map(function(u){return '<button class="chip '+(fMerma===u?'active':'')+' " onclick="setFMerma(this.textContent)">'+u+'</button>';}).join('');
 
   // Lista
-  let items = S.mermas;
-  if(fMerma!=='Todos') items=items.filter(m=>m.userName===fMerma);
+  var items=S.mermas.slice();
+  if(fMerma!=='Todos') items=items.filter(function(m){return m.userName===m.userName&&m.userName===fMerma;});
   const el = document.getElementById('lista-mermas');
   if(!items.length){
     el.innerHTML=`<div class="empty"><div class="empty-ico">✅</div><div class="empty-txt">Sin pérdidas registradas</div></div>`;
     return;
   }
-  el.innerHTML = items.map(m=>`
-    <div class="merma-card">
-      <div class="merma-head">
-        <div class="merma-ico">${MOTIVO_ICO[m.motivo]||'⚠️'}</div>
-        <div class="merma-inf">
-          <div class="merma-nombre">${m.itemNombre}</div>
-          <div class="merma-meta">
-            <span class="motivo-chip ${MOTIVO_CLR[m.motivo]||'m-otro'}">${MOTIVO_LBL[m.motivo]}</span>
-          </div>
-          <div style="font-size:10px;color:var(--gris3);margin-top:4px">
-            📝 ${m.desc} &nbsp;·&nbsp; 
-            <span style="display:inline-flex;align-items:center;gap:3px">
-              <span style="background:${m.userColor};width:12px;height:12px;border-radius:50%;display:inline-block"></span>
-              ${m.userName}
-            </span> &nbsp;·&nbsp; ${m.fecha}
-          </div>
-        </div>
-        <div style="text-align:right;flex-shrink:0">
-          <div class="merma-cant">-${m.cant}</div>
-          <div style="font-size:10px;color:var(--rojo-m);font-weight:700">${fmt$(m.perdidaTotal)}</div>
-          <div style="font-size:9px;color:var(--gris3)">${m.itemUnidad}</div>
-        </div>
-      </div>
-    </div>`).join('');
+  el.innerHTML = items.map(function(m){
+    var h='<div class="merma-card">';
+    h+='<div class="merma-head"><div class="merma-ico">'+(window.MOTIVO_ICO&&MOTIVO_ICO[m.motivo]?MOTIVO_ICO[m.motivo]:'⚠️')+'</div>';
+    h+='<div class="merma-inf"><div class="merma-prod">'+(m.itemNombre||'')+'</div>';
+    h+='<div class="merma-sub">'+(m.motivo||'')+(m.cant?' · '+(m.cant)+' '+(m.itemUnidad||''):'')+'</div></div>';
+    h+='<div class="merma-val" style="color:#C62828">-'+(m.perdidaTotal?fmt$(m.perdidaTotal):'$0')+'</div></div>';
+    h+='<div class="merma-det">';
+    h+='<span class="merma-chip">'+(m.tipo||m.motivo||'')+'</span>';
+    h+='<span class="merma-chip">'+(m.userName||'')+'</span>';
+    h+='<span class="merma-chip">'+(m.fecha||'')+'</span>';
+    if(m.obs)h+='<div style="font-size:11px;color:var(--color-text-tertiary);margin-top:4px">'+m.obs+'</div>';
+    h+='</div></div>';
+    return h;
+  }).join('')
 }
 window.setFMerma=function(u){ fMerma=u; renderMermas(); };
 
 // ── GESTIÓN DE USUARIOS ──────────────────────────────────────────────────────
 function renderUsuariosMgmt(){
-  const el = document.getElementById('lista-usuarios-mgmt');
-  if(!el) return;
-  const isAdmin = currentUser && currentUser.rol === 'admin';
-  el.innerHTML = S.usuarios.map(u => {
-    const color = u.color || ROL_CLR[u.rol] || '#888';
-    const isSelf = u.id === currentUser?.id;
-    return `
-    <div style="background:#fff;border-radius:14px;padding:14px;margin-bottom:9px;box-shadow:0 1px 8px rgba(0,0,0,.06);display:flex;align-items:center;gap:12px;">
-      <div style="width:44px;height:44px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${u.emoji}</div>
-      <div style="flex:1">
-        <div style="font-weight:700;font-size:14px">${u.nombre} ${isSelf?'<span style="font-size:10px;color:#888">(tú)</span>':''}</div>
-        <div style="font-size:11px;color:#aaa;margin-top:2px">${ROL_LBL[u.rol]} · PIN: ••••</div>
-      </div>
-      ${isAdmin ? `<button onclick="openEditUser('${u.id}')" style="padding:8px 14px;border-radius:10px;border:none;background:#f4f0ea;color:#333;font-size:13px;font-weight:600;cursor:pointer;">✏️ Editar</button>` : ''}
-    </div>`;
+  var el=document.getElementById('lista-usuarios-mgmt'); if(!el) return;
+  var isAdm=currentUser&&currentUser.rol==='admin';
+  el.innerHTML=S.usuarios.map(function(u){
+    var color=u.color||ROL_CLR[u.rol]||'#888';
+    var isSelf=u.id===currentUser?.id;
+    var h='<div style="background:#fff;border-radius:14px;padding:14px;margin-bottom:9px;box-shadow:0 1px 8px rgba(0,0,0,.06);display:flex;align-items:center;gap:12px;">';
+    h+='<div style="width:44px;height:44px;border-radius:50%;background:'+color+';display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">'+u.emoji+'</div>';
+    h+='<div style="flex:1">';
+    h+='<div style="font-weight:700;font-size:15px">'+u.nombre+(isSelf?' <span style=\"font-size:11px;color:#888\">(Tú)</span>':'')+'</div>';
+    h+='<div style="font-size:12px;color:#888;margin-top:2px">'+u.rol+' · PIN: ****</div>';
+    h+='</div>';
+    if(isAdm){
+      h+='<button onclick="openEditUser(this.dataset.uid)" data-uid="'+u.id+'" style="padding:8px 14px;border-radius:10px;border:none;background:#1F4E79;color:#fff;font-size:12px;cursor:pointer;font-family:inherit">Editar</button>';
+    }
+    h+='</div>';
+    return h;
   }).join('');
 }
 
@@ -1683,7 +1378,7 @@ window.openEditUser = function(id){
   const u = S.usuarios.find(u=>u.id===id);
   if(!u) return;
   document.getElementById('edit-user-id').value = id;
-  document.getElementById('edit-user-title').textContent = `✏️ Editar: ${u.nombre}`;
+  document.getElementById('edit-user-title').textContent = 'Editar: '+u.nombre;
   document.getElementById('eu-nombre').value = u.nombre;
   document.getElementById('eu-rol').value = u.rol;
   document.getElementById('eu-emoji').value = u.emoji;
@@ -1703,10 +1398,10 @@ window.saveEditUser = async function(){
   if(pin && !/^\d{4}$/.test(pin)){ showToast('⚠ El PIN debe ser 4 dígitos'); return; }
   const updated = { ...u, nombre, rol, emoji, color: ROL_CLR[rol] };
   if(pin) updated.pin = pin;
-  await fbSet(`inventario/usuarios/${id}`, updated);
-  fbLog('edit', `${currentUser.nombre} editó usuario: ${nombre}${pin?' (PIN cambiado)':''}`);
+  await fbSet('inventario/usuarios/'+id,updated);
+  fbLog('edit', currentUser.nombre+' edito usuario: '+nombre);
   closeModal('modal-edit-user');
-  showToast(`✅ Usuario ${nombre} actualizado`);
+  showToast('Usuario '+nombre+' actualizado');
   if(id === currentUser.id){
     currentUser = updated;
     document.getElementById('pill-name').textContent = updated.nombre;
@@ -1722,11 +1417,11 @@ window.deleteUser = async function(){
   if(id === currentUser.id){ showToast('⚠ No puedes eliminarte a ti mismo'); return; }
   const u = S.usuarios.find(u=>u.id===id);
   if(!u) return;
-  if(!confirm(`¿Eliminar al usuario "${u.nombre}"? Esta acción no se puede deshacer.`)) return;
-  await fbRemove(`inventario/usuarios/${id}`);
-  fbLog('del', `${currentUser.nombre} eliminó usuario: ${u.nombre}`);
+  if(!confirm('Eliminar usuario '+u.nombre+'?')) return;
+  await fbRemove('inventario/usuarios/'+id);
+  fbLog('del', currentUser.nombre+' elimino usuario: '+u.nombre);
   closeModal('modal-edit-user');
-  showToast(`🗑️ Usuario ${u.nombre} eliminado`);
+  showToast('Usuario '+u.nombre+' eliminado');
 };
 
 // ── EXPORT ─────────────────────────────────────────────────────────────────────
@@ -1734,7 +1429,7 @@ window.exportData=function(){
   const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
-  a.href=url;a.download=`donCamaron_${new Date().toISOString().split('T')[0]}.json`;
+  a.href=url;a.download='donCamaron_'+new Date().toISOString().split('T')[0]+'.json';
   a.click();URL.revokeObjectURL(url);
   fbLog('edit','Exportó respaldo del inventario');
   showToast('💾 Respaldo descargado');
@@ -1762,241 +1457,434 @@ window.showToast=function(msg){
 // ── INICIO ───────────────────────────────────────────────────────────────────
 initDB();
 
-// ══════════════════════════════════════════════════════════════════════════════
-// FEATURE 1: REPORTES & GRÁFICAS
-// ══════════════════════════════════════════════════════════════════════════════
-function renderReportes(){
-  const el = document.getElementById('reportes-content');
-  if(!el) return;
-  const prod = S.productos;
-  const ins  = S.insumos;
-  const mermas = S.mermas || [];
-  const hoyStr = new Date().toDateString();
+// =====================================================================
+// HELPERS
+// =====================================================================
+var VIV_CATS = ['Salsas','Viveres','Empaque','Limpieza'];
+function isVivere(p){ return VIV_CATS.indexOf(p.cat) !== -1; }
+function getPescado(){ return S.productos.filter(function(p){ return !isVivere(p); }); }
+function getViveres(){ return S.productos.filter(function(p){ return isVivere(p); }); }
 
-  const totalVend    = prod.reduce(function(s,p){return s+p.vend;},0);
-  const totalIngreso = prod.reduce(function(s,p){return s+(p.vend*(p.precio||0));},0);
-  const mermasHoy    = mermas.filter(function(m){return new Date(m.ts).toDateString()===hoyStr;});
-  const perdidaHoy   = mermasHoy.reduce(function(s,m){return s+(m.perdidaTotal||0);},0);
-  const bajosIns     = ins.filter(function(i){return stIns(i)==='reponer';});
-  const bajosProd    = prod.filter(function(p){return stProd(p)==='reponer';});
-
-  var html = '<div style="padding:12px 0">';
-
-  // KPIs
-  html += '<div class="kpi-grid">';
-  html += '<div class="kpi-box"><div class="kpi-val">'+totalVend+'</div><div class="kpi-lbl">Unidades vendidas</div></div>';
-  html += '<div class="kpi-box"><div class="kpi-val" style="color:#1E5631">'+fmt$(totalIngreso)+'</div><div class="kpi-lbl">Ingresos estimados</div></div>';
-  html += '<div class="kpi-box"><div class="kpi-val" style="color:#E65100">'+(perdidaHoy>0?fmt$(perdidaHoy):'$0')+'</div><div class="kpi-lbl">Pérdida hoy</div></div>';
-  html += '<div class="kpi-box"><div class="kpi-val" style="color:#B71C1C">'+(bajosIns.length+bajosProd.length)+'</div><div class="kpi-lbl">Alertas de stock</div></div>';
-  html += '</div>';
-
-  // Top productos vendidos
-  var topProd = prod.slice().sort(function(a,b){return b.vend-a.vend;}).slice(0,8);
-  var maxVend  = topProd.length>0 ? topProd[0].vend||1 : 1;
-  var clrs = ['#1F4E79','#2E75B6','#4490C8','#5DAADA','#1E5631','#2E7D32','#E65100','#B71C1C'];
-  html += '<div class="rep-card"><div class="rep-title">🛍 Productos más vendidos</div><div class="bar-wrap">';
-  if(topProd.length===0){
-    html += '<div style="color:#999;font-size:12px;text-align:center">Sin datos de ventas aún</div>';
-  } else {
-    topProd.forEach(function(p,i){
-      var pct = Math.round((p.vend/maxVend)*100);
-      html += '<div class="bar-row">';
-      html += '<span class="bar-label" title="'+p.nombre+' · '+p.variante+'">'+p.nombre+'</span>';
-      html += '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:'+clrs[i%clrs.length]+'"></div></div>';
-      html += '<span class="bar-val">'+p.vend+'</span></div>';
-    });
-  }
-  html += '</div></div>';
-
-  // Insumos por valor
-  var topIns = ins.filter(function(i){return i.costo>0;}).slice().sort(function(a,b){return (b.cant*b.costo)-(a.cant*a.costo);}).slice(0,6);
-  var maxInsVal = topIns.length>0 ? topIns[0].cant*topIns[0].costo : 1;
-  html += '<div class="rep-card"><div class="rep-title">📦 Valor en inventario de insumos</div><div class="bar-wrap">';
-  if(topIns.length===0){
-    html += '<div style="color:#999;font-size:12px;text-align:center">Agrega costos a los insumos para ver esta gráfica</div>';
-  } else {
-    topIns.forEach(function(i){
-      var val = i.cant*i.costo;
-      var pct = Math.round((val/maxInsVal)*100);
-      html += '<div class="bar-row">';
-      html += '<span class="bar-label">'+i.nombre+'</span>';
-      html += '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:#1E5631"></div></div>';
-      html += '<span class="bar-val">'+fmt$(val)+'</span></div>';
-    });
-  }
-  html += '</div></div>';
-
-  // Mermas por tipo
-  var mCat = {};
-  mermas.forEach(function(m){ var k=m.tipo||'Otro'; mCat[k]=(mCat[k]||0)+1; });
-  var mCatArr = Object.keys(mCat).map(function(k){return [k,mCat[k]];}).sort(function(a,b){return b[1]-a[1];});
-  var maxMCat = mCatArr.length>0 ? mCatArr[0][1] : 1;
-  html += '<div class="rep-card"><div class="rep-title">⚠️ Mermas por tipo</div><div class="bar-wrap">';
-  if(mCatArr.length===0){
-    html += '<div style="color:#999;font-size:12px;text-align:center">Sin mermas registradas</div>';
-  } else {
-    mCatArr.forEach(function(e){
-      var pct = Math.round((e[1]/maxMCat)*100);
-      html += '<div class="bar-row"><span class="bar-label">'+e[0]+'</span>';
-      html += '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:#B71C1C"></div></div>';
-      html += '<span class="bar-val">'+e[1]+'</span></div>';
-    });
-  }
-  html += '</div></div>';
-
-  // WhatsApp button
-  html += '<div class="rep-card"><div class="rep-title">📲 Reporte semanal</div>';
-  html += '<p style="font-size:12px;color:#555;margin-bottom:8px">Genera un resumen y envíalo por WhatsApp al dueño o supervisor.</p>';
-  html += '<button class="wa-btn" onclick="enviarReporteWhatsApp()"><span style="font-size:18px">📲</span> Enviar por WhatsApp</button>';
-  html += '</div>';
-
-  // Precios section
-  html += '<div class="rep-card" id="precios-section">';
-  html += '<div class="rep-title">💰 Precios y márgenes <button onclick="guardarPrecios()" style="padding:5px 12px;border-radius:8px;border:none;background:#1F4E79;color:#fff;font-size:11px;cursor:pointer;font-family:inherit">Guardar</button></div>';
-  html += '<div style="font-size:11px;color:#888;margin-bottom:8px">Precio venta · Costo unitario · Margen</div>';
-  prod.forEach(function(p){
-    var margen = p.precio>0&&p.costo>0 ? Math.round(((p.precio-p.costo)/p.precio)*100) : null;
-    var mClass = margen===null ? 'margen-badge' : 'margen-badge '+(margen>=40?'margen-ok':margen>=20?'margen-med':'margen-low');
-    var mText  = margen!==null ? margen+'%' : '—';
-    html += '<div class="precio-row">';
-    html += '<span class="precio-nom">'+p.nombre+'<br><span style="font-size:10px;color:#999">'+p.variante+'</span></span>';
-    html += '<input class="precio-inp" id="pr-p-'+p.id+'" type="number" value="'+(p.precio||0)+'" placeholder="Precio" min="0" step="0.01" oninput="actualizarMargen(\''+p.id+'\')">';
-    html += '<input class="precio-inp" id="pr-c-'+p.id+'" type="number" value="'+(p.costo||0)+'" placeholder="Costo" min="0" step="0.01" oninput="actualizarMargen(\''+p.id+'\')">';
-    html += '<span class="'+mClass+'" id="mg-'+p.id+'">'+mText+'</span>';
-    html += '</div>';
-  });
-  html += '</div>';
-
-  // Stock notification button
-  html += '<div class="rep-card"><div class="rep-title">🔔 Notificaciones</div>';
-  html += '<p style="font-size:12px;color:#555;margin-bottom:8px">Activa las notificaciones para recibir alertas cuando un producto esté bajo de stock.</p>';
-  html += '<button onclick="pedirPermisNotificaciones()" style="width:100%;padding:11px;border-radius:12px;border:1px solid #1F4E79;background:transparent;color:#1F4E79;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🔔 Activar notificaciones de stock</button>';
-  html += '</div>';
-
-  html += '</div>';
-  el.innerHTML = html;
-
-  // Inject stock banner in dashboard
-  checkNotificaciones();
+function migrarProducto(p){
+  if(p.stock !== undefined || p.entrada !== undefined) return p;
+  var ent = p.prod || 0;
+  var sal = p.vend || 0;
+  return Object.assign({}, p, {entrada:ent, salida:sal, stock:Math.max(0,ent-sal), unidad:p.unidad||'Kg'});
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// FEATURE 2: REPORTE WHATSAPP
-// ══════════════════════════════════════════════════════════════════════════════
-function enviarReporteWhatsApp(){
-  var prod = S.productos;
-  var ins  = S.insumos;
-  var mermas = S.mermas || [];
-  var fecha = new Date().toLocaleDateString('es-VE',{weekday:'long',day:'numeric',month:'long'});
-  var totalVend = prod.reduce(function(s,p){return s+p.vend;},0);
-  var totalIng  = prod.reduce(function(s,p){return s+(p.vend*(p.precio||0));},0);
-  var bajosIns  = ins.filter(function(i){return stIns(i)==='reponer';});
-  var bajosProd = prod.filter(function(p){return stProd(p)==='reponer';});
-  var hoyStr    = new Date().toDateString();
-  var mermasHoy = mermas.filter(function(m){return new Date(m.ts).toDateString()===hoyStr;});
-  var perdida   = mermasHoy.reduce(function(s,m){return s+(m.perdidaTotal||0);},0);
-  var topVend   = prod.slice().sort(function(a,b){return b.vend-a.vend;}).slice(0,3);
+function stMar(p){
+  var s = p.stock || 0;
+  if(s <= 0) return 'empty';
+  if(s <= p.min) return 'reponer';
+  return 'ok';
+}
 
-  var msg = '🦐 *DON CAMARÓN — Reporte de Inventario*\n';
-  msg += '📅 '+fecha+'\n\n';
-  msg += '📊 *RESUMEN GENERAL*\n';
-  msg += '• Unidades vendidas: *'+totalVend+'*\n';
-  msg += '• Ingresos estimados: *'+fmt$(totalIng)+'*\n';
-  msg += '• Mermas hoy: *'+mermasHoy.length+'* (pérdida: *'+fmt$(perdida)+'*)\n\n';
-  if(topVend.length>0){
-    msg += '🏆 *TOP PRODUCTOS*\n';
-    topVend.forEach(function(p,i){ msg += (i+1)+'. '+p.nombre+' · '+p.variante+': *'+p.vend+' uds*\n'; });
-    msg += '\n';
+function buildItemCard(item, prefix, saveFn, delFn){
+  var st   = stMar(item);
+  var disp = item.stock || 0;
+  var pct  = item.entrada > 0 ? Math.min(100, Math.round(disp/item.entrada*100)) : 0;
+  var bc   = st==='ok' ? '#2E7D32' : st==='reponer' ? '#C62828' : '#ccc';
+  var locked = !canEdit();
+  var mod  = modStr(item);
+  var margen = (item.precio>0 && item.costo>0) ? Math.round(((item.precio-item.costo)/item.precio)*100) : null;
+  var mColor = margen===null ? '#999' : margen>=40 ? '#1E5631' : margen>=20 ? '#856404' : '#B71C1C';
+  var clrDot = catClr ? catClr(item.cat) : '#888';
+
+  var badge = st==='ok' ? ('OK ' + disp + ' ' + item.unidad) :
+              st==='reponer' ? ('! ' + disp + ' ' + item.unidad) : 'Sin stock';
+  var badgeCls = st==='ok' ? 'bOK' : st==='reponer' ? 'bWARN' : 'bEMPTY';
+
+  var uni_opts = ['Kg','Gr','Lt','Ml','Und','Paq','Caja','Rollo'].map(function(u){
+    return '<option' + (item.unidad===u?' selected':'') + '>' + u + '</option>';
+  }).join('');
+
+  var dis = locked ? ' disabled' : '';
+  var h = '';
+  h += '<div class="item-card ' + st + '" id="' + prefix + '-' + item.id + '">';
+  h += '<div class="item-head" onclick="tog_' + prefix + '(\'' + item.id + '\')">';
+  h += '<div class="cat-dot" style="background:' + clrDot + '"></div>';
+  h += '<div class="item-inf">';
+  h += '<div class="item-name">' + item.nombre + '</div>';
+  h += '<div class="item-meta">' + item.cat + ' - ' + item.unidad + '</div>';
+  h += '</div>';
+  h += '<div class="ibadge ' + badgeCls + '">' + badge + '</div>';
+  h += '</div>';
+  h += '<div class="expand-body" id="' + prefix + 'e-' + item.id + '">';
+  h += '<div class="sbar-wrap">';
+  h += '<div class="sbar-lbl"><span>Stock: ' + disp + ' ' + item.unidad + '</span><span>Min: ' + item.min + '</span></div>';
+  h += '<div class="sbar-bg"><div class="sbar-fill" style="width:' + pct + '%;background:' + bc + '"></div></div>';
+  h += '</div>';
+  h += '<div class="field-row">';
+  h += '<div class="field-col"><div class="flabel">Entrada (compra)</div>';
+  h += '<input class="finput yellow" type="number" min="0" step="0.01" value="' + (item.entrada||0) + '"' + dis + ' id="' + prefix + '-ent-' + item.id + '"></div>';
+  h += '<div class="field-col"><div class="flabel">Salida (venta)</div>';
+  h += '<input class="finput yellow" type="number" min="0" step="0.01" value="' + (item.salida||0) + '"' + dis + ' id="' + prefix + '-sal-' + item.id + '"></div>';
+  h += '</div>';
+  h += '<div class="field-row">';
+  h += '<div class="field-col"><div class="flabel">Unidad</div>';
+  h += '<select class="finput"' + dis + ' id="' + prefix + '-uni-' + item.id + '">' + uni_opts + '</select></div>';
+  h += '<div class="field-col"><div class="flabel">Stock minimo</div>';
+  h += '<input class="finput" type="number" min="0" step="0.01" value="' + (item.min||0) + '"' + dis + ' id="' + prefix + '-min-' + item.id + '"></div>';
+  h += '</div>';
+  h += '<div class="field-row">';
+  h += '<div class="field-col"><div class="flabel">Precio venta ($/' + item.unidad + ')</div>';
+  h += '<input class="finput yellow" type="number" min="0" step="0.01" value="' + (item.precio||0) + '"' + dis + ' id="' + prefix + '-precio-' + item.id + '"></div>';
+  h += '<div class="field-col"><div class="flabel">Costo ($/' + item.unidad + ')</div>';
+  h += '<input class="finput" type="number" min="0" step="0.01" value="' + (item.costo||0) + '"' + dis + ' id="' + prefix + '-costo-' + item.id + '"></div>';
+  h += '</div>';
+  h += '<div class="calc-row"><span class="clabel">Stock actual</span><span class="cval">' + disp + ' ' + item.unidad + '</span></div>';
+  h += '<div class="calc-row"><span class="clabel">Ingreso est.</span><span class="cval">' + fmt$(item.salida*(item.precio||0)) + '</span></div>';
+  if(margen !== null){
+    h += '<div class="calc-row"><span class="clabel">Margen</span><span class="cval" style="color:' + mColor + ';font-weight:700">' + margen + '%</span></div>';
   }
-  if(bajosIns.length>0||bajosProd.length>0){
-    msg += '⚠️ *ALERTAS DE STOCK BAJO*\n';
-    bajosIns.slice(0,5).forEach(function(i){ msg += '• 📦 '+i.nombre+': *'+i.cant+' '+i.unidad+'* (mín '+i.min+')\n'; });
-    bajosProd.slice(0,5).forEach(function(p){ msg += '• 🛍 '+p.nombre+' · '+p.variante+': stock *'+Math.max(0,p.prod-p.vend)+'* (mín '+p.min+')\n'; });
+  if(mod) h += '<div class="last-mod">Editado: ' + mod + '</div>';
+  if(!locked){
+    h += '<div class="action-row">';
+    h += '<button class="btn-save" onclick="' + saveFn + '(\'' + item.id + '\')">Guardar</button>';
+    if(canDelete()) h += '<button class="btn-del" onclick="' + delFn + '(\'' + item.id + '\')">X</button>';
+    h += '</div>';
   } else {
-    msg += '✅ *Todo el stock en niveles normales*\n';
+    h += '<div style="font-size:11px;color:var(--gris3);margin-top:8px;text-align:center">Solo lectura</div>';
   }
-  msg += '\n_Generado por el sistema Don Camarón_';
-  window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+  h += '</div></div>';
+  return h;
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// FEATURE 3: PRECIOS Y MÁRGENES
-// ══════════════════════════════════════════════════════════════════════════════
-function actualizarMargen(id){
-  var precio = parseFloat(document.getElementById('pr-p-'+id)&&document.getElementById('pr-p-'+id).value)||0;
-  var costo  = parseFloat(document.getElementById('pr-c-'+id)&&document.getElementById('pr-c-'+id).value)||0;
-  var el = document.getElementById('mg-'+id);
-  if(!el) return;
-  if(precio>0&&costo>0){
-    var m = Math.round(((precio-costo)/precio)*100);
-    el.textContent = m+'%';
-    el.className = 'margen-badge '+(m>=40?'margen-ok':m>=20?'margen-med':'margen-low');
-  } else {
-    el.textContent = '—';
-    el.className = 'margen-badge';
-  }
-}
+// =====================================================================
+// PRODUCTOS (MARISCOS / PESCADO / CONGELADOS)
+// =====================================================================
+var fProd2 = 'Todos';
+var expProd2 = null;
 
-async function guardarPrecios(){
-  var prod = S.productos;
-  for(var i=0;i<prod.length;i++){
-    var p = prod[i];
-    var ep = document.getElementById('pr-p-'+p.id);
-    var ec = document.getElementById('pr-c-'+p.id);
-    if(ep) p.precio = parseFloat(ep.value)||0;
-    if(ec) p.costo  = parseFloat(ec.value)||0;
-    if(db) await firebase.database().ref('inventario/productos/'+p.id).update({precio:p.precio,costo:p.costo});
-  }
-  showToast('✅ Precios guardados');
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// FEATURE 4: NOTIFICACIONES DE STOCK BAJO
-// ══════════════════════════════════════════════════════════════════════════════
-function checkNotificaciones(){
-  var bajosIns  = S.insumos.filter(function(i){return stIns(i)==='reponer';});
-  var bajosProd = S.productos.filter(function(p){return stProd(p)==='reponer';});
-  var total = bajosIns.length + bajosProd.length;
-  var dashEl = document.getElementById('tab-dashboard');
-  if(!dashEl) return;
-  var banner = document.getElementById('stock-banner');
-  if(!banner){
-    banner = document.createElement('div');
-    banner.id = 'stock-banner';
-    var hdr = dashEl.querySelector('.sec-hdr');
-    if(hdr) hdr.parentNode.insertBefore(banner, hdr.nextSibling);
-    else dashEl.prepend(banner);
-  }
-  if(total>0){
-    banner.textContent = '';
-    banner.innerHTML = '⚠️ '+total+' item'+(total>1?'s':'')+' con stock bajo — toca para ver';
-    banner.className = 'notif-bar';
-    banner.style.display = 'flex';
-    banner.onclick = function(){ goTab('insumos'); };
-  } else {
-    banner.style.display = 'none';
-  }
-  if(total>0 && typeof Notification!=='undefined' && Notification.permission==='granted'){
-    try{
-      new Notification('🦐 Don Camarón — Stock bajo',{body:total+' producto'+(total>1?'s':'')+' necesitan reposición'});
-    }catch(e){}
-  }
-}
-
-function pedirPermisNotificaciones(){
-  if(typeof Notification==='undefined'){ showToast('Tu navegador no soporta notificaciones'); return; }
-  Notification.requestPermission().then(function(p){
-    if(p==='granted') showToast('✅ Notificaciones activadas');
-    else showToast('❌ Actívalas desde la configuración del navegador');
+function renderProd(){
+  var items = getPescado();
+  var cats = ['Todos'].concat(Array.from(new Set(items.map(function(p){ return p.cat; }))));
+  document.getElementById('chips-prod').innerHTML = cats.map(function(cc){
+    return '<button class="chip ' + (fProd2===cc?'active':'') + '" onclick="setFProd2(\'' + cc + '\')">' + cc + '</button>';
+  }).join('');
+  var q = (document.getElementById('srch-prod') ? document.getElementById('srch-prod').value : '').toLowerCase();
+  if(fProd2 !== 'Todos') items = items.filter(function(p){ return p.cat === fProd2; });
+  if(q) items = items.filter(function(p){ return p.nombre.toLowerCase().indexOf(q) !== -1; });
+  var el = document.getElementById('lista-prod');
+  if(!items.length){ el.innerHTML = '<div class="empty"><div class="empty-ico">search</div><div class="empty-txt">Sin resultados</div></div>'; return; }
+  el.innerHTML = items.map(function(item){ return buildItemCard(item, 'pm', 'saveProd2', 'delProd2'); }).join('');
+  items.forEach(function(item){
+    var exp = document.getElementById('pme-' + item.id);
+    if(exp) exp.classList.toggle('open', expProd2 === item.id);
   });
 }
 
-// Override updateBadges to also check notifications
-var _origUpdateBadges = updateBadges;
+window.tog_pm = function(id){ expProd2 = expProd2===id ? null : id; renderProd(); };
+window.setFProd2 = function(c){ fProd2 = c; renderProd(); };
+
+window.saveProd2 = async function(id){
+  var item = S.productos.find(function(p){ return p.id===id; });
+  if(!item) return;
+  var entrada = parseFloat((document.getElementById('pm-ent-'+id)||{}).value) || 0;
+  var salida  = parseFloat((document.getElementById('pm-sal-'+id)||{}).value) || 0;
+  var unidad  = (document.getElementById('pm-uni-'+id)||{}).value || item.unidad;
+  var min     = parseFloat((document.getElementById('pm-min-'+id)||{}).value) || 0;
+  var precio  = parseFloat((document.getElementById('pm-precio-'+id)||{}).value) || 0;
+  var costo   = parseFloat((document.getElementById('pm-costo-'+id)||{}).value) || 0;
+  var stock   = Math.max(0, entrada - salida);
+  var updated = Object.assign({}, item, {entrada:entrada, salida:salida, stock:stock, unidad:unidad, min:min, precio:precio, costo:costo,
+    mod:{userId:currentUser.id, userName:currentUser.nombre, emoji:currentUser.emoji, time:nowStr()}});
+  await fbSet('inventario/productos/' + id, updated);
+  fbLog('edit', 'Edito: ' + item.nombre + ' Ent:' + entrada + ' Sal:' + salida + ' Stock:' + stock + ' ' + unidad);
+  expProd2 = null;
+  showToast('Guardado y sincronizado');
+};
+
+window.delProd2 = async function(id){
+  if(!canDelete()){ showToast('Sin permiso'); return; }
+  var item = S.productos.find(function(p){ return p.id===id; });
+  if(!confirm('Eliminar "' + (item ? item.nombre : id) + '"?')) return;
+  await fbRemove('inventario/productos/' + id);
+  fbLog('del', 'Elimino producto: ' + (item ? item.nombre : id));
+  expProd2 = null;
+  showToast('Eliminado');
+};
+
+// =====================================================================
+// VIVERES (SALSAS / VIVERES / EMPAQUE / LIMPIEZA)
+// =====================================================================
+var fViv = 'Todos';
+var expViv = null;
+
+function renderViveres(){
+  var items = getViveres();
+  var cats = ['Todos'].concat(Array.from(new Set(items.map(function(p){ return p.cat; }))));
+  document.getElementById('chips-viv').innerHTML = cats.map(function(cc){
+    return '<button class="chip ' + (fViv===cc?'active':'') + '" onclick="setFViv(\'' + cc + '\')">' + cc + '</button>';
+  }).join('');
+  var q = (document.getElementById('srch-viv') ? document.getElementById('srch-viv').value : '').toLowerCase();
+  if(fViv !== 'Todos') items = items.filter(function(p){ return p.cat === fViv; });
+  if(q) items = items.filter(function(p){ return p.nombre.toLowerCase().indexOf(q) !== -1; });
+  var el = document.getElementById('lista-viv');
+  if(!items.length){ el.innerHTML = '<div class="empty"><div class="empty-ico">search</div><div class="empty-txt">Sin resultados</div></div>'; return; }
+  el.innerHTML = items.map(function(item){ return buildItemCard(item, 'vv', 'saveViv', 'delViv'); }).join('');
+  items.forEach(function(item){
+    var exp = document.getElementById('vve-' + item.id);
+    if(exp) exp.classList.toggle('open', expViv === item.id);
+  });
+}
+
+window.tog_vv = function(id){ expViv = expViv===id ? null : id; renderViveres(); };
+window.setFViv = function(c){ fViv = c; renderViveres(); };
+
+window.saveViv = async function(id){
+  var item = S.productos.find(function(p){ return p.id===id; });
+  if(!item) return;
+  var entrada = parseFloat((document.getElementById('vv-ent-'+id)||{}).value) || 0;
+  var salida  = parseFloat((document.getElementById('vv-sal-'+id)||{}).value) || 0;
+  var unidad  = (document.getElementById('vv-uni-'+id)||{}).value || item.unidad;
+  var min     = parseFloat((document.getElementById('vv-min-'+id)||{}).value) || 0;
+  var precio  = parseFloat((document.getElementById('vv-precio-'+id)||{}).value) || 0;
+  var costo   = parseFloat((document.getElementById('vv-costo-'+id)||{}).value) || 0;
+  var stock   = Math.max(0, entrada - salida);
+  var updated = Object.assign({}, item, {entrada:entrada, salida:salida, stock:stock, unidad:unidad, min:min, precio:precio, costo:costo,
+    mod:{userId:currentUser.id, userName:currentUser.nombre, emoji:currentUser.emoji, time:nowStr()}});
+  await fbSet('inventario/productos/' + id, updated);
+  fbLog('edit', 'Edito vivere: ' + item.nombre + ' Stock:' + stock + ' ' + unidad);
+  expViv = null;
+  showToast('Guardado y sincronizado');
+};
+
+window.delViv = async function(id){
+  if(!canDelete()){ showToast('Sin permiso'); return; }
+  var item = S.productos.find(function(p){ return p.id===id; });
+  if(!confirm('Eliminar "' + (item ? item.nombre : id) + '"?')) return;
+  await fbRemove('inventario/productos/' + id);
+  fbLog('del', 'Elimino vivere: ' + (item ? item.nombre : id));
+  expViv = null;
+  showToast('Eliminado');
+};
+
+// =====================================================================
+// HOOK goTab for viveres
+// =====================================================================
+var _goTabOrig = goTab;
+goTab = function(tab){
+  _goTabOrig(tab);
+  if(tab === 'viveres') renderViveres();
+};
+
+// =====================================================================
+// PATCH: load productos with migration + filter by section
+// =====================================================================
+var _origUpdateBadges = typeof updateBadges === 'function' ? updateBadges : function(){};
 updateBadges = function(){
   _origUpdateBadges();
-  if(S.insumos&&S.insumos.length>0) checkNotificaciones();
+  // badge-viv
+  var viv = getViveres();
+  var bajosViv = viv.filter(function(p){ return stMar(p)==='reponer'||stMar(p)==='empty'; }).length;
+  var bvEl = document.getElementById('badge-viv');
+  if(bvEl){ bvEl.textContent = bajosViv; bvEl.style.display = bajosViv > 0 ? 'flex' : 'none'; }
 };
+
+</script>
+<script>
+
+// ── VIVERES HELPERS ───────────────────────────────────────────────────────────
+var VIV_CATS = ['Salsas','Viveres','Empaque','Limpieza'];
+function getViveres(){return S.productos.filter(function(p){return VIV_CATS.indexOf(p.cat)!==-1;});}
+function getMar(){return S.productos.filter(function(p){return VIV_CATS.indexOf(p.cat)===-1;});}
+function updateBadgeViv(){
+  var bajos=getViveres().filter(function(p){return stProd(p)==='reponer'||stProd(p)==='empty';}).length;
+  var el=document.getElementById('badge-viv');
+  if(el){el.textContent=bajos;el.style.display=bajos>0?'flex':'none';}
+}
+window.togViv=function(id){expViv=expViv===id?null:id;renderViveres();};
+window.setFViv=function(cc){fViv=cc;renderViveres();};
+
+
+// ── CIERRE ────────────────────────────────────────────────────────────────────
+function hoy(){return new Date().toISOString().split('T')[0];}
+function fmtFecha(d){try{return new Date(d+'T00:00:00').toLocaleDateString('es-VE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}catch(e){return d;}}
+function renderCierre(){
+  var el=document.getElementById('cierre-content');if(!el)return;
+  var fecha=hoy(),prod=S.productos;
+  var mHoy=(S.mermas||[]).filter(function(m){return m.fecha===fecha;});
+  var perdida=mHoy.reduce(function(s,m){return s+(m.perdidaTotal||0);},0);
+  var ch=(S.cierres||{})[fecha.replace(/-/g,'_')];
+  var h='<div style="padding:12px 0">';
+  h+='<div class="cierre-card"><div class="cierre-title">'+fmtFecha(fecha)+'</div>';
+  h+='<div class="cierre-resumen">';
+  h+='<div class="cierre-resumen-row"><span>Mermas hoy</span><span><b>'+mHoy.length+'</b></span></div>';
+  h+='<div class="cierre-resumen-row"><span>Perdida estimada</span><span><b style="color:#B71C1C">'+fmt$(perdida)+'</b></span></div>';
+  h+='<div class="cierre-resumen-row"><span>Items bajo stock</span><span><b>'+prod.filter(function(p){return (p.stock||0)<=p.min;}).length+'</b></span></div>';
+  h+='</div>';
+  if(ch&&ch.apertura)h+='<div style="background:#C6EFCE;border-radius:10px;padding:10px;text-align:center;font-size:13px;color:#1E5631;font-weight:500;margin-bottom:8px">Apertura registrada por '+ch.apertura.usuario+'</div>';
+  if(ch&&ch.cierre)h+='<div style="background:#BDD7EE;border-radius:10px;padding:10px;text-align:center;font-size:13px;color:#1F4E79;font-weight:500;margin-bottom:8px">Cierre registrado por '+ch.cierre.usuario+'</div>';
+  h+='</div>';
+  h+='<div class="cierre-card"><div class="cierre-title">Apertura — Turno manana</div>';
+  if(S.insumos&&S.insumos.length>0){
+    S.insumos.slice(0,10).forEach(function(i){h+='<div class="cierre-row"><span class="cierre-label">'+i.nombre+'</span><input class="cierre-inp" id="ap-'+i.id+'" type="number" placeholder="'+i.cant+'" min="0" step="0.01" value=""></div>';});
+  }else{h+='<div style="font-size:12px;color:#999;padding:8px 0">Sin insumos registrados</div>';}
+  h+='<input id="ap-obs" placeholder="Observaciones..." style="width:100%;border:1px solid var(--color-border-secondary);border-radius:10px;padding:8px 12px;font-size:12px;margin-top:10px;font-family:inherit;background:var(--color-background-secondary);color:var(--color-text-primary);box-sizing:border-box">';
+  h+='<button class="btn-cierre" onclick="guardarApertura()" style="margin-top:10px">Guardar Apertura</button></div>';
+  h+='<div class="cierre-card"><div class="cierre-title">Cierre — Turno tarde</div>';
+  h+='<div style="font-size:11px;color:#999;margin-bottom:8px">Entrada (compra) — Salida (venta)</div>';
+  prod.slice(0,20).forEach(function(p){
+    h+='<div class="cierre-row"><span class="cierre-label">'+p.nombre+'<br><small style="color:#999">'+p.unidad+'</small></span>';
+    h+='<div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end">';
+    h+='<input class="cierre-inp" id="ci-ent-'+p.id+'" type="number" placeholder="Ent:'+(p.entrada||0)+'" min="0" step="0.01" value="">';
+    h+='<input class="cierre-inp" id="ci-sal-'+p.id+'" type="number" placeholder="Sal:'+(p.salida||0)+'" min="0" step="0.01" value="">';
+    h+='</div></div>';
+  });
+  h+='<input id="ci-obs" placeholder="Observaciones de cierre..." style="width:100%;border:1px solid var(--color-border-secondary);border-radius:10px;padding:8px 12px;font-size:12px;margin-top:8px;font-family:inherit;background:var(--color-background-secondary);color:var(--color-text-primary);box-sizing:border-box">';
+  h+='<button class="btn-cierre verde" onclick="guardarCierre()" style="margin-top:10px">Registrar Cierre del Dia</button></div></div>';
+  el.innerHTML=h;
+}
+async function guardarApertura(){
+  var fecha=hoy(),key=fecha.replace(/-/g,'_'),snap={};
+  if(S.insumos){S.insumos.forEach(function(i){var e=document.getElementById('ap-'+i.id);if(e&&e.value!=='')snap[i.id]={nombre:i.nombre,unidad:i.unidad,cantidad:parseFloat(e.value)};});}
+  var obs=document.getElementById('ap-obs')?document.getElementById('ap-obs').value:'';
+  var data={fecha:fecha,turno:'apertura',usuario:currentUser?currentUser.nombre:'',timestamp:Date.now(),insumos:snap,observaciones:obs};
+  if(db)await firebase.database().ref('cierres/'+key+'/apertura').set(data);
+  if(!S.cierres)S.cierres={};if(!S.cierres[key])S.cierres[key]={};S.cierres[key].apertura=data;
+  fbLog('cierre','Apertura '+fecha);showToast('Apertura guardada');renderCierre();
+}
+async function guardarCierre(){
+  var fecha=hoy(),key=fecha.replace(/-/g,'_'),sp={};
+  S.productos.forEach(function(p){
+    var ee=document.getElementById('ci-ent-'+p.id),es=document.getElementById('ci-sal-'+p.id);
+    var ent=ee&&ee.value!==''?parseFloat(ee.value):(p.entrada||0);
+    var sal=es&&es.value!==''?parseFloat(es.value):(p.salida||0);
+    sp[p.id]={nombre:p.nombre,unidad:p.unidad,entrada:ent,salida:sal,stock:Math.max(0,ent-sal)};
+    p.entrada=ent;p.salida=sal;p.stock=Math.max(0,ent-sal);
+  });
+  var mHoy=(S.mermas||[]).filter(function(m){return m.fecha===fecha;});
+  var obs=document.getElementById('ci-obs')?document.getElementById('ci-obs').value:'';
+  var data={fecha:fecha,turno:'cierre',usuario:currentUser?currentUser.nombre:'',timestamp:Date.now(),
+    productos:sp,mermasCount:mHoy.length,perdidaTotal:mHoy.reduce(function(s,m){return s+(m.perdidaTotal||0);},0),observaciones:obs};
+  if(db)await firebase.database().ref('cierres/'+key+'/cierre').set(data);
+  if(!S.cierres)S.cierres={};if(!S.cierres[key])S.cierres[key]={};S.cierres[key].cierre=data;
+  if(db){S.productos.forEach(function(p){firebase.database().ref('inventario/productos/'+p.id).update({entrada:p.entrada,salida:p.salida,stock:p.stock});});}
+  fbLog('cierre','Cierre '+fecha);showToast('Cierre del dia guardado');renderCierre();
+}
+// ── HISTORIAL ─────────────────────────────────────────────────────────────────
+function renderHistorial(){
+  var el=document.getElementById('historial-content');if(!el)return;
+  var mes=hoy().slice(0,7);
+  el.innerHTML='<div style="padding:12px 0"><div class="fecha-selector"><input type="month" id="hist-mes" value="'+mes+'" onchange="filtrarHistorial()"><button onclick="filtrarHistorial()" style="padding:8px 14px;border-radius:10px;border:none;background:var(--azul);color:#fff;font-size:13px;cursor:pointer;font-family:inherit">Buscar</button></div><div id="hist-lista"><div style="text-align:center;padding:20px;color:#999">Cargando...</div></div></div>';
+  var cierres=S.cierres||{};
+  if(db&&Object.keys(cierres).length===0){
+    firebase.database().ref('cierres').once('value').then(function(sn){S.cierres=sn.exists()?sn.val():{};renderHistorialLista(S.cierres,mes);}).catch(function(){renderHistorialLista(cierres,mes);});
+  }else{renderHistorialLista(cierres,mes);}
+}
+function filtrarHistorial(){var mes=document.getElementById('hist-mes')?document.getElementById('hist-mes').value:hoy().slice(0,7);renderHistorialLista(S.cierres||{},mes);}
+function renderHistorialLista(cierres,mes){
+  var lista=document.getElementById('hist-lista');if(!lista)return;
+  var keys=Object.keys(cierres).filter(function(k){return k.startsWith(mes.replace('-','_'));}).sort().reverse();
+  if(!keys.length){lista.innerHTML='<div style="text-align:center;padding:40px"><div style="font-size:40px;margin-bottom:8px">📅</div><div style="color:#999">Sin registros para este mes</div></div>';return;}
+  var html='';
+  keys.forEach(function(k){
+    var d=cierres[k],fecha=k.replace(/_/g,'-'),ap=d.apertura,ci=d.cierre;
+    var totalSal=0;if(ci&&ci.productos)Object.values(ci.productos).forEach(function(p){totalSal+=(p.salida||0);});
+    html+='<div class="hist-day"><div class="hist-day-hdr" data-key="'+k+'" onclick="toggleHistDay(this.dataset.key)"><span>'+fmtFecha(fecha)+'</span><span style="font-size:11px;opacity:.8">'+(ci?'Cierre':ap?'Apertura':'Sin datos')+'</span></div><div class="hist-day-body" id="hd-'+k+'">';
+    if(ap){html+='<span class="turno-badge turno-a">APERTURA</span> <span style="font-size:11px;color:#555">'+ap.usuario+'</span>';if(ap.observaciones)html+='<div style="font-size:11px;color:#777;font-style:italic;margin:4px 0">'+ap.observaciones+'</div>';Object.values(ap.insumos||{}).slice(0,5).forEach(function(i){html+='<div class="hist-stat"><span>'+i.nombre+'</span><span><b>'+i.cantidad+' '+i.unidad+'</b></span></div>';});}
+    if(ci){html+='<div style="margin-top:8px"><span class="turno-badge turno-c">CIERRE</span> <span style="font-size:11px;color:#555">'+ci.usuario+'</span></div><div class="hist-stat" style="margin-top:4px"><span>Salida total</span><span><b>'+totalSal+' uds</b></span></div><div class="hist-stat"><span>Mermas</span><span><b>'+ci.mermasCount+'</b></span></div><div class="hist-stat"><span>Perdida</span><span><b style="color:#B71C1C">'+fmt$(ci.perdidaTotal||0)+'</b></span></div>';if(ci.observaciones)html+='<div style="font-size:11px;color:#777;font-style:italic;margin:4px 0">'+ci.observaciones+'</div>';html+='<div style="font-size:11px;font-weight:500;color:var(--azul);margin-top:8px;margin-bottom:4px">Stock al cierre:</div>';Object.values(ci.productos||{}).slice(0,8).forEach(function(p){html+='<div class="hist-stat"><span>'+p.nombre+'</span><span>E:'+(p.entrada||0)+' S:'+(p.salida||0)+' Stk:'+(p.stock||0)+' '+(p.unidad||'')+'</span></div>';});}
+    html+='</div></div>';
+  });
+  lista.innerHTML=html;
+}
+function toggleHistDay(k){var el=document.getElementById('hd-'+k);if(el)el.classList.toggle('open');}
+// ── REPORTES ──────────────────────────────────────────────────────────────────
+function renderReportes(){
+  var el=document.getElementById('reportes-content');if(!el)return;
+  var prod=S.productos,mermas=S.mermas||[];
+  var hoyStr=new Date().toDateString();
+  var totalVend=prod.reduce(function(s,p){return s+(p.salida||0);},0);
+  var totalIng=prod.reduce(function(s,p){return s+((p.salida||0)*(p.precio||0));},0);
+  var mHoy=mermas.filter(function(m){return new Date(m.ts).toDateString()===hoyStr;});
+  var perdida=mHoy.reduce(function(s,m){return s+(m.perdidaTotal||0);},0);
+  var bajos=prod.filter(function(p){return stProd(p)==='reponer';});
+  var sinStk=prod.filter(function(p){return stProd(p)==='empty';});
+  var top=prod.slice().sort(function(a,b){return (b.salida||0)-(a.salida||0);}).slice(0,8);
+  var maxV=top.length>0&&top[0].salida>0?top[0].salida:1;
+  var clrs=['#1F4E79','#2E75B6','#4490C8','#5DAADA','#1E5631','#2E7D32','#E65100','#B71C1C'];
+  var html='<div style="padding:12px 0">';
+  html+='<div class="kpi-grid">';
+  html+='<div class="kpi-box"><div class="kpi-val">'+prod.length+'</div><div class="kpi-lbl">Total productos</div></div>';
+  html+='<div class="kpi-box"><div class="kpi-val" style="color:#B71C1C">'+bajos.length+'</div><div class="kpi-lbl">Stock bajo</div></div>';
+  html+='<div class="kpi-box"><div class="kpi-val" style="color:#1E5631">'+fmt$(totalIng)+'</div><div class="kpi-lbl">Ingresos est.</div></div>';
+  html+='<div class="kpi-box"><div class="kpi-val" style="color:#E65100">'+(perdida>0?fmt$(perdida):'$0')+'</div><div class="kpi-lbl">Perdida hoy</div></div>';
+  html+='<div class="kpi-box"><div class="kpi-val">'+totalVend+'</div><div class="kpi-lbl">Salida total</div></div>';
+  html+='<div class="kpi-box"><div class="kpi-val" style="color:#C62828">'+sinStk.length+'</div><div class="kpi-lbl">Sin stock</div></div>';
+  html+='</div>';
+  html+='<div class="rep-card"><div class="rep-title">Mas salida hoy</div><div class="bar-wrap">';
+  if(!top.length||!top[0].salida){html+='<div style="color:#999;font-size:12px;text-align:center;padding:8px">Sin ventas registradas</div>';}
+  else{top.forEach(function(p,i){var pct=Math.round(((p.salida||0)/maxV)*100);html+='<div class="bar-row"><span class="bar-label">'+p.nombre+'</span><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:'+clrs[i%8]+'"></div></div><span class="bar-val">'+(p.salida||0)+' '+p.unidad+'</span></div>';});}
+  html+='</div></div>';
+  var mCat={};mermas.forEach(function(m){var k=m.tipo||'Otro';mCat[k]=(mCat[k]||0)+1;});
+  var mArr=Object.keys(mCat).map(function(k){return [k,mCat[k]];}).sort(function(a,b){return b[1]-a[1];});
+  html+='<div class="rep-card"><div class="rep-title">Mermas por tipo</div><div class="bar-wrap">';
+  if(!mArr.length){html+='<div style="color:#999;font-size:12px;text-align:center;padding:8px">Sin mermas</div>';}
+  else{var maxM=mArr[0][1];mArr.forEach(function(e){var pct=Math.round((e[1]/maxM)*100);html+='<div class="bar-row"><span class="bar-label">'+e[0]+'</span><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:#B71C1C"></div></div><span class="bar-val">'+e[1]+'</span></div>';});}
+  html+='</div></div>';
+  html+='<div class="rep-card"><div class="rep-title">Precios y margenes</div>';
+  html+='<div style="font-size:11px;color:#999;margin-bottom:8px">Verde 40%+ · Amarillo 20-40% · Rojo menos de 20%</div>';
+  html+='<div style="text-align:right;margin-bottom:8px"><button onclick="guardarPrecios()" style="padding:6px 14px;border-radius:8px;border:none;background:var(--azul);color:#fff;font-size:12px;cursor:pointer;font-family:inherit">Guardar precios</button></div>';
+  prod.forEach(function(p){var m=p.precio>0&&p.costo>0?Math.round(((p.precio-p.costo)/p.precio)*100):null;var mc=m===null?'margen-badge':'margen-badge '+(m>=40?'margen-ok':m>=20?'margen-med':'margen-low');html+='<div class="precio-row"><span class="precio-nom">'+p.nombre+'<br><small style="color:#999">'+p.unidad+'</small></span><input class="precio-inp" id="pr-p-'+p.id+'" type="number" value="'+(p.precio||0)+'" min="0" step="0.01" data-pid="'+p.id+'" oninput="actualizarMargen(this.dataset.pid)" placeholder="Precio"><input class="precio-inp" id="pr-c-'+p.id+'" type="number" value="'+(p.costo||0)+'" min="0" step="0.01" data-pid="'+p.id+'" oninput="actualizarMargen(this.dataset.pid)" placeholder="Costo"><span class="'+mc+'" id="mg-'+p.id+'">'+(m!==null?m+'%':'--')+'</span></div>';});
+  html+='</div>';
+  html+='<div class="rep-card"><div class="rep-title">Reporte por WhatsApp</div>';
+  html+='<div style="font-size:12px;color:#555;margin-bottom:10px">Envia un resumen del dia con: salida total, ingresos, mermas, top 3 productos y alertas de stock bajo.</div>';
+  html+='<button class="wa-btn" onclick="enviarReporteWhatsApp()">Generar y enviar por WhatsApp</button></div>';
+  if(bajos.length>0||sinStk.length>0){
+    html+='<div class="rep-card"><div class="rep-title">Alertas de stock</div>';
+    html+='<div style="background:#FFF3CD;border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:12px;color:#856404">';
+    html+='<b>'+(bajos.length+sinStk.length)+' items necesitan atencion:</b><br>';
+    bajos.concat(sinStk).slice(0,8).forEach(function(p){html+='• '+p.nombre+': '+(p.stock||0)+' '+p.unidad+' (min '+p.min+')<br>';});
+    html+='</div>';
+    html+='<button onclick="pedirPermisNotificaciones()" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--azul);background:transparent;color:var(--azul);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit">Activar notificaciones del navegador</button>';
+    html+='</div>';
+  }
+  html+='<div class="rep-card"><div class="rep-title">Permisos por rol</div>';
+  html+='<table style="width:100%;border-collapse:collapse;font-size:12px">';
+  html+='<thead><tr style="background:var(--color-background-secondary)"><th style="padding:8px;text-align:left;border-bottom:1px solid var(--color-border-tertiary)">Accion</th><th style="padding:8px;text-align:center;border-bottom:1px solid var(--color-border-tertiary)">Admin</th><th style="padding:8px;text-align:center;border-bottom:1px solid var(--color-border-tertiary)">Supervisor</th><th style="padding:8px;text-align:center;border-bottom:1px solid var(--color-border-tertiary)">Empleado</th></tr></thead><tbody>';
+  var perms=[['Ver inventario','SI','SI','SI'],['Editar stock','SI','SI','NO'],['Registrar merma','SI','SI','SI'],['Ver bitacora','SI','SI','NO'],['Registrar cierre','SI','SI','NO'],['Ver historial','SI','SI','SI'],['Ver reportes','SI','SI','NO'],['Editar precios','SI','NO','NO'],['Eliminar items','SI','NO','NO'],['Gestionar usuarios','SI','NO','NO']];
+  perms.forEach(function(row,i){var bg=i%2===0?'transparent':'var(--color-background-secondary)';html+='<tr style="background:'+bg+'"><td style="padding:8px;border-bottom:1px solid var(--color-border-tertiary);color:var(--color-text-secondary)">'+row[0]+'</td>';[row[1],row[2],row[3]].forEach(function(v){var ok=v==='SI';html+='<td style="padding:8px;text-align:center;border-bottom:1px solid var(--color-border-tertiary)"><span style="background:'+(ok?'#C6EFCE':'#FFCCCC')+';color:'+(ok?'#1E5631':'#B71C1C')+';padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500">'+v+'</span></td>';});html+='</tr>';});
+  html+='</tbody></table></div>';
+  html+='</div>';
+  el.innerHTML=html;
+  checkNotificaciones();
+}
+function actualizarMargen(id){var p=parseFloat(document.getElementById('pr-p-'+id)?.value)||0,co=parseFloat(document.getElementById('pr-c-'+id)?.value)||0;var el=document.getElementById('mg-'+id);if(!el)return;if(p>0&&co>0){var m=Math.round(((p-co)/p)*100);el.textContent=m+'%';el.className='margen-badge '+(m>=40?'margen-ok':m>=20?'margen-med':'margen-low');}else{el.textContent='--';el.className='margen-badge';}}
+async function guardarPrecios(){for(var i=0;i<S.productos.length;i++){var p=S.productos[i];var ep=document.getElementById('pr-p-'+p.id),ec=document.getElementById('pr-c-'+p.id);if(ep)p.precio=parseFloat(ep.value)||0;if(ec)p.costo=parseFloat(ec.value)||0;if(db)await firebase.database().ref('inventario/productos/'+p.id).update({precio:p.precio,costo:p.costo});}showToast('Precios guardados');}
+function enviarReporteWhatsApp(){
+  var prod=S.productos,mermas=S.mermas||[];
+  var fecha=new Date().toLocaleDateString('es-VE',{weekday:'long',day:'numeric',month:'long'});
+  var totalVend=prod.reduce(function(s,p){return s+(p.salida||0);},0);
+  var totalIng=prod.reduce(function(s,p){return s+((p.salida||0)*(p.precio||0));},0);
+  var hoyStr=new Date().toDateString();
+  var mHoy=mermas.filter(function(m){return new Date(m.ts).toDateString()===hoyStr;});
+  var perdida=mHoy.reduce(function(s,m){return s+(m.perdidaTotal||0);},0);
+  var bajos=prod.filter(function(p){return stProd(p)==='reponer';});
+  var top=prod.slice().sort(function(a,b){return (b.salida||0)-(a.salida||0);}).slice(0,3);
+  var nl=String.fromCharCode(10);
+  var msg='Don Camaron - Reporte del dia'+nl+fecha+nl+nl;
+  msg+='Salida total: '+totalVend+nl;
+  msg+='Ingresos est.: '+fmt$(totalIng)+nl;
+  msg+='Mermas hoy: '+mHoy.length+' (perdida: '+fmt$(perdida)+')'+nl+nl;
+  if(top.length&&top[0].salida>0){msg+='Top 3 productos:'+nl;top.forEach(function(p,i){msg+=(i+1)+'. '+p.nombre+': '+(p.salida||0)+' '+p.unidad+nl;});msg+=nl;}
+  if(bajos.length){msg+='Stock bajo ('+bajos.length+' items):'+nl;bajos.slice(0,6).forEach(function(p){msg+='- '+p.nombre+': '+(p.stock||0)+' '+p.unidad+' (min '+p.min+')'+nl;});}
+  else{msg+='Todo el stock en nivel normal'+nl;}
+  window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+}
+function checkNotificaciones(){
+  var bajos=S.productos.filter(function(p){return stProd(p)==='reponer';});
+  var dashEl=document.getElementById('tab-dashboard');if(!dashEl)return;
+  var banner=document.getElementById('stock-banner');
+  if(!banner){banner=document.createElement('div');banner.id='stock-banner';var hdr=dashEl.querySelector('.sec-hdr');if(hdr)hdr.parentNode.insertBefore(banner,hdr.nextSibling);else dashEl.prepend(banner);}
+  if(bajos.length){banner.innerHTML=bajos.length+' items con stock bajo';banner.className='notif-bar';banner.style.display='flex';banner.onclick=function(){goTab('reportes');};}
+  else banner.style.display='none';
+}
+function pedirPermisNotificaciones(){
+  if(typeof Notification==='undefined'){showToast('No soportado en este navegador');return;}
+  Notification.requestPermission().then(function(p){showToast(p==='granted'?'Notificaciones activadas':'Activalas desde la configuracion');});
+}
+// updateBadges extended inline below
 
 </script>
 </body>
