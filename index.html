@@ -1194,36 +1194,38 @@ window.openAddModal = function(){
 };
 
 window.saveNewIns=async function(){
-  const nom=document.getElementById('an-nom').value.trim();
-  let cat=document.getElementById('an-cat').value;
-  const und=document.getElementById('an-und').value.trim();
-  if(!nom||!und){showToast('⚠ Completa nombre y unidad');return;}
-  if(cat==='__new__'){cat=prompt('Nombre de la nueva categoría:')||'Otros';}
-  const id='i'+Date.now();
-  const item={id,nombre:nom,cat,unidad:und,
-    min:parseFloat(document.getElementById('an-min').value)||1,
-    max:parseFloat(document.getElementById('an-max').value)||10,
-    cant:0,costo:0,
+  var nom=(document.getElementById('new-nombre')||{}).value; nom=nom?nom.trim():'';
+  var cat=((document.getElementById('new-cat')||{}).value)||'Otro';
+  var und=((document.getElementById('new-uni')||{}).value)||'Kg';
+  if(!nom){showToast('Escribe el nombre');return;}
+  var id='i'+Date.now();
+  var item={id:id,nombre:nom,cat:cat,unidad:und,
+    min:parseFloat(((document.getElementById('new-min')||{}).value))||1,
+    max:10,
+    cant:parseFloat(((document.getElementById('new-cant')||{}).value))||0,
+    costo:parseFloat(((document.getElementById('new-costo')||{}).value))||0,
     mod:{userId:currentUser.id,userName:currentUser.nombre,emoji:currentUser.emoji,time:nowStr()}};
   await fbSet('inventario/insumos/'+id,item);
   fbLog('add','Agrego ins: '+nom);
-  closeModal('modal-add'); showToast('✅ Insumo agregado y sincronizado');
+  closeModal('modal-add'); showToast('Insumo agregado');
 };
 
 window.saveNewProd=async function(){
-  const nom=document.getElementById('an-nom').value.trim();
-  const cat=document.getElementById('an-cat').value;
-  const vari=document.getElementById('an-var').value.trim()||'Estándar';
-  if(!nom){showToast('⚠ Escribe el nombre');return;}
-  const id='p'+Date.now();
-  const item={id,nombre:nom,cat,variante:vari,
-    min:parseFloat(document.getElementById('an-min').value)||2,
-    precio:parseFloat(document.getElementById('an-precio').value)||0,
-    prod:0,vend:0,
+  var nom=(document.getElementById('new-nombre')||{}).value; nom=nom?nom.trim():'';
+  var cat=((document.getElementById('new-cat')||{}).value)||'Mariscos';
+  var und=((document.getElementById('new-uni')||{}).value)||'Kg';
+  if(!nom){showToast('Escribe el nombre');return;}
+  var id='p'+Date.now();
+  var ent=parseFloat(((document.getElementById('new-entrada')||{}).value))||0;
+  var item={id:id,nombre:nom,cat:cat,unidad:und,
+    min:parseFloat(((document.getElementById('new-min')||{}).value))||1,
+    precio:parseFloat(((document.getElementById('new-precio')||{}).value))||0,
+    costo:parseFloat(((document.getElementById('new-costo')||{}).value))||0,
+    entrada:ent,salida:0,stock:ent,
     mod:{userId:currentUser.id,userName:currentUser.nombre,emoji:currentUser.emoji,time:nowStr()}};
   await fbSet('inventario/productos/'+id,item);
   fbLog('add','Agrego prod: '+nom);
-  closeModal('modal-add'); showToast('✅ Producto agregado y sincronizado');
+  closeModal('modal-add'); showToast('Producto agregado');
 };
 
 // ── MERMAS ────────────────────────────────────────────────────────────────────
