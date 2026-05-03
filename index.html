@@ -716,6 +716,9 @@ async function loadFromFirebase(){
     if(currentTab==='insumos') renderIns();
     if(currentTab==='terminados') renderProd();
     if(currentTab==='dashboard') renderDash();
+    if(currentTab==='viveres') renderViveres();
+    if(currentTab==='reportes') renderReportes();
+    updateBadges();
   }
 }
 
@@ -737,9 +740,20 @@ function subscribeAll(){
   // Productos
   listeners.push(onValue(ref(db,'inventario/productos'), snap=>{
     const fromDB = snap.exists() ? Object.values(snap.val()) : [];
-    S.productos = fromDB.length > 0 ? fromDB.map(migrarProducto) : JSON.parse(JSON.stringify(DEF_PROD));
+    // Merge: keep all fromDB items + add any DEF_PROD items not yet in Firebase
+    var fromDBmapped = fromDB.map(migrarProducto);
+    if(fromDB.length > 0){
+      var dbIds = fromDBmapped.map(function(p){ return p.id; });
+      var missing = JSON.parse(JSON.stringify(DEF_PROD)).filter(function(p){ return dbIds.indexOf(p.id) === -1; });
+      S.productos = fromDBmapped.concat(missing);
+    } else {
+      S.productos = JSON.parse(JSON.stringify(DEF_PROD));
+    }
     if(currentTab==='terminados') renderProd();
     if(currentTab==='dashboard') renderDash();
+    if(currentTab==='viveres') renderViveres();
+    if(currentTab==='reportes') renderReportes();
+    updateBadges();
     updateBadges();
   }));
   // Bitácora
@@ -844,6 +858,7 @@ function enterApp(){
   document.getElementById('pill-name').textContent=currentUser.nombre;
   document.getElementById('pill-role').textContent=ROL_LBL[currentUser.rol];
   goTab('dashboard');
+  pushMissingToFirebase();
 }
 
 window.logout = function(){
@@ -1886,6 +1901,19 @@ function pedirPermisNotificaciones(){
 }
 // updateBadges extended inline below
 
+
+/* Push missing DEF_PROD items to Firebase on first run */
+function pushMissingToFirebase(){
+  if(!db) return;
+  firebase.database().ref('inventario/productos').once('value').then(function(snap){
+    var existing = snap.exists() ? Object.keys(snap.val()) : [];
+    DEF_PROD.forEach(function(p){
+      if(existing.indexOf(p.id) === -1){
+        firebase.database().ref('inventario/productos/'+p.id).set(p);
+      }
+    });
+  });
+}
 </script>
 </body>
 </html>
