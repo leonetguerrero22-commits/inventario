@@ -342,7 +342,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--negro);color:var(--negro)
       <div class="login-err" id="login-err"></div>
     </div>
   </div>
-  <button class="login-new" onclick="openModal('modal-new-user')">＋ Crear nuevo usuario</button>
+  <button class="login-new" onclick="abrirCrearUsuario()">＋ Crear nuevo usuario</button>
 </div>
 
 <!-- APP -->
@@ -411,11 +411,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--negro);color:var(--negro)
     <div id="tab-reportes" class="tab-panel"><div id="reportes-content"></div></div>
     <!-- BITÁCORA -->
     <!-- USUARIOS -->
-    <div id="tab-usuarios" class="tab-panel">
-      <div class="sec-hdr">👥 Gestión de <span>Usuarios</span></div>
-      <div id="lista-usuarios-mgmt"></div>
-      <button class="btn-primary" style="margin-top:10px" onclick="openModal('modal-new-user')">＋ Crear nuevo usuario</button>
-    </div>
+    <div id="tab-usuarios" class="tab-panel"><div style="padding:12px"><div class="sec-hdr" style="margin-bottom:12px">👥 Gestión de <span style="color:var(--dorado)">Usuarios</span></div><div id="user-grid-mgmt"></div><button class="btn-primary" style="margin-top:14px;width:100%" onclick="abrirCrearUsuario()">＋ Crear nuevo usuario</button></div></div>
 
     <div id="tab-bitacora" class="tab-panel">
       <div class="sec-hdr">📋 Registro de <span>Actividad</span></div>
@@ -423,12 +419,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--negro);color:var(--negro)
       <div id="lista-log"></div>
     </div>
     <!-- MERMAS -->
-    <div id="tab-mermas" class="tab-panel">
-      <div id="mermas-resumen-wrap"></div>
-      <div class="sec-hdr">📋 Historial de <span>Pérdidas</span></div>
-      <div class="chips" id="chips-mermas"></div>
-      <div id="lista-mermas"></div>
-    </div>
+    <div id="tab-mermas" class="tab-panel"><div id="mermas-content"></div></div>
     <!-- REPORTES -->
     <div id="tab-reportes" class="tab-panel">
       <div class="sec-hdr">📊 Reportes & <span>Analítica</span></div>
@@ -578,346 +569,57 @@ const ACT_ICO = {add:'➕',edit:'✏️',del:'🗑️',reset:'🔄',login:'🔐'
 function hoy(){ return new Date().toISOString().split('T')[0]; }
 function fmtFecha(d){ return new Date(d+'T00:00:00').toLocaleDateString('es-VE',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); }
 
-function renderCierre(){
-  const el = document.getElementById('cierre-content');
-  const fecha = hoy();
-  const ins = S.insumos;
-  const prod = S.productos;
-  const mermasHoy = (S.mermas||[]).filter(m=>m.fecha===fecha);
-  const perdidaHoy = mermasHoy.reduce((s,m)=>s+(m.perdidaTotal||0),0);
-
-  // Check if cierre already done today
-  const cierres = S.cierres || {};
-  const cierreHoy = cierres[fecha.replace(/-/g,'_')];
-
-  el.innerHTML = `
-    <div style="padding:12px 0 0">
-      <div class="cierre-card">
-        <div class="cierre-title">📅 ${fmtFecha(fecha)}</div>
-        <div class="cierre-resumen">
-          <div class="cierre-resumen-row"><span>Mermas registradas hoy</span><span><b>${mermasHoy.length}</b></span></div>
-          <div class="cierre-resumen-row"><span>Pérdida estimada hoy</span><span><b style="color:#B71C1C">${fmt$(perdidaHoy)}</b></span></div>
-          <div class="cierre-resumen-row"><span>Items bajo stock mínimo</span><span><b>${ins.filter(i=>i.cant<=i.min).length} insumos / ${prod.filter(p=>(p.prod-p.vend)<=p.min).length} productos</b></span></div>
-        </div>
-        ${cierreHoy ? `<div style="background:#C6EFCE;border-radius:10px;padding:10px;text-align:center;font-size:13px;color:#1E5631;font-weight:700;margin-bottom:8px">✅ Cierre de apertura registrado · ${cierreHoy.usuario || ''}</div>` : ''}
-      </div>
-
-      <!-- APERTURA / TURNO MAÑANA -->
-      <div class="cierre-card">
-        <div class="cierre-title">🌅 Registro de Apertura (Turno mañana)</div>
-        <div id="rows-apertura">
-          ${ins.slice(0,8).map(i=>`
-          <div class="cierre-row">
-            <span class="cierre-label">${i.nombre}</span>
-            <input class="cierre-inp" id="ap-${i.id}" type="number" placeholder="${i.cant}" min="0" value="">
-            <span style="font-size:10px;color:#999;margin-left:4px">${i.unidad}</span>
-          </div>`).join('')}
-          <div style="text-align:center;margin-top:6px">
-            <button onclick="toggleAperturaFull()" id="btn-ver-mas" style="background:none;border:1px solid #ddd;border-radius:8px;padding:5px 14px;font-size:12px;cursor:pointer;color:#555">Ver todos los insumos ▼</button>
-          </div>
-          <div id="apertura-extra" style="display:none">
-            ${ins.slice(8).map(i=>`
-            <div class="cierre-row">
-              <span class="cierre-label">${i.nombre}</span>
-              <input class="cierre-inp" id="ap-${i.id}" type="number" placeholder="${i.cant}" min="0" value="">
-              <span style="font-size:10px;color:#999;margin-left:4px">${i.unidad}</span>
-            </div>`).join('')}
-          </div>
-        </div>
-        <input id="ap-obs" placeholder="Observaciones de apertura..." style="width:100%;border:1px solid #ddd;border-radius:10px;padding:8px 12px;font-size:12px;margin-top:10px;font-family:inherit;">
-        <button class="btn-cierre" onclick="guardarApertura()">💾 Guardar Apertura</button>
-      </div>
-
-      <!-- CIERRE / TURNO TARDE -->
-      <div class="cierre-card">
-        <div class="cierre-title">🌙 Registro de Cierre (Turno tarde)</div>
-        ${prod.map(p=>`
-        <div class="cierre-row">
-          <span class="cierre-label">${p.nombre}<br><span style="font-size:10px;color:#999">${p.variante}</span></span>
-          <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
-            <input class="cierre-inp" id="ci-prod-${p.id}" type="number" placeholder="Prod: ${p.prod}" min="0" value="" title="Producido">
-            <input class="cierre-inp" id="ci-vend-${p.id}" type="number" placeholder="Vend: ${p.vend}" min="0" value="" title="Vendido">
-          </div>
-        </div>`).join('')}
-        <div style="font-size:10px;color:#999;text-align:center;margin:4px 0 8px">Primer campo = producido · Segundo = vendido</div>
-        <input id="ci-obs" placeholder="Observaciones de cierre..." style="width:100%;border:1px solid #ddd;border-radius:10px;padding:8px 12px;font-size:12px;margin-top:4px;font-family:inherit;">
-        <button class="btn-cierre verde" onclick="guardarCierre()">✅ Registrar Cierre del Día</button>
-      </div>
-    </div>`;
-}
-
+/* function renderCierre: overridden */
 function toggleAperturaFull(){
   const ex = document.getElementById('apertura-extra');
   const btn = document.getElementById('btn-ver-mas');
   if(ex.style.display==='none'){ex.style.display='block';btn.textContent='Ver menos ▲';}
   else{ex.style.display='none';btn.textContent='Ver todos los insumos ▼';}
 }
-
-async function guardarApertura(){
-  const fecha = hoy();
-  const key = fecha.replace(/-/g,'_');
-  const snap = {};
-  S.insumos.forEach(i=>{
-    const el = document.getElementById('ap-'+i.id);
-    if(el && el.value!=='') snap[i.id]={nombre:i.nombre,unidad:i.unidad,cantidad:parseFloat(el.value)};
-  });
-  const obs = document.getElementById('ap-obs')?.value || '';
-  const data = {
-    fecha, turno:'apertura',
-    usuario: currentUser?.nombre || 'Desconocido',
-    timestamp: Date.now(),
-    insumos: snap,
-    observaciones: obs,
-  };
-  const ref = db ? firebase.database().ref('cierres/'+key+'/apertura') : null;
-  if(ref) await ref.set(data);
-  // Also save locally
-  if(!S.cierres) S.cierres = {};
-  if(!S.cierres[key]) S.cierres[key] = {};
-  S.cierres[key].apertura = data;
-  S.cierres[key].usuario = currentUser?.nombre;
-  // Log
-  logAction('cierre_apertura', 'Apertura registrada para '+fecha);
-  alert('✅ Apertura guardada correctamente');
-  renderCierre();
-}
-
-async function guardarCierre(){
-  const fecha = hoy();
-  const key = fecha.replace(/-/g,'_');
-  const snapProd = {};
-  S.productos.forEach(p=>{
-    const ep = document.getElementById('ci-prod-'+p.id);
-    const ev = document.getElementById('ci-vend-'+p.id);
-    const prod = ep && ep.value!=='' ? parseFloat(ep.value) : p.prod;
-    const vend = ev && ev.value!=='' ? parseFloat(ev.value) : p.vend;
-    snapProd[p.id]={nombre:p.nombre,variante:p.variante,prod,vend,stock:prod-vend};
-    // Update live stock
-    p.prod = prod; p.vend = vend;
-  });
-  const mermasHoy = (S.mermas||[]).filter(m=>m.fecha===fecha);
-  const perdidaHoy = mermasHoy.reduce((s,m)=>s+(m.perdidaTotal||0),0);
-  const obs = document.getElementById('ci-obs')?.value || '';
-  const data = {
-    fecha, turno:'cierre',
-    usuario: currentUser?.nombre || 'Desconocido',
-    timestamp: Date.now(),
-    productos: snapProd,
-    mermasCount: mermasHoy.length,
-    perdidaTotal: perdidaHoy,
-    observaciones: obs,
-    stockInsumos: Object.fromEntries(S.insumos.map(i=>[i.id,{nombre:i.nombre,cant:i.cant,unidad:i.unidad}])),
-  };
-  const ref = db ? firebase.database().ref('cierres/'+key+'/cierre') : null;
-  if(ref) await ref.set(data);
-  if(!S.cierres) S.cierres = {};
-  if(!S.cierres[key]) S.cierres[key] = {};
-  S.cierres[key].cierre = data;
-  // Update productos in firebase
-  if(db){ S.productos.forEach(p=>{ firebase.database().ref('productos/'+p.id).update({prod:p.prod,vend:p.vend}); }); }
-  logAction('cierre_dia', 'Cierre del dia '+fecha+' registrado');
-  alert('✅ Cierre del día guardado. ¡Buen trabajo!');
-  renderCierre();
-}
-
-// ── HISTORIAL ─────────────────────────────────────────────────────────────────
-async function renderHistorial(){
-  const el = document.getElementById('historial-content');
-  el.innerHTML = `<div style="padding:12px 0">
-    <div class="fecha-selector">
-      <input type="month" id="hist-mes" value="${hoy().slice(0,7)}" onchange="filtrarHistorial()">
-      <button onclick="filtrarHistorial()" style="padding:8px 14px;border-radius:10px;border:1px solid #ddd;background:#1F4E79;color:#fff;font-size:13px;cursor:pointer">Buscar</button>
-    </div>
-    <div id="hist-lista">Cargando historial...</div>
-  </div>`;
-
-  // Load from firebase
-  let cierres = S.cierres || {};
-  if(db){
-    try{
-      const snap = await firebase.database().ref('cierres').once('value');
-      cierres = snap.val() || {};
-      S.cierres = cierres;
-    }catch(e){}
-  }
-  renderHistorialLista(cierres, hoy().slice(0,7));
-}
-
-function filtrarHistorial(){
-  const mes = document.getElementById('hist-mes')?.value || hoy().slice(0,7);
-  renderHistorialLista(S.cierres || {}, mes);
-}
-
-function renderHistorialLista(cierres, mes){
-  const lista = document.getElementById('hist-lista');
-  if(!lista) return;
-  const keys = Object.keys(cierres)
-    .filter(k => k.startsWith(mes.replace('-','_')))
-    .sort().reverse();
-  if(!keys.length){
-    lista.innerHTML = `<div class="empty"><div class="empty-ico">📅</div><div class="empty-txt">Sin registros para este mes</div></div>`;
-    return;
-  }
-  lista.innerHTML = keys.map(k=>{
-    const d = cierres[k];
-    const fecha = k.replace(/_/g,'-');
-    const ap = d.apertura;
-    const ci = d.cierre;
-    const totalVend = ci ? Object.values(ci.productos||{}).reduce((s,p)=>s+p.vend,0) : '-';
-    const perdida = ci ? fmt$(ci.perdidaTotal||0) : '-';
-    return `
-    <div class="hist-day">
-      <div class="hist-day-hdr" onclick="toggleHistDay('${k}')">
-        <span>${fmtFecha(fecha)}</span>
-        <span style="font-size:11px;opacity:.8">${ci?'Cierre ✅':ap?'Apertura 🌅':'Sin datos'}</span>
-      </div>
-      <div class="hist-day-body" id="hd-${k}">
-        ${ap?`<div style="margin-bottom:8px"><span class="turno-badge turno-a">APERTURA</span><span style="font-size:11px;color:#555">por ${ap.usuario}</span>
-          ${ap.observaciones?`<div style="font-size:11px;color:#777;margin-top:3px;font-style:italic">"${ap.observaciones}"</div>`:''}
-          <div style="margin-top:6px">
-            ${Object.values(ap.insumos||{}).slice(0,5).map(i=>`
-            <div class="hist-stat"><span>${i.nombre}</span><span><b>${i.cantidad} ${i.unidad}</b></span></div>`).join('')}
-            ${Object.keys(ap.insumos||{}).length>5?`<div style="font-size:11px;color:#999;text-align:center">+${Object.keys(ap.insumos).length-5} más</div>`:''}
-          </div>
-        </div>`:'<div style="font-size:12px;color:#999;margin-bottom:6px">Sin apertura registrada</div>'}
-        ${ci?`<div><span class="turno-badge turno-c">CIERRE</span><span style="font-size:11px;color:#555">por ${ci.usuario}</span>
-          <div class="hist-stat" style="margin-top:6px"><span>Total vendido</span><span><b>${totalVend} unidades</b></span></div>
-          <div class="hist-stat"><span>Mermas</span><span><b>${ci.mermasCount} registros</b></span></div>
-          <div class="hist-stat"><span>Pérdida estimada</span><span><b style="color:#B71C1C">${perdida}</b></span></div>
-          ${ci.observaciones?`<div style="font-size:11px;color:#777;margin-top:4px;font-style:italic">"${ci.observaciones}"</div>`:''}
-          <div style="margin-top:8px;font-size:11px;font-weight:700;color:#1F4E79">Stock de productos al cierre:</div>
-          ${Object.values(ci.productos||{}).map(p=>`
-          <div class="hist-stat"><span>${p.nombre} · ${p.variante}</span><span>Prod:<b>${p.prod}</b> Vend:<b>${p.vend}</b> Stock:<b>${p.stock}</b></span></div>`).join('')}
-        </div>`:'<div style="font-size:12px;color:#999">Sin cierre registrado</div>'}
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function toggleHistDay(k){
-  const el = document.getElementById('hd-'+k);
-  if(el) el.classList.toggle('open');
-}
-
 </script>
 
 <!-- Firebase via jsDelivr CDN — funciona en GitHub Pages, Safari y Chrome -->
 <script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/firebase-app-compat.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/firebase@9.23.0/firebase-database-compat.min.js"></script>
 
-<script>
-// ── CONFIG DON CAMARÓN — REEMPLAZA ESTOS VALORES CON TU FIREBASE ──────────────
-const firebaseConfig = {
-  apiKey: "AIzaSyC71QlF_nql9mrj35vmS94U2-tURU-7_5Q",
-  authDomain: "inventario-pescaderia.firebaseapp.com",
-  databaseURL: "https://inventario-pescaderia-default-rtdb.firebaseio.com",
-  projectId: "inventario-pescaderia",
-  storageBucket: "inventario-pescaderia.firebasestorage.app",
-  messagingSenderId: "978478241555",
-  appId: "1:978478241555:web:ee71aadfd9b5adcfea2ce6",
-};
-// Inicializar Firebase de forma segura
-let db = null;
-try {
-  firebase.initializeApp(firebaseConfig);
-  db = firebase.database();
-} catch(e) {
-  console.warn('Firebase no disponible, modo local activado');
-}
-
-// Wrappers Firebase Compat — funcionan en Safari, Chrome, Android y iPhone
-function ref(dbOrPath, path) {
-  if(!db) return null;
-  return path !== undefined ? db.ref(path) : db.ref(dbOrPath);
-}
-function set(r, val)    { return r ? r.set(val) : Promise.resolve(); }
-function get(r)         { return r ? r.once('value') : Promise.resolve({exists:()=>false,val:()=>null}); }
-function push(r, val)   { return r ? r.push(val) : Promise.resolve(); }
-function onValue(r, cb) { if(r){ r.on('value', cb); return function(){ r.off('value', cb); }; } return function(){}; }
-function remove(r)      { return r ? r.remove() : Promise.resolve(); }
-function update(r, val) { return r ? r.update(val) : Promise.resolve(); }
-
-
-const DEF_USUARIOS = [
+<script>var DEF_USUARIOS = [
   {id:'u1',nombre:'Admin',rol:'admin',emoji:'👑',pin:'1234',color:'#B71C1C'},
   {id:'u2',nombre:'Supervisor',rol:'supervisor',emoji:'🔑',pin:'5678',color:'#1565C0'},
-  {id:'u3',nombre:'Empleado 1',rol:'empleado',emoji:'🦐',pin:'0000',color:'#2E7D32'},
+  {id:'u3',nombre:'Empleado',rol:'empleado',emoji:'🦐',pin:'0000',color:'#2E7D32'}
 ];
-const DEF_INS = [];var _OLD=[
-  // Salsas
-  {id:'i1',nombre:"Salsa de soya verde 148ml",cat:"Salsas",unidad:"Und",min:5,max:30,cant:0,costo:0},
-  {id:'i2',nombre:"Salsa de soya roja 148ml",cat:"Salsas",unidad:"Und",min:5,max:30,cant:0,costo:0},
-  {id:'i3',nombre:"Salsa de soya verde 290ml",cat:"Salsas",unidad:"Und",min:5,max:20,cant:0,costo:0},
-  {id:'i4',nombre:"Salsa de soya roja 290ml",cat:"Salsas",unidad:"Und",min:5,max:20,cant:0,costo:0},
-  {id:'i5',nombre:"Salsa sriracha",cat:"Salsas",unidad:"Und",min:3,max:12,cant:0,costo:0},
-  {id:'i6',nombre:"Salsa de soya de litro",cat:"Salsas",unidad:"Und",min:3,max:10,cant:0,costo:0},
-  {id:'i7',nombre:"Salsa de tilapia",cat:"Salsas",unidad:"Und",min:2,max:8,cant:0,costo:0},
-  // Conservas / Complementos
-  {id:'i8',nombre:"Hojas de nori",cat:"Conservas",unidad:"Paq",min:3,max:12,cant:0,costo:0},
-  {id:'i9',nombre:"Arroz para sushi",cat:"Conservas",unidad:"Kg",min:5,max:20,cant:0,costo:0},
-  {id:'i10',nombre:"Caldo de pescado",cat:"Conservas",unidad:"Und",min:3,max:10,cant:0,costo:0},
-  {id:'i11',nombre:"Crema de coco pequeña",cat:"Conservas",unidad:"Und",min:4,max:15,cant:0,costo:0},
-  {id:'i12',nombre:"Crema de coco grande",cat:"Conservas",unidad:"Und",min:2,max:8,cant:0,costo:0},
-  {id:'i13',nombre:"Chivo de soya de litro",cat:"Salsas",unidad:"Und",min:2,max:8,cant:0,costo:0},
-  // Acompañantes
-  {id:'i14',nombre:"Canchitas",cat:"Acompañantes",unidad:"Paq",min:5,max:20,cant:0,costo:0},
-  {id:'i15',nombre:"Bolsas de papas",cat:"Acompañantes",unidad:"Paq",min:5,max:20,cant:0,costo:0},
-  {id:'i16',nombre:"Harina PAN",cat:"Harina",unidad:"Kg",min:5,max:20,cant:0,costo:0},
-  {id:'i17',nombre:"Massago",cat:"Conservas",unidad:"Und",min:2,max:8,cant:0,costo:0},
-  {id:'i18',nombre:"Wakame",cat:"Conservas",unidad:"Paq",min:2,max:8,cant:0,costo:0},
-  // Empaque
-  {id:'i19',nombre:"Bolsas para llevar",cat:"Empaque",unidad:"Paq",min:5,max:20,cant:0,costo:0},
-  {id:'i20',nombre:"Bandojas de plástico",cat:"Empaque",unidad:"Paq",min:5,max:20,cant:0,costo:0},
-  {id:'i21',nombre:"Film plástico / Vinipel",cat:"Empaque",unidad:"Rollo",min:2,max:6,cant:0,costo:0},
-  {id:'i22',nombre:"Papel encerado",cat:"Empaque",unidad:"Rollo",min:2,max:6,cant:0,costo:0},
-  {id:'i23',nombre:"Bolsas al vacío",cat:"Empaque",unidad:"Paq",min:3,max:10,cant:0,costo:0},
-  {id:'i24',nombre:"Etiquetas",cat:"Empaque",unidad:"Rollo",min:2,max:6,cant:0,costo:0},
-  // Limpieza
-  {id:'i25',nombre:"Desengrasante",cat:"Limpieza",unidad:"Litro",min:2,max:6,cant:0,costo:0},
-  {id:'i26',nombre:"Cloro",cat:"Limpieza",unidad:"Litro",min:2,max:6,cant:0,costo:0},
-  {id:'i27',nombre:"Jabón de manos",cat:"Limpieza",unidad:"Botella",min:2,max:6,cant:0,costo:0},
-  {id:'i28',nombre:"Guantes desechables",cat:"Limpieza",unidad:"Caja",min:2,max:6,cant:0,costo:0},
-  {id:'i29',nombre:"Esponja / estropajo",cat:"Limpieza",unidad:"Paq",min:3,max:10,cant:0,costo:0},
-  {id:'i30',nombre:"Hielo",cat:"Congelados",unidad:"Kg",min:10,max:50,cant:0,costo:0},
-  // Surimi
-  {id:'i31',nombre:"Surimi / Kanikama",cat:"Surimi",unidad:"Paq",min:5,max:20,cant:0,costo:0},
-  // Aceites
-  {id:'i32',nombre:"Aceite vegetal",cat:"Aceites",unidad:"Litro",min:3,max:10,cant:0,costo:0},
-  {id:'i33',nombre:"Aceite de oliva",cat:"Aceites",unidad:"Litro",min:1,max:4,cant:0,costo:0},
-];;
-const DEF_PROD = [
-  // Mariscos frescos
-  {id:'p1',nombre:"Conchas",cat:"Mariscos",variante:"Frescas",min:5,prod:0,vend:0,precio:0},
-  {id:'p2',nombre:"Almejas limpias",cat:"Mariscos",variante:"Limpias",min:3,prod:0,vend:0,precio:0},
-  {id:'p3',nombre:"Mejillón importado",cat:"Mariscos",variante:"Importado",min:3,prod:0,vend:0,precio:0},
-  {id:'p4',nombre:"Mejillón nacional",cat:"Mariscos",variante:"Nacional",min:3,prod:0,vend:0,precio:0},
-  {id:'p5',nombre:"Pulpitos",cat:"Mariscos",variante:"Enteros",min:3,prod:0,vend:0,precio:0},
-  {id:'p6',nombre:"Pulpo baby",cat:"Mariscos",variante:"Pequeño",min:3,prod:0,vend:0,precio:0},
-  {id:'p7',nombre:"Pulpo entero",cat:"Mariscos",variante:"Entero",min:2,prod:0,vend:0,precio:0},
-  {id:'p8',nombre:"Aros de calamar",cat:"Mariscos",variante:"Aros",min:5,prod:0,vend:0,precio:0},
-  {id:'p9',nombre:"Coronilla de calamar",cat:"Mariscos",variante:"Coronilla",min:3,prod:0,vend:0,precio:0},
-  {id:'p10',nombre:"Mixtura de mariscos",cat:"Mariscos",variante:"Mixtura",min:5,prod:0,vend:0,precio:0},
-  {id:'p11',nombre:"Bandoja de cazuela",cat:"Mariscos",variante:"Cazuela",min:3,prod:0,vend:0,precio:0},
-  {id:'p12',nombre:"Langostinos",cat:"Mariscos",variante:"Enteros",min:3,prod:0,vend:0,precio:0},
-  {id:'p13',nombre:"Camarones",cat:"Mariscos",variante:"Enteros",min:5,prod:0,vend:0,precio:0},
-  {id:'p14',nombre:"Cangrejos",cat:"Mariscos",variante:"Enteros",min:3,prod:0,vend:0,precio:0},
-  {id:'p15',nombre:"Langosta",cat:"Mariscos",variante:"Entera",min:1,prod:0,vend:0,precio:0},
-  // Pescados
-  {id:'p16',nombre:"Filet de tilapia",cat:"Pescado",variante:"Filete",min:5,prod:0,vend:0,precio:0},
-  {id:'p17',nombre:"Filet de panga/zuzo",cat:"Pescado",variante:"Filete",min:5,prod:0,vend:0,precio:0},
-  {id:'p18',nombre:"Salmón en porciones",cat:"Pescado",variante:"Porción",min:3,prod:0,vend:0,precio:0},
-  {id:'p19',nombre:"Trucha salmonada",cat:"Pescado",variante:"Entera",min:3,prod:0,vend:0,precio:0},
-  {id:'p20',nombre:"Panga de salmón",cat:"Pescado",variante:"Filete",min:3,prod:0,vend:0,precio:0},
-  {id:'p21',nombre:"Atún rojo",cat:"Pescado",variante:"Filete",min:2,prod:0,vend:0,precio:0},
-  {id:'p22',nombre:"Bagre",cat:"Pescado",variante:"Entero",min:3,prod:0,vend:0,precio:0},
-  {id:'p23',nombre:"Cachama",cat:"Pescado",variante:"Entera",min:3,prod:0,vend:0,precio:0},
-  // Congelados / Procesados
-  {id:'p24',nombre:"Paquete de surimi",cat:"Congelados",variante:"Paquete",min:5,prod:0,vend:0,precio:0},
-  {id:'p25',nombre:"Desmechado de camarón",cat:"Congelados",variante:"Empacado",min:3,prod:0,vend:0,precio:0},
-  {id:'p26',nombre:"Tender de pollo",cat:"Congelados",variante:"Porción",min:5,prod:0,vend:0,precio:0},
-  {id:'p27',nombre:"Vienns / Salchichas",cat:"Congelados",variante:"Paquete",min:3,prod:0,vend:0,precio:0},
-  {id:'p28',nombre:"Canchitas",cat:"Congelados",variante:"Paquete",min:5,prod:0,vend:0,precio:0},
-
+var DEF_INS = [];
+var DEF_PROD = [
+  /* ── MARISCOS ── */
+  {id:'p1',nombre:'Conchas',cat:'Mariscos',unidad:'Kg',min:1,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'p2',nombre:'Almejas limpias',cat:'Mariscos',unidad:'Kg',min:1,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'p3',nombre:'Mixtura de mariscos',cat:'Mariscos',unidad:'Kg',min:1,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'p4',nombre:'Bandoja de cazuela',cat:'Mariscos',unidad:'Und',min:2,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'p5',nombre:'Langostinos',cat:'Mariscos',unidad:'Kg',min:1,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'p6',nombre:'Camarones',cat:'Mariscos',unidad:'Gr',min:500,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'p7',nombre:'Pulpo',cat:'Mariscos',unidad:'Kg',min:1,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'p8',nombre:'Calamar',cat:'Mariscos',unidad:'Kg',min:1,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'p9',nombre:'Cangrejos',cat:'Mariscos',unidad:'Kg',min:1,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'p10',nombre:'Langosta',cat:'Mariscos',unidad:'Kg',min:0.5,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'p11',nombre:'Filet de tilapia',cat:'Mariscos',unidad:'Kg',min:1,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'p12',nombre:'Filet de panga/zuzo',cat:'Mariscos',unidad:'Kg',min:1,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'p13',nombre:'Camarones enteros',cat:'Mariscos',unidad:'Kg',min:1,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'p14',nombre:'Cangrejos azules',cat:'Mariscos',unidad:'Kg',min:1,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'p15',nombre:'Ostras',cat:'Mariscos',unidad:'Kg',min:1,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  /* ── PESCADO ── */
+  {id:'p16',nombre:'Filet de salmon',cat:'Pescado',unidad:'Kg',min:1,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'p17',nombre:'Bandeja de cazuela 500gr',cat:'Pescado',unidad:'Kg',min:1,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'p18',nombre:'Bandejas de cazuelas 1kg',cat:'Pescado',unidad:'Kg',min:1,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'p19',nombre:'Salmon en porciones',cat:'Pescado',unidad:'Kg',min:1,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'p20',nombre:'Trucha salmonada',cat:'Pescado',unidad:'Kg',min:1,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'p21',nombre:'Wakame',cat:'Pescado',unidad:'Paq',min:1,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'p22',nombre:'Bolsas al vacio',cat:'Pescado',unidad:'Paq',min:5,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'p23',nombre:'Bolsas al vacio de 250gr',cat:'Pescado',unidad:'Paq',min:5,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  /* ── CONGELADOS ── */
+  {id:'p24',nombre:'Bolsas al vacio 500gr',cat:'Congelados',unidad:'Paq',min:5,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'p25',nombre:'Bolsas al vacio de 1kg',cat:'Congelados',unidad:'Paq',min:5,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'p26',nombre:'Salsa siracha 481ml',cat:'Congelados',unidad:'Und',min:3,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'p27',nombre:'Massago',cat:'Congelados',unidad:'Und',min:2,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'p28',nombre:'Almejas en concha',cat:'Congelados',unidad:'Kg',min:1,stock:0,entrada:0,salida:0,precio:0,costo:0},
   /* ── SALSAS ── */
   {id:'v1',nombre:'Salsa soya verde 148ml',cat:'Salsas',unidad:'Und',min:5,stock:0,entrada:0,salida:0,precio:0,costo:0},
   {id:'v2',nombre:'Salsa soya roja 148ml',cat:'Salsas',unidad:'Und',min:5,stock:0,entrada:0,salida:0,precio:0,costo:0},
@@ -926,844 +628,506 @@ const DEF_PROD = [
   {id:'v5',nombre:'Salsa sriracha',cat:'Salsas',unidad:'Und',min:3,stock:0,entrada:0,salida:0,precio:0,costo:0},
   {id:'v6',nombre:'Salsa soya litro',cat:'Salsas',unidad:'Und',min:3,stock:0,entrada:0,salida:0,precio:0,costo:0},
   {id:'v7',nombre:'Salsa de tilapia',cat:'Salsas',unidad:'Und',min:2,stock:0,entrada:0,salida:0,precio:0,costo:0},
-  {id:'v8',nombre:'Massago',cat:'Salsas',unidad:'Und',min:2,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'v8',nombre:'Massago salsa',cat:'Salsas',unidad:'Und',min:2,stock:0,entrada:0,salida:0,precio:0,costo:0},
   /* ── VIVERES ── */
   {id:'v9',nombre:'Arroz para sushi',cat:'Viveres',unidad:'Kg',min:5,stock:0,entrada:0,salida:0,precio:0,costo:0},
   {id:'v10',nombre:'Hojas de nori',cat:'Viveres',unidad:'Paq',min:3,stock:0,entrada:0,salida:0,precio:0,costo:0},
   {id:'v11',nombre:'Crema de coco pequena',cat:'Viveres',unidad:'Und',min:4,stock:0,entrada:0,salida:0,precio:0,costo:0},
   {id:'v12',nombre:'Crema de coco grande',cat:'Viveres',unidad:'Und',min:2,stock:0,entrada:0,salida:0,precio:0,costo:0},
   {id:'v13',nombre:'Caldo de pescado',cat:'Viveres',unidad:'Und',min:3,stock:0,entrada:0,salida:0,precio:0,costo:0},
-  {id:'v14',nombre:'Wakame',cat:'Viveres',unidad:'Paq',min:2,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'v14',nombre:'Wakamen',cat:'Viveres',unidad:'Paq',min:2,stock:0,entrada:0,salida:0,precio:0,costo:0},
   {id:'v15',nombre:'Harina PAN',cat:'Viveres',unidad:'Kg',min:5,stock:0,entrada:0,salida:0,precio:0,costo:0},
   {id:'v16',nombre:'Bolsas de papas',cat:'Viveres',unidad:'Paq',min:5,stock:0,entrada:0,salida:0,precio:0,costo:0},
   /* ── EMPAQUE ── */
   {id:'v17',nombre:'Bolsas para llevar',cat:'Empaque',unidad:'Paq',min:5,stock:0,entrada:0,salida:0,precio:0,costo:0},
   {id:'v18',nombre:'Bandojas plastico',cat:'Empaque',unidad:'Paq',min:5,stock:0,entrada:0,salida:0,precio:0,costo:0},
   {id:'v19',nombre:'Film plastico',cat:'Empaque',unidad:'Rollo',min:2,stock:0,entrada:0,salida:0,precio:0,costo:0},
-  {id:'v20',nombre:'Bolsas al vacio',cat:'Empaque',unidad:'Paq',min:3,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'v20',nombre:'Bolsas al vacio empaque',cat:'Empaque',unidad:'Paq',min:3,stock:0,entrada:0,salida:0,precio:0,costo:0},
   /* ── LIMPIEZA ── */
   {id:'v21',nombre:'Desengrasante',cat:'Limpieza',unidad:'Lt',min:2,stock:0,entrada:0,salida:0,precio:0,costo:0},
   {id:'v22',nombre:'Cloro',cat:'Limpieza',unidad:'Lt',min:2,stock:0,entrada:0,salida:0,precio:0,costo:0},
   {id:'v23',nombre:'Jabon de manos',cat:'Limpieza',unidad:'Und',min:2,stock:0,entrada:0,salida:0,precio:0,costo:0},
   {id:'v24',nombre:'Guantes desechables',cat:'Limpieza',unidad:'Caja',min:2,stock:0,entrada:0,salida:0,precio:0,costo:0},
-  {id:'v25',nombre:'Hielo',cat:'Limpieza',unidad:'Kg',min:10,stock:0,entrada:0,salida:0,precio:0,costo:0},
+  {id:'v25',nombre:'Hielo',cat:'Limpieza',unidad:'Kg',min:10,stock:0,entrada:0,salida:0,precio:0,costo:0}
 ];
 
-// ── STATE ────────────────────────────────────────────────────────────────────
-let S = { usuarios:[], insumos:[], productos:[], bitacora:[], mermas:[] };
-let currentUser = null;
-let currentTab  = 'dashboard';
-let pinBuf = '', selUserId = null;
-let expIns = null, expProd = null;
-let fIns='Todos', fProd='Todos', fLog='Todos';
-let addMode = '';
-let listeners = [];
 
-// ── FIREBASE HELPERS ─────────────────────────────────────────────────────────
-function syncDot(state){ // 'online'|'syncing'|'offline'
-  const d = document.getElementById('sync-dot');
-  if(d){ d.className='sync-dot '+state; }
+/* ══ CONFIG ══════════════════════════════════════════════════════════════════ */
+var firebaseConfig = {
+  apiKey: "AIzaSyC71QlF_nql9mrj35vmS94U2-tURU-7_5Q",
+  authDomain: "inventario-pescaderia.firebaseapp.com",
+  databaseURL: "https://inventario-pescaderia-default-rtdb.firebaseio.com",
+  projectId: "inventario-pescaderia",
+  storageBucket: "inventario-pescaderia.firebasestorage.app",
+  messagingSenderId: "978478241555",
+  appId: "1:978478241555:web:ee71aadfd9b5adcfea2ce6",
+};
+
+firebase.initializeApp(firebaseConfig);
+var db = firebase.database();
+
+/* ── Early functions — must exist before any Firebase callback ── */
+function updateBadges(){
+  var bP = S.productos.filter(function(p){return typeof stProd==='function'&&stProd(p)==='reponer';}).length;
+  var bp = document.getElementById('badge-prod');
+  if(bp){bp.textContent=bP;bp.style.display=bP>0?'flex':'none';}
+  if(typeof updateBadgeViv==='function') updateBadgeViv();
+  if(typeof checkNotif==='function') setTimeout(checkNotif,200);
+}
+function stProd(p){
+  return (!p.stock&&p.stock!==0)||p.stock===0?'empty':p.stock<=(p.min||0)?'reponer':'ok';
+}
+function stIns(i){
+  return i.cant<=0?'empty':i.cant<=i.min?'reponer':'ok';
+}
+function fmt$(n){
+  return '$'+Number(n||0).toFixed(2);
+}
+function fmtTs(ts){
+  if(!ts) return '';
+  var d=new Date(ts);
+  return d.toLocaleDateString('es-VE')+' '+d.toLocaleTimeString('es-VE',{hour:'2-digit',minute:'2-digit'});
+}
+function nowStr(){
+  return new Date().toLocaleString('es-VE');
+}
+function catClr(cat){
+  var CLR={'Mariscos':'#0D47A1','Pescado':'#1565C0','Congelados':'#00838F',
+    'Salsas':'#E65100','Viveres':'#4caf50','Empaque':'#607d8b','Limpieza':'#00bcd4'};
+  return CLR[cat]||'#888';
+}
+function modStr(item){
+  if(!item||!item.mod) return '';
+  return (item.mod.emoji||'')+' '+item.mod.userName+' · '+item.mod.time;
+}
+function canEdit(){
+  return currentUser&&(currentUser.rol==='admin'||currentUser.rol==='supervisor');
+}
+function canDelete(){
+  return currentUser&&currentUser.rol==='admin';
+}
+function showToast(msg){
+  var t=document.getElementById('toast');
+  if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;z-index:9999;display:none';document.body.appendChild(t);}
+  t.textContent=msg;t.style.display='block';
+  clearTimeout(t._timer);
+  t._timer=setTimeout(function(){t.style.display='none';},2500);
+}
+function openModal(id){var m=document.getElementById(id);if(m)m.style.display='flex';}
+function closeModal(id){var m=document.getElementById(id);if(m)m.style.display='none';}
+function goTab(tab){
+  if(tab==='insumos'){tab='terminados';}
+  document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});
+  var panel=document.getElementById('tab-'+tab);
+  var navBtn=document.getElementById('nav-'+tab);
+  if(panel)panel.classList.add('active');
+  if(navBtn)navBtn.classList.add('active');
+  currentTab=tab;
+  document.getElementById('content').scrollTop=0;
+  if(tab==='dashboard'){if(typeof renderDash==='function')renderDash();}
+  if(tab==='terminados'){if(typeof renderProd==='function')renderProd();}
+  if(tab==='mermas'){if(typeof renderMermas==='function')renderMermas();}
+  if(tab==='bitacora'){if(typeof renderLog==='function')renderLog();}
+  if(tab==='viveres'){if(typeof renderViveres==='function')renderViveres();}
+  if(tab==='reportes'){if(typeof renderReportes==='function')renderReportes();}
+  if(tab==='cierre'){if(typeof renderCierre==='function')renderCierre();}
+  if(tab==='historial'){if(typeof renderHistorial==='function')renderHistorial();}
+  if(tab==='restaurante'){if(typeof renderRestaurante==='function')renderRestaurante();}
+  if(tab==='usuarios'){if(typeof renderUsuariosMgmt==='function')renderUsuariosMgmt();}
 }
 
-async function initDB(){
-  // Cargar datos por defecto INMEDIATAMENTE
-  S.usuarios = JSON.parse(JSON.stringify(DEF_USUARIOS));
-  S.insumos  = JSON.parse(JSON.stringify(DEF_INS));
-  S.productos= JSON.parse(JSON.stringify(DEF_PROD));
-  S.bitacora = [];
-  S.mermas   = [];
-  
-  // Ir al login en 800ms sin esperar Firebase
+
+/* ══ ESTADO GLOBAL ══════════════════════════════════════════════════════════ */
+var S = { usuarios:[], insumos:[], productos:[], bitacora:[], mermas:[], cierres:{} };
+var currentUser = null;
+var currentTab = 'dashboard';
+var listeners = [];
+
+/* ══ HELPERS FIREBASE ═══════════════════════════════════════════════════════ */
+function syncDot(state){
+  var d = document.getElementById('sync-dot');
+  if(d) d.className = 'sync-dot ' + state;
+}
+
+function fbSet(path, val){
+  syncDot('syncing');
+  return firebase.database().ref(path).set(val).then(function(){
+    syncDot('online');
+  }).catch(function(){
+    syncDot('offline');
+    showToast('Error al guardar');
+  });
+}
+
+function fbUpdate(path, val){
+  syncDot('syncing');
+  return firebase.database().ref(path).update(val).then(function(){
+    syncDot('online');
+  }).catch(function(){
+    syncDot('offline');
+    showToast('Error al guardar');
+  });
+}
+
+function fbRemove(path){
+  syncDot('syncing');
+  return firebase.database().ref(path).remove().then(function(){
+    syncDot('online');
+  }).catch(function(){
+    syncDot('offline');
+  });
+}
+
+function fbPush(path, val){
+  return firebase.database().ref(path).push(val);
+}
+
+function fbLog(tipo, detalle){
+  if(!currentUser || !db) return;
+  var entry = {
+    tipo: tipo, detalle: detalle,
+    userId: currentUser.id, userName: currentUser.nombre,
+    userEmoji: currentUser.emoji, userColor: currentUser.color || ROL_CLR[currentUser.rol],
+    ts: Date.now(), fecha: nowStr()
+  };
+  firebase.database().ref('inventario/bitacora').push(entry);
+}
+
+// Aliases for compatibility
+function push(refObj, val){ return refObj.push(val); }
+function ref(dbObj, path){ return dbObj.ref(path); }
+function set(refObj, val){ return refObj.set(val); }
+function update(refObj, val){ return refObj.update(val); }
+function remove(refObj){ return refObj.remove(); }
+function onValue(refObj, cb){ refObj.on('value', cb); return refObj; }
+function get(refObj){ return refObj.once('value'); }
+
+/* ══ INIT ════════════════════════════════════════════════════════════════════ */
+function initDB(){
+  S.usuarios  = JSON.parse(JSON.stringify(DEF_USUARIOS));
+  S.insumos   = JSON.parse(JSON.stringify(DEF_INS));
+  S.productos = JSON.parse(JSON.stringify(DEF_PROD));
+  S.bitacora  = [];
+  S.mermas    = [];
+  S.cierres   = {};
+
   document.getElementById('splash-msg').textContent = 'Cargando...';
-  setTimeout(() => {
+  setTimeout(function(){
     showLogin();
-    // Firebase carga en segundo plano sin bloquear
     setTimeout(loadFromFirebase, 500);
   }, 800);
 }
 
-async function loadFromFirebase(){
-  try {
-    const snap = await get(ref(db,'inventario'));
+function loadFromFirebase(){
+  firebase.database().ref('inventario').once('value').then(function(snap){
     if(!snap.exists()){
-      // Primera vez — subir datos iniciales
-      await set(ref(db,'inventario/usuarios'), Object.fromEntries(DEF_USUARIOS.map(u=>[u.id,u])));
-      await set(ref(db,'inventario/insumos'),  Object.fromEntries(DEF_INS.map(i=>[i.id,i])));
-      await set(ref(db,'inventario/productos'),Object.fromEntries(DEF_PROD.map(p=>[p.id,p])));
-      await set(ref(db,'inventario/bitacora'), {});
-      await set(ref(db,'inventario/mermas'), {});
+      /* Primera vez — subir defaults */
+      var usrObj = {};
+      DEF_USUARIOS.forEach(function(u){ usrObj[u.id] = u; });
+      var prodObj = {};
+      DEF_PROD.forEach(function(p){ prodObj[p.id] = p; });
+      firebase.database().ref('inventario/usuarios').set(usrObj);
+      firebase.database().ref('inventario/productos').set(prodObj);
+      firebase.database().ref('inventario/bitacora').set({});
+      firebase.database().ref('inventario/mermas').set({});
     }
     syncDot('online');
-    subscribeAll(); // Suscribirse a cambios en tiempo real
-  } catch(e){
+    subscribeAll();
+  }).catch(function(){
     syncDot('offline');
-    // Sin Firebase — renderizar con datos locales por defecto
-    if(currentTab==='insumos') renderIns();
-    if(currentTab==='terminados') renderProd();
-    if(currentTab==='dashboard') renderDash();
-    if(currentTab==='viveres') renderViveres();
-    if(currentTab==='reportes'&&typeof renderReportes==='function') renderReportes();
-    if(typeof applyRoleUI==='function') applyRoleUI();
-    if(typeof updateBadgeViv==='function') updateBadgeViv();
-  }
+    if(typeof applyRoleUI === 'function') applyRoleUI();
+    if(typeof updateBadgeViv === 'function') updateBadgeViv();
+  });
 }
 
 function subscribeAll(){
-  // Usuarios
-  listeners.push(onValue(ref(db,'inventario/usuarios'), snap=>{
-    const fromDB = snap.exists() ? Object.values(snap.val()) : [];
+  /* Usuarios */
+  firebase.database().ref('inventario/usuarios').on('value', function(snap){
+    var fromDB = snap.exists() ? Object.values(snap.val()) : [];
     S.usuarios = fromDB.length > 0 ? fromDB : JSON.parse(JSON.stringify(DEF_USUARIOS));
-    if(document.getElementById('screen-login').style.display!=='none') renderLoginUsers();
-  }));
-  // Insumos
-  listeners.push(onValue(ref(db,'inventario/insumos'), snap=>{
-    const fromDB = snap.exists() ? Object.values(snap.val()) : [];
-    S.insumos = fromDB.length > 0 ? fromDB : JSON.parse(JSON.stringify(DEF_INS));
-    if(currentTab==='insumos') renderIns();
-    if(currentTab==='dashboard') renderDash();
+    var loginScr = document.getElementById('screen-login');
+    if(loginScr && loginScr.style.display !== 'none') renderLoginUsers();
+  });
+
+  /* Productos */
+  firebase.database().ref('inventario/productos').on('value', function(snap){
+    var fromDB = snap.exists() ? Object.values(snap.val()) : [];
+    var mapped = fromDB.map(function(p){
+      p.unidad = p.unidad || 'Kg';
+      p.precio = p.precio || 0;
+      p.costo  = p.costo  || 0;
+      p.min    = p.min    || 0;
+      if(p.stock === undefined && p.entrada === undefined){
+        p.entrada = p.prod || 0;
+        p.salida  = p.vend || 0;
+        p.stock   = Math.max(0, (p.prod||0) - (p.vend||0));
+      }
+      return p;
+    });
+    if(fromDB.length > 0){
+      var dbIds = mapped.map(function(p){ return p.id; });
+      var missing = JSON.parse(JSON.stringify(DEF_PROD)).filter(function(p){ return dbIds.indexOf(p.id) === -1; });
+      S.productos = mapped.concat(missing);
+    } else {
+      S.productos = JSON.parse(JSON.stringify(DEF_PROD));
+    }
+    if(currentTab === 'terminados') renderProd();
+    if(currentTab === 'dashboard')  renderDash();
+    if(currentTab === 'viveres')    renderViveres();
+    if(currentTab === 'reportes' && typeof renderReportes === 'function') renderReportes();
+    if(typeof applyRoleUI    === 'function') applyRoleUI();
+    if(typeof updateBadgeViv === 'function') updateBadgeViv();
     updateBadges();
-  }));
-  // Productos
-  listeners.push(onValue(ref(db,'inventario/productos'), snap=>{
-    const fromDB = snap.exists() ? Object.values(snap.val()) : [];
-    var fromDBmapped2=fromDB.map(function(p){p.unidad=p.unidad||p.unid||'Kg';p.precio=p.precio||0;p.costo=p.costo||0;p.min=p.min||0;if(p.stock!==undefined||p.entrada!==undefined)return p;return Object.assign({},p,{entrada:p.prod||0,salida:p.vend||0,stock:Math.max(0,(p.prod||0)-(p.vend||0)),unidad:p.unidad||p.unid||'Kg',precio:p.precio||0,costo:p.costo||0,min:p.min||0});});
-if(fromDB.length>0){var dbIds=fromDBmapped2.map(function(p){return p.id;});var missing2=JSON.parse(JSON.stringify(DEF_PROD)).filter(function(p){return dbIds.indexOf(p.id)===-1;});S.productos=fromDBmapped2.concat(missing2);}else{S.productos=JSON.parse(JSON.stringify(DEF_PROD));}
-    if(currentTab==='terminados') renderProd();
-    if(currentTab==='dashboard') renderDash();
-    if(currentTab==='viveres') renderViveres();
-    if(currentTab==='reportes'&&typeof renderReportes==='function') renderReportes();
-    if(typeof applyRoleUI==='function') applyRoleUI();
-    if(typeof updateBadgeViv==='function') updateBadgeViv();
-    updateBadges();
-  }));
-  // Bitácora
-  listeners.push(onValue(ref(db,'inventario/bitacora'), snap=>{
-    const raw = snap.exists() ? snap.val() : {};
-    S.bitacora = Object.values(raw).sort((a,b)=>b.ts-a.ts).slice(0,200);
-    if(currentTab==='bitacora') renderLog();
-  }));
-  // Mermas
-  listeners.push(onValue(ref(db,'inventario/mermas'), snap=>{
-    const raw = snap.exists() ? snap.val() : {};
-    S.mermas = Object.values(raw).sort((a,b)=>b.ts-a.ts);
-    if(currentTab==='mermas') renderMermas();
-    if(currentTab==='dashboard') renderDash();
-  }));
-  // Cierres diarios
-  listeners.push(onValue(ref(db,'cierres'), snap=>{
+  });
+
+  /* Bitácora */
+  firebase.database().ref('inventario/bitacora').on('value', function(snap){
+    var raw = snap.exists() ? snap.val() : {};
+    var vals = Object.values(raw);
+    vals.sort(function(a,b){ return b.ts - a.ts; });
+    S.bitacora = vals.slice(0, 200);
+    if(currentTab === 'bitacora' && typeof renderLog === 'function') renderLog();
+  });
+
+  /* Mermas */
+  firebase.database().ref('inventario/mermas').on('value', function(snap){
+    var raw = snap.exists() ? snap.val() : {};
+    var vals = Object.values(raw);
+    vals.sort(function(a,b){ return b.ts - a.ts; });
+    S.mermas = vals;
+    if(currentTab === 'mermas')    renderMermas();
+    if(currentTab === 'dashboard') renderDash();
+  });
+
+  /* Cierres */
+  firebase.database().ref('cierres').on('value', function(snap){
     S.cierres = snap.exists() ? snap.val() : {};
-    if(currentTab==='historial') renderHistorial();
-    if(currentTab==='cierre') renderCierre();
-  }));
+    if(currentTab === 'historial' && typeof renderHistorial === 'function') renderHistorial();
+    if(currentTab === 'cierre'    && typeof renderCierre    === 'function') renderCierre();
+  });
 }
 
-async function fbSet(path, val){
-  syncDot('syncing');
-  try{ await set(ref(db,path),val); syncDot('online'); }
-  catch(e){ syncDot('offline'); showToast('⚠ Error al guardar'); }
-}
-async function fbUpdate(path, val){
-  syncDot('syncing');
-  try{ await update(ref(db,path),val); syncDot('online'); }
-  catch(e){ syncDot('offline'); showToast('⚠ Error al guardar'); }
-}
-async function fbRemove(path){
-  syncDot('syncing');
-  try{ await remove(ref(db,path)); syncDot('online'); }
-  catch(e){ syncDot('offline'); showToast('⚠ Error al eliminar'); }
-}
-async function fbLog(tipo, descripcion){
-  if(!currentUser) return;
-  const entry = {
-    tipo, descripcion,
-    userId: currentUser.id,
-    userName: currentUser.nombre,
-    userEmoji: currentUser.emoji,
-    userColor: currentUser.color||ROL_CLR[currentUser.rol],
-    ts: Date.now(),
-  };
-  try{ await push(ref(db,'inventario/bitacora'), entry); } catch(e){}
+/* ══ UTILS ════════════════════════════════════════════════════════════════ */
+function nowStr(){
+  return new Date().toLocaleString('es-VE', {timeZone:'America/Caracas'});
 }
 
-// ── LOGIN UI ─────────────────────────────────────────────────────────────────
-function showLogin(){
-  if(S.usuarios.length === 0) S.usuarios = JSON.parse(JSON.stringify(DEF_USUARIOS));
-  document.getElementById('splash').style.display='none';
-  document.getElementById('screen-login').style.display='flex';
-  renderLoginUsers();
+function fmt$(n){
+  return '$' + Number(n || 0).toFixed(2);
+}
+
+function fmtTs(ts){
+  if(!ts) return '';
+  var d = new Date(ts);
+  var now = Date.now();
+  var diff = now - ts;
+  if(diff < 3600000)  return 'Hace ' + Math.floor(diff/60000) + ' min';
+  if(diff < 86400000) return 'Hace ' + Math.floor(diff/3600000) + ' h';
+  return d.toLocaleDateString('es-VE');
+}
+
+function catClr(cat){
+  var map = {Mariscos:'#1F4E79',Pescado:'#1E5631',Congelados:'#6A1B9A',
+              Salsas:'#B71C1C',Viveres:'#E65100',Empaque:'#4A148C',Limpieza:'#1B5E20'};
+  return map[cat] || '#555';
+}
+
+function modStr(item){
+  if(!item || !item.mod) return '';
+  return (item.mod.emoji||'✏️') + ' ' + (item.mod.userName||'') + ' · ' + (item.mod.time||'');
+}
+
+function canEdit(){ return currentUser && (currentUser.rol==='admin'||currentUser.rol==='supervisor'); }
+function canDelete(){ return currentUser && currentUser.rol==='admin'; }
+
+/* ══ MODAL HELPERS ═══════════════════════════════════════════════════════════ */
+function openModal(id){
+  var m = document.getElementById(id);
+  if(m) m.style.display = 'flex';
+}
+function closeModal(id){
+  var m = document.getElementById(id);
+  if(m) m.style.display = 'none';
+}
+
+/* ══ TOAST ════════════════════════════════════════════════════════════════ */
+function showToast(msg){
+  var t = document.getElementById('toast');
+  if(!t) return;
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 3000);
+}
+
+/* ══ NAV / TABS ══════════════════════════════════════════════════════════ */
+function goTab(tab){
+  if(tab === 'insumos') tab = 'terminados';
+  if(typeof getRoleTabs === 'function' && currentUser){
+    if(getRoleTabs().indexOf(tab) === -1){ showToast('Sin acceso'); return; }
+  }
+  currentTab = tab;
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.remove('active'); });
+  var tabEl = document.getElementById('tab-' + tab);
+  if(tabEl) tabEl.classList.add('active');
+  var navEl = document.getElementById('nav-' + tab);
+  if(navEl) navEl.classList.add('active');
+  /* also handle top tab buttons */
+  document.querySelectorAll('.tab[onclick]').forEach(function(b){
+    if(b.getAttribute('onclick') && b.getAttribute('onclick').indexOf("'"+tab+"'") !== -1) b.classList.add('active');
+  });
+  var fab = document.getElementById('fab');
+  if(fab) fab.style.display = (tab==='terminados'||tab==='viveres'||tab==='insumos') ? 'flex' : 'none';
+  document.getElementById('content').scrollTop = 0;
+  if(tab==='dashboard')  renderDash();
+  if(tab==='terminados') renderProd();
+  if(tab==='mermas')     renderMermas();
+  if(tab==='bitacora'  && typeof renderLog        === 'function') renderLog();
+  if(tab==='viveres'   && typeof renderViveres     === 'function') renderViveres();
+  if(tab==='cierre'    && typeof renderCierre      === 'function') renderCierre();
+  if(tab==='historial' && typeof renderHistorial   === 'function') renderHistorial();
+  if(tab==='reportes'  && typeof renderReportes    === 'function') renderReportes();
+  if(tab==='usuarios'  && typeof renderUsuariosMgmt=== 'function') renderUsuariosMgmt();
+}
+
+/* ══ EXPORT ═══════════════════════════════════════════════════════════════ */
+function exportData(){
+  var data = JSON.stringify({
+    exportDate: new Date().toISOString(),
+    productos: S.productos, insumos: S.insumos,
+    bitacora: S.bitacora, mermas: S.mermas
+  }, null, 2);
+  var blob = new Blob([data], {type:'application/json'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href   = url;
+  a.download = 'donCamaron_' + new Date().toISOString().split('T')[0] + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ══ STARTUP ══════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', function(){
+  if(typeof DEF_PROD !== 'undefined' && typeof initDB === 'function'){
+    initDB();
+  } else {
+    /* DEF_PROD not yet defined — wait for all scripts */
+    setTimeout(function(){
+      if(typeof initDB === 'function') initDB();
+    }, 100);
+  }
+});
+
+/* ── Login functions — must be early ── */
+var _selUserId = null;
+var _pin = '';
+
+window.selUser = function(id){
+  _selUserId = id;
+  _pin = '';
+  document.querySelectorAll('.user-btn').forEach(function(b){
+    b.classList.remove('selected');
+  });
+  document.querySelectorAll('.user-btn').forEach(function(b){
+    if(b.dataset && b.dataset.uid === id) b.classList.add('selected');
+  });
+  var ps = document.getElementById('pin-section');
+  if(ps) ps.style.display = 'block';
+  var pd = document.getElementById('pin-display');
+  if(pd) pd.textContent = '';
+  var pf = document.getElementById('pin-feedback');
+  if(pf){ pf.textContent=''; pf.className='pin-feedback'; }
+};
+
+window.pinKey = function(k){
+  if(!_selUserId){ showToast('Selecciona un usuario'); return; }
+  if(k === 'del'){ _pin = _pin.slice(0,-1); }
+  else if(_pin.length < 6){ _pin += k; }
+  var pd = document.getElementById('pin-display');
+  if(pd) pd.textContent = '●'.repeat(_pin.length);
+  if(_pin.length >= 4) doLogin();
+};
+
+function doLogin(){
+  if(!_selUserId){ showToast('Selecciona un usuario'); return; }
+  var users = (S.usuarios && S.usuarios.length > 0) ? S.usuarios : DEF_USUARIOS;
+  var user = users.find(function(u){ return u.id === _selUserId; });
+  if(!user){ showToast('Usuario no encontrado'); return; }
+  if(String(user.pin) !== String(_pin)){
+    var pf = document.getElementById('pin-feedback');
+    if(pf){ pf.textContent = 'PIN incorrecto'; pf.className = 'pin-feedback error'; }
+    _pin = '';
+    var pd = document.getElementById('pin-display');
+    if(pd) pd.textContent = '';
+    return;
+  }
+  currentUser = user;
+  fbLog('login', user.nombre + ' inicio sesion');
+  showApp();
+  goTab('dashboard');
+  if(typeof pushMissingToFirebase === 'function') pushMissingToFirebase();
+  if(typeof applyRoleUI === 'function'){ applyRoleUI(); document.body.className = 'rol-' + (user.rol||'empleado'); }
 }
 
 function renderLoginUsers(){
-  const users = S.usuarios.length > 0 ? S.usuarios : DEF_USUARIOS;
-  document.getElementById('user-grid').innerHTML = users.map(u=>`
-    <button class="user-btn ${selUserId===u.id?'selected':''}" onclick="selUser('${u.id}')">
-      <div class="user-avatar" style="background:${u.color||ROL_CLR[u.rol]}">${u.emoji}</div>
-      <div style="font-size:12px;color:#fff">${u.nombre}</div>
-      <div class="user-role-badge" style="background:${(u.color||ROL_CLR[u.rol])+'33'};color:${u.color||ROL_CLR[u.rol]}">${ROL_LBL[u.rol]}</div>
-    </button>`).join('');
-}
-
-window.selUser = function(id){
-  selUserId=id; pinBuf=''; updDots();
-  document.getElementById('login-err').textContent='';
-  document.getElementById('pin-section').style.display='block';
-  renderLoginUsers();
-};
-window.pk = function(k){ if(pinBuf.length>=4)return; pinBuf+=k; updDots(); if(pinBuf.length===4)setTimeout(pe,120); };
-window.pd = function(){ pinBuf=pinBuf.slice(0,-1); updDots(); };
-function updDots(){ for(let i=0;i<4;i++) document.getElementById('d'+i).classList.toggle('filled',i<pinBuf.length); }
-
-window.pe = function(){
-  if(!selUserId){showToast('Selecciona un usuario');return;}
-  const u=S.usuarios.find(u=>u.id===selUserId);
-  if(!u) return;
-  if(pinBuf===u.pin){
-    currentUser=u;
-    document.getElementById('login-err').textContent='';
-    enterApp();
-  } else {
-    document.getElementById('login-err').textContent='❌ PIN incorrecto';
-    pinBuf=''; updDots();
-    setTimeout(()=>document.getElementById('login-err').textContent='',2500);
-  }
-};
-
-function enterApp(){
-  fbLog('login',currentUser.nombre+' inicio sesion');
-  document.getElementById('screen-login').style.display='none';
-  document.getElementById('screen-app').style.display='flex';
-  document.getElementById('bnav').style.display='flex';
-  const av=document.getElementById('pill-av');
-  av.textContent=currentUser.emoji;
-  av.style.background=currentUser.color||ROL_CLR[currentUser.rol];
-  document.getElementById('pill-name').textContent=currentUser.nombre;
-  document.getElementById('pill-role').textContent=ROL_LBL[currentUser.rol];
-  goTab('dashboard');
-  if(typeof pushMissingToFirebase==='function')pushMissingToFirebase();
-  if(typeof applyRoleUI==='function'){applyRoleUI();document.body.className='rol-'+(currentUser.rol||'empleado');}
-}
-
-window.logout = function(){
-  if(!confirm('Cerrar sesion de '+currentUser.nombre+'?')) return;
-  fbLog('logout',currentUser.nombre+' cerro sesion');
-  currentUser=null; selUserId=null; pinBuf=''; updDots();
-  document.getElementById('pin-section').style.display='none';
-  document.getElementById('screen-app').style.display='none';
-  document.getElementById('bnav').style.display='none';
-  document.getElementById('screen-login').style.display='flex';
-  renderLoginUsers(); showToast('👋 Sesión cerrada');
-};
-
-// ── NUEVO USUARIO ─────────────────────────────────────────────────────────────
-window.saveNewUser = async function(){
-  const nombre=document.getElementById('nu-nom').value.trim();
-  const rol=document.getElementById('nu-rol').value;
-  const emoji=document.getElementById('nu-emoji').value.trim()||'👤';
-  const pin=document.getElementById('nu-pin').value.trim();
-  if(!nombre){showToast('⚠ Escribe un nombre');return;}
-  if(!/^\d{4}$/.test(pin)){showToast('⚠ PIN debe ser 4 dígitos');return;}
-  const id='u'+Date.now();
-  const newU={id,nombre,rol,emoji,pin,color:ROL_CLR[rol]};
-  await fbSet('inventario/usuarios/'+id,newU);
-  closeModal('modal-new-user');
-  document.getElementById('nu-nom').value='';
-  document.getElementById('nu-pin').value='';
-  showToast('Usuario '+nombre+' creado');
-};
-
-// ── TAB ───────────────────────────────────────────────────────────────────────
-window.goTab = function(tab){
-  currentTab=tab;
-  document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
-  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
-  document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});
-  var _tabEl=document.getElementById('tab-'+tab);if(_tabEl)_tabEl.classList.add('active');
-  const tabs=['dashboard','insumos','terminados','mermas','bitacora'];
-  document.querySelectorAll('.tab')[tabs.indexOf(tab)]?.classList.add('active');
-  var _navEl=document.getElementById('nav-'+tab);if(_navEl)_navEl.classList.add('active');
-  document.getElementById('fab').style.display=(tab==='insumos'||tab==='terminados'||tab==='viveres')?'flex':'none';
-  document.getElementById('content').scrollTop=0;
-  if(tab==='dashboard'){
-    if(S.insumos.length===0) S.insumos=JSON.parse(JSON.stringify(DEF_INS));
-    if(S.productos.length===0) S.productos=JSON.parse(JSON.stringify(DEF_PROD));
-    renderDash();
-  }
-  if(tab==='insumos'){
-    if(S.insumos.length===0) S.insumos=JSON.parse(JSON.stringify(DEF_INS));
-    renderIns();
-  }
-  if(tab==='terminados'){
-    if(S.productos.length===0) S.productos=JSON.parse(JSON.stringify(DEF_PROD));
-    renderProd();
-  }
-  if(tab==='mermas') renderMermas();
-  if(tab==='bitacora'){if(typeof renderLog==='function')renderLog();}
-  if(tab==='usuarios') renderUsuariosMgmt();
-  if(tab==='viveres') renderViveres();
-  if(tab==='cierre'){if(typeof renderCierre==='function')renderCierre();}
-  if(tab==='historial'){if(typeof renderHistorial==='function')renderHistorial();}
-  if(tab==='reportes'){if(typeof renderReportes==='function')renderReportes();}
-
-  if(tab==='cierre') renderCierre();
-  if(tab==='reportes') renderReportes();
-  if(tab==='historial') renderHistorial();
-  // Show/hide usuarios nav button based on role
-  const unav = document.getElementById('nav-usuarios');
-  const utab = document.getElementById('tab-btn-usuarios');
-  const isAdmin = currentUser && currentUser.rol === 'admin';
-  if(unav) unav.style.display = isAdmin ? 'flex' : 'none';
-  if(utab) utab.style.display = isAdmin ? 'block' : 'none';
-};
-
-// ── HELPERS ───────────────────────────────────────────────────────────────────
-function fmt$(n){ return '$'+parseFloat(n||0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
-function catClr(c){ return CAT_CLR[c]||'#999'; }
-function stIns(i){ return !i.cant&&i.cant!==0?'empty':i.cant<=0?'empty':i.cant<=i.min?'reponer':'ok'; }
-function stProd(p){ return (!p.stock&&p.stock!==0)||p.stock===0?'empty':p.stock<=p.min?'reponer':'ok'; }
-function nowStr(){ return new Date().toLocaleString('es-VE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
-function canEdit(){ return !!currentUser; }
-function canDelete(){ return currentUser&&(currentUser.rol==='admin'||currentUser.rol==='supervisor'); }
-function fmtTs(ts){
-  const d=new Date(ts), now=Date.now(), diff=now-ts;
-  if(diff<60000) return 'Hace un momento';
-  if(diff<3600000) return 'Hace '+Math.floor(diff/60000)+' min';
-  if(diff<86400000) return 'Hace '+Math.floor(diff/3600000)+' h';
-  return d.toLocaleDateString('es-VE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-}
-function modStr(item){
-  if(!item.mod) return null;
-  return (item.mod.emoji||'👤')+' '+item.mod.userName+' · '+item.mod.time;
-}
-function updateBadges(){
-  const bI=S.insumos.filter(i=>stIns(i)==='reponer').length;
-  const bP=S.productos.filter(p=>stProd(p)==='reponer').length;
-  const bi=document.getElementById('badge-ins');
-  const bp=document.getElementById('badge-prod');
-  if(bi){bi.textContent=bI;bi.style.display=bI>0?'flex':'none';}
-  if(bp){bp.textContent=bP;bp.style.display=bP>0?'flex':'none';}
-}
-
-// ── DASHBOARD ─────────────────────────────────────────────────────────────────
-function renderDash(){
-  document.getElementById('fecha-hoy').textContent=
-    new Date().toLocaleDateString('es-VE',{weekday:'long',day:'numeric',month:'long'});
-  const ins=S.insumos,prod=S.productos;
-  const bIns=ins.filter(i=>stIns(i)==='reponer').length;
-  const bProd=prod.filter(p=>stProd(p)==='reponer').length;
-  document.getElementById('k-ins-tot').textContent=ins.length;
-  document.getElementById('k-ins-bajo').textContent=bIns;
-  document.getElementById('k-ins-ok').textContent=ins.filter(i=>stIns(i)==='ok').length;
-  document.getElementById('k-ins-val').textContent=fmt$(ins.reduce((s,i)=>s+(i.cant*i.costo),0));
-  document.getElementById('k-prod-tot').textContent=prod.length;
-  document.getElementById('k-prod-bajo').textContent=bProd;
-  document.getElementById('k-vend').textContent=prod.reduce((s,p)=>s+p.vend,0);
-  document.getElementById('k-ingreso').textContent=fmt$(prod.reduce((s,p)=>s+(p.vend*p.precio),0));
-  // Mermas hoy
-  const hoy=new Date().toDateString();
-  const mermasHoy=(S.mermas||[]).filter(m=>new Date(m.ts).toDateString()===hoy);
-  const perdidaHoy=mermasHoy.reduce((s,m)=>s+(m.perdidaTotal||0),0);
-  const kMH=document.getElementById('k-mermas-hoy');
-  const kPH=document.getElementById('k-perdida-hoy');
-  if(kMH) kMH.textContent=mermasHoy.length;
-  if(kPH) kPH.textContent=fmt$(perdidaHoy);
-  const aEl=document.getElementById('alertas-dash');
-  const all=[
-    ...ins.filter(i=>stIns(i)==='reponer').map(i=>({ico:'📦',name:i.nombre,det:i.cant+' '+i.unidad+' — min '+i.min})),
-    ...S.productos.filter(function(p){return stProd(p)==='reponer';}).map(function(p){return {ico:'🛍',name:p.nombre,det:'Stock: '+(p.stock||0)+' '+p.unidad};}),
-  ];
-  if(!all.length){
-    aEl.innerHTML=`<div class="empty"><div class="empty-ico">✅</div><div class="empty-txt">Sin alertas · Todo en orden</div></div>`;
-  } else {
-    aEl.innerHTML=all.map(a=>`
-      <div class="alert-card">
-        <div class="alert-ico">${a.ico}</div>
-        <div><div class="alert-name">${a.name}</div><div class="alert-det">${a.det}</div></div>
-      </div>`).join('');
-  }
-  updateBadges();
-}
-
-// ── INSUMOS ───────────────────────────────────────────────────────────────────
-/* renderIns: see appended script */
-window.saveIns=async function(id){
-  const item=S.insumos.find(i=>i.id===id); if(!item) return;
-  var cant=parseFloat(document.getElementById('ic-cant-'+id)?.value)||0;
-  var costo_i=parseFloat(document.getElementById('ic-costo-'+id)?.value)||0;
-  var min_i=parseFloat(document.getElementById('ic-min-'+id)?.value)||0;
-  var max_i=parseFloat(document.getElementById('ic-max-'+id)?.value)||0;
-  var updated_i=Object.assign({},item,{cant:cant,costo:costo_i,min:min_i,max:max_i,mod:{userId:currentUser.id,userName:currentUser.nombre,emoji:currentUser.emoji,time:nowStr()}});
-  await fbSet('inventario/insumos/'+id,updated_i);
-  fbLog('edit','Edito insumo: '+item.nombre);
-  expIns=null; showToast('✅ Guardado y sincronizado');
-};
-
-window.delIns=async function(id){
-  if(!canDelete()){showToast('🔒 Sin permiso');return;}
-  const item=S.insumos.find(i=>i.id===id);
-  if(!confirm('Eliminar '+item?.nombre+'?')) return;
-  await fbRemove('inventario/insumos/'+id);
-  fbLog('del','Elimino insumo: '+item.nombre);
-  expIns=null; showToast('🗑 Eliminado');
-};
-
-// ── PRODUCTOS ─────────────────────────────────────────────────────────────────
-/* renderProd moved to appended script */
-
-// ── MERMAS ────────────────────────────────────────────────────────────────────
-const MOTIVO_CLR = {dañado:'m-dañado',vencido:'m-vencido',accidente:'m-accidente',otro:'m-otro'};
-const MOTIVO_LBL = {dañado:'🟠 Dañado',vencido:'🔴 Vencido',accidente:'🔵 Accidente',otro:'⚪ Otro'};
-const MOTIVO_ICO = {dañado:'💔',vencido:'🗑️',accidente:'💥',otro:'⚠️'};
-let fMerma = 'Todos';
-
-window.openMermaModal = function(){
-  updateMermaItems();
-  openModal('modal-merma');
-  document.getElementById('m-cant').addEventListener('input', calcPerdida);
-  document.getElementById('m-item').addEventListener('change', calcPerdida);
-  document.getElementById('m-tipo').addEventListener('change', ()=>{ updateMermaItems(); calcPerdida(); });
-};
-
-window.updateMermaItems = function(){
-  var tipo = (document.getElementById('m-tipo')||{}).value||'producto';
-  var sel  = document.getElementById('m-item');
-  var VIV  = ['Salsas','Viveres','Empaque','Limpieza'];
-  var items = tipo==='vivere'
-    ? S.productos.filter(function(p){ return VIV.indexOf(p.cat)!==-1; })
-    : S.productos.filter(function(p){ return VIV.indexOf(p.cat)===-1; });
-  if(sel) sel.innerHTML = items.map(function(p){
-    return '<option value="'+p.id+'">'+p.nombre+' (Stock: '+(p.stock||0)+' '+p.unidad+')</option>';
-  }).join('');
-  calcPerdida();
-};
-
-function calcPerdida(){
-  var itemId= (document.getElementById('m-item')||{}).value||'';
-  var cant  = parseFloat((document.getElementById('m-cant')||{}).value)||0;
-  var costo = 0;
-  var calcItem = S.productos.find(function(p){return p.id===itemId;});
-  costo = calcItem ? ((calcItem.precio||calcItem.costo||0)*cant) : 0;
-  var perdEl = document.getElementById('m-perdida-val');
-  if(perdEl) perdEl.textContent = fmt$(costo);
-}
-
-window.guardarMerma = async function(){
-  var tipo   = (document.getElementById('m-tipo')||{}).value||'producto';
-  var itemId = (document.getElementById('m-item')||{}).value||'';
-  var cant   = parseFloat((document.getElementById('m-cant')||{}).value)||0;
-  var motivo = (document.getElementById('m-motivo')||{}).value||'dañado';
-  var desc   = ((document.getElementById('m-desc')||{}).value||'').trim();
-  if(cant<=0){ showToast('La cantidad debe ser mayor a 0'); return; }
-
-  var item = S.productos.find(function(p){ return p.id===itemId; });
-  if(!item){ showToast('Selecciona un producto'); return; }
-
-  var itemNombre = item.nombre;
-  var itemUnidad = item.unidad||'Kg';
-  var costoUnit  = item.precio||item.costo||0;
-
-  /* Descontar del stock */
-  item.stock  = Math.max(0,(item.stock||0)-cant);
-  item.salida = (item.salida||0)+cant;
-  var updated = Object.assign({},item,{
-    mod:{userId:currentUser.id,userName:currentUser.nombre,emoji:currentUser.emoji,time:nowStr()}
-  });
-  await fbSet('inventario/productos/'+itemId, updated);
-
-  var perdidaTotal = costoUnit * cant;
-  var entrada = {
-    tipo:tipo, itemId:itemId, itemNombre:itemNombre, itemUnidad:itemUnidad,
-    cant:cant, motivo:motivo,
-    desc: desc||'Sin descripcion',
-    costoUnit:costoUnit, perdidaTotal:perdidaTotal,
-    userId:currentUser.id, userName:currentUser.nombre,
-    userEmoji:currentUser.emoji,
-    userColor:currentUser.color||ROL_CLR[currentUser.rol],
-    ts:Date.now(), fecha:nowStr(),
-  };
-  await push(ref(db,'inventario/mermas'), entrada);
-  fbLog('del','Merma: '+cant+' '+itemUnidad+' de '+itemNombre+' — '+fmt$(perdidaTotal));
-  closeModal('modal-merma');
-  document.getElementById('m-cant').value='1';
-  document.getElementById('m-desc').value='';
-  showToast('Merma registrada — '+fmt$(perdidaTotal)+' de perdida');
-};
-
-function renderMermas(){
-  // Resumen
-  const hoy = new Date().toDateString();
-  const mermasHoy   = S.mermas.filter(m=>new Date(m.ts).toDateString()===hoy);
-  const totalPerdida = S.mermas.reduce((s,m)=>s+(m.perdidaTotal||0),0);
-  const perdidaHoy  = mermasHoy.reduce((s,m)=>s+(m.perdidaTotal||0),0);
-  const byMotivo    = {};
-  S.mermas.forEach(m=>{ byMotivo[m.motivo]=(byMotivo[m.motivo]||0)+1; });
-
-  document.getElementById('mermas-resumen-wrap').innerHTML=`
-    <div class="merma-resumen">
-      <div class="merma-resumen-title">📊 Resumen de Pérdidas</div>
-      <div class="mrrow"><span class="mrk">Total registradas</span><span class="mrv">${S.mermas.length}</span></div>
-      <div class="mrrow"><span class="mrk">Registradas hoy</span><span class="mrv amber">${mermasHoy.length}</span></div>
-      <div class="mrrow"><span class="mrk">Pérdida total acumulada</span><span class="mrv red">${fmt$(totalPerdida)}</span></div>
-      <div class="mrrow"><span class="mrk">Pérdida de hoy</span><span class="mrv red">${fmt$(perdidaHoy)}</span></div>
-      <div class="mrrow"><span class="mrk">Dañados / Vencidos / Accidentes</span>
-        <span class="mrv">${byMotivo['dañado']||0} / ${byMotivo['vencido']||0} / ${byMotivo['accidente']||0}</span></div>
-    </div>
-    <button class="btn-merma" onclick="openMermaModal()">⚠️ Registrar nueva pérdida / merma</button>`;
-
-  // Chips filtro
-  const users=['Todos',...new Set(S.mermas.map(m=>m.userName))];
-  document.getElementById('chips-mermas').innerHTML=users.map(function(u){return '<button class="chip '+(fMerma===u?'active':'')+' " onclick="setFMerma(this.textContent)">'+u+'</button>';}).join('');
-
-  // Lista
-  let items = S.mermas;
-  if(fMerma!=='Todos') items=items.filter(m=>m.userName===fMerma);
-  const el = document.getElementById('lista-mermas');
-  if(!items.length){
-    el.innerHTML=`<div class="empty"><div class="empty-ico">✅</div><div class="empty-txt">Sin pérdidas registradas</div></div>`;
-    return;
-  }
-  el.innerHTML=items.map(function(m){var h='<div class="merma-card"><div class="merma-head"><div class="merma-ico">'+(window.MOTIVO_ICO&&MOTIVO_ICO[m.motivo]?MOTIVO_ICO[m.motivo]:'⚠️')+'</div><div class="merma-inf"><div class="merma-prod">'+(m.itemNombre||'')+'</div><div class="merma-sub">'+(m.motivo||'')+(m.cant?' · '+m.cant+' '+(m.itemUnidad||''):'')+'</div></div><div class="merma-val" style="color:#C62828">-'+(m.perdidaTotal?fmt$(m.perdidaTotal):'$0')+'</div></div><div class="merma-det"><span class="merma-chip">'+(m.tipo||'')+'</span><span class="merma-chip">'+(m.userName||'')+'</span><span class="merma-chip">'+(m.fecha||'')+'</span></div></div>';return h;}).join('')
-}
-window.setFMerma=function(u){ fMerma=u; renderMermas(); };
-
-// ── GESTIÓN DE USUARIOS ──────────────────────────────────────────────────────
-function renderUsuariosMgmt(){
-  var isAdmin = currentUser && currentUser.rol === 'admin';
-  var grid = document.getElementById('user-grid-mgmt');
+  var grid = document.getElementById('user-grid');
   if(!grid) return;
-  var users = S.usuarios.length > 0 ? S.usuarios : DEF_USUARIOS;
+  var users = (S.usuarios && S.usuarios.length > 0) ? S.usuarios : DEF_USUARIOS;
   grid.innerHTML = users.map(function(u){
-    var isSelf = currentUser && u.id === currentUser.id;
-    var h = '<div style="background:var(--color-background-primary);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;border:1px solid var(--color-border-tertiary);margin-bottom:10px">';
-    h += '<div style="width:48px;height:48px;border-radius:50%;background:'+(u.color||ROL_CLR[u.rol]||'#888')+';display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">'+u.emoji+'</div>';
-    h += '<div style="flex:1"><div style="font-weight:700;font-size:14px">'+u.nombre+(isSelf?' <span style="font-size:10px;color:#888">(tú)</span>':'')+'</div>';
-    h += '<div style="font-size:11px;color:#aaa;margin-top:2px">'+(ROL_LBL[u.rol]||u.rol)+' · PIN: ••••</div></div>';
-    if(isAdmin){h += '<button onclick="openEditUser(this.dataset.uid)" data-uid="'+u.id+'" style="padding:8px 14px;border-radius:10px;border:none;background:var(--color-background-secondary);color:var(--color-text-primary);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Editar</button>';}
-    h += '</div>';
-    return h;
+    return '<button class="user-btn" data-uid="'+u.id+'" onclick="selUser(this.dataset.uid)">'
+      +'<div class="user-avatar" style="background:'+(u.color||ROL_CLR[u.rol]||'#888')+'">'+u.emoji+'</div>'
+      +'<div style="font-size:14px;color:#fff;margin-top:6px;font-weight:600">'+u.nombre+'</div>'
+      +'<div class="user-role-badge" style="background:'+(u.color||ROL_CLR[u.rol]||'#888')+'">'+u.emoji+' '+(ROL_LBL[u.rol]||u.rol).toUpperCase()+'</div>'
+      +'</button>';
   }).join('');
 }
 
-window.openEditUser = function(id){
-  const u = S.usuarios.find(u=>u.id===id);
-  if(!u) return;
-  document.getElementById('edit-user-id').value = id;
-  document.getElementById('edit-user-title').textContent = 'Editar: '+u.nombre;
-  document.getElementById('eu-nombre').value = u.nombre;
-  document.getElementById('eu-rol').value = u.rol;
-  document.getElementById('eu-emoji').value = u.emoji;
-  document.getElementById('eu-pin').value = '';
-  openModal('modal-edit-user');
+window.abrirCrearUsuario = function(){
+  var modal = document.getElementById('modal-add');
+  var title = document.getElementById('modal-add-title');
+  var body  = document.getElementById('modal-add-body');
+  if(!modal||!title||!body) return;
+  title.textContent = 'Crear Usuario';
+  body.innerHTML =
+    '<div class="field-col"><div class="flabel">Nombre</div>'
+    +'<input class="finput" id="nu-nom" placeholder="Nombre del empleado"></div>'
+    +'<div class="field-row"><div class="field-col"><div class="flabel">Rol</div>'
+    +'<select class="finput" id="nu-rol">'
+    +'<option value="empleado">🦐 Empleado</option>'
+    +'<option value="supervisor">🔑 Supervisor</option>'
+    +'<option value="admin">👑 Admin</option>'
+    +'</select></div>'
+    +'<div class="field-col"><div class="flabel">Emoji avatar</div>'
+    +'<input class="finput" id="nu-emoji" value="😊" maxlength="2"></div></div>'
+    +'<div class="field-col"><div class="flabel">PIN (4 dígitos)</div>'
+    +'<input class="finput yellow" type="number" id="nu-pin" placeholder="••••" maxlength="4"></div>'
+    +'<button class="btn-primary" onclick="saveNewUser()" style="margin-top:14px;width:100%">✅ Crear Usuario</button>';
+  openModal('modal-add');
 };
 
-window.saveEditUser = async function(){
-  if(!currentUser || currentUser.rol !== 'admin'){ showToast('🔒 Solo el Admin puede editar usuarios'); return; }
-  const id = document.getElementById('edit-user-id').value;
-  const u = S.usuarios.find(u=>u.id===id);
-  if(!u) return;
-  const nombre = document.getElementById('eu-nombre').value.trim() || u.nombre;
-  const rol    = document.getElementById('eu-rol').value;
-  const emoji  = document.getElementById('eu-emoji').value.trim() || u.emoji;
-  const pin    = document.getElementById('eu-pin').value.trim();
-  if(pin && !/^\d{4}$/.test(pin)){ showToast('⚠ El PIN debe ser 4 dígitos'); return; }
-  const updated = { ...u, nombre, rol, emoji, color: ROL_CLR[rol] };
-  if(pin) updated.pin = pin;
-  await fbSet(`inventario/usuarios/${id}`, updated);
-  fbLog('edit', currentUser.nombre+' edito usuario: '+nombre);
-  closeModal('modal-edit-user');
-  showToast('Usuario '+nombre+' actualizado');
-  if(id === currentUser.id){
-    currentUser = updated;
-    document.getElementById('pill-name').textContent = updated.nombre;
-    document.getElementById('pill-role').textContent = ROL_LBL[updated.rol];
-    const av = document.getElementById('pill-av');
-    if(av){ av.textContent = updated.emoji; av.style.background = updated.color; }
-  }
-};
-
-window.deleteUser = async function(){
-  if(!currentUser || currentUser.rol !== 'admin'){ showToast('🔒 Solo el Admin puede eliminar usuarios'); return; }
-  const id = document.getElementById('edit-user-id').value;
-  if(id === currentUser.id){ showToast('⚠ No puedes eliminarte a ti mismo'); return; }
-  const u = S.usuarios.find(u=>u.id===id);
-  if(!u) return;
-  if(!confirm(`¿Eliminar al usuario "${u.nombre}"? Esta acción no se puede deshacer.`)) return;
-  await fbRemove(`inventario/usuarios/${id}`);
-  fbLog('del', currentUser.nombre+' elimino: '+u.nombre);
-  closeModal('modal-edit-user');
-  showToast('Usuario '+u.nombre+' eliminado');
-};
-
-// ── EXPORT ─────────────────────────────────────────────────────────────────────
-window.exportData=function(){
-  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download='donCamaron_'+new Date().toISOString().split('T')[0]+'.json';
-  a.click();URL.revokeObjectURL(url);
-  fbLog('edit','Exportó respaldo del inventario');
-  showToast('💾 Respaldo descargado');
-};
-window.handleImport=function(e){
-  const f=e.target.files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=async ev=>{try{
-    const d=JSON.parse(ev.target.result);
-    if(d.insumos&&d.productos){ showToast('⚠ Importar reemplaza datos. Usa Firebase.'); }
-  }catch{showToast('⚠ Archivo inválido');}};
-  r.readAsText(f);e.target.value='';
-};
-
-// ── MODAL / TOAST ──────────────────────────────────────────────────────────────
-window.openModal=function(id){ document.getElementById(id).classList.add('open'); };
-window.closeModal=function(id){ document.getElementById(id).classList.remove('open'); };
-document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
-let toastT;
-window.showToast=function(msg){
-  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
-  clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2800);
-};
-
-// ── INICIO ───────────────────────────────────────────────────────────────────
-initDB();
-
-// ══════════════════════════════════════════════════════════════════════════════
-// FEATURE 1: REPORTES & GRÁFICAS
-// ══════════════════════════════════════════════════════════════════════════════
-function renderReportes(){
-  const el = document.getElementById('reportes-content');
-  if(!el) return;
-  const prod = S.productos;
-  const ins  = S.insumos;
-  const mermas = S.mermas || [];
-  const hoyStr = new Date().toDateString();
-
-  const totalVend    = prod.reduce(function(s,p){return s+p.vend;},0);
-  const totalIngreso = prod.reduce(function(s,p){return s+(p.vend*(p.precio||0));},0);
-  const mermasHoy    = mermas.filter(function(m){return new Date(m.ts).toDateString()===hoyStr;});
-  const perdidaHoy   = mermasHoy.reduce(function(s,m){return s+(m.perdidaTotal||0);},0);
-  const bajosIns     = ins.filter(function(i){return stIns(i)==='reponer';});
-  const bajosProd    = prod.filter(function(p){return stProd(p)==='reponer';});
-
-  var html = '<div style="padding:12px 0">';
-
-  // KPIs
-  html += '<div class="kpi-grid">';
-  html += '<div class="kpi-box"><div class="kpi-val">'+totalVend+'</div><div class="kpi-lbl">Unidades vendidas</div></div>';
-  html += '<div class="kpi-box"><div class="kpi-val" style="color:#1E5631">'+fmt$(totalIngreso)+'</div><div class="kpi-lbl">Ingresos estimados</div></div>';
-  html += '<div class="kpi-box"><div class="kpi-val" style="color:#E65100">'+(perdidaHoy>0?fmt$(perdidaHoy):'$0')+'</div><div class="kpi-lbl">Pérdida hoy</div></div>';
-  html += '<div class="kpi-box"><div class="kpi-val" style="color:#B71C1C">'+(bajosIns.length+bajosProd.length)+'</div><div class="kpi-lbl">Alertas de stock</div></div>';
-  html += '</div>';
-
-  // Top productos vendidos
-  var topProd = prod.slice().sort(function(a,b){return b.vend-a.vend;}).slice(0,8);
-  var maxVend  = topProd.length>0 ? topProd[0].vend||1 : 1;
-  var clrs = ['#1F4E79','#2E75B6','#4490C8','#5DAADA','#1E5631','#2E7D32','#E65100','#B71C1C'];
-  html += '<div class="rep-card"><div class="rep-title">🛍 Productos más vendidos</div><div class="bar-wrap">';
-  if(topProd.length===0){
-    html += '<div style="color:#999;font-size:12px;text-align:center">Sin datos de ventas aún</div>';
-  } else {
-    topProd.forEach(function(p,i){
-      var pct = Math.round((p.vend/maxVend)*100);
-      html += '<div class="bar-row">';
-      html += '<span class="bar-label" title="'+p.nombre+' · '+p.variante+'">'+p.nombre+'</span>';
-      html += '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:'+clrs[i%clrs.length]+'"></div></div>';
-      html += '<span class="bar-val">'+p.vend+'</span></div>';
-    });
-  }
-  html += '</div></div>';
-
-  // Insumos por valor
-  var topIns = ins.filter(function(i){return i.costo>0;}).slice().sort(function(a,b){return (b.cant*b.costo)-(a.cant*a.costo);}).slice(0,6);
-  var maxInsVal = topIns.length>0 ? topIns[0].cant*topIns[0].costo : 1;
-  html += '<div class="rep-card"><div class="rep-title">📦 Valor en inventario de insumos</div><div class="bar-wrap">';
-  if(topIns.length===0){
-    html += '<div style="color:#999;font-size:12px;text-align:center">Agrega costos a los insumos para ver esta gráfica</div>';
-  } else {
-    topIns.forEach(function(i){
-      var val = i.cant*i.costo;
-      var pct = Math.round((val/maxInsVal)*100);
-      html += '<div class="bar-row">';
-      html += '<span class="bar-label">'+i.nombre+'</span>';
-      html += '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:#1E5631"></div></div>';
-      html += '<span class="bar-val">'+fmt$(val)+'</span></div>';
-    });
-  }
-  html += '</div></div>';
-
-  // Mermas por tipo
-  var mCat = {};
-  mermas.forEach(function(m){ var k=m.tipo||'Otro'; mCat[k]=(mCat[k]||0)+1; });
-  var mCatArr = Object.keys(mCat).map(function(k){return [k,mCat[k]];}).sort(function(a,b){return b[1]-a[1];});
-  var maxMCat = mCatArr.length>0 ? mCatArr[0][1] : 1;
-  html += '<div class="rep-card"><div class="rep-title">⚠️ Mermas por tipo</div><div class="bar-wrap">';
-  if(mCatArr.length===0){
-    html += '<div style="color:#999;font-size:12px;text-align:center">Sin mermas registradas</div>';
-  } else {
-    mCatArr.forEach(function(e){
-      var pct = Math.round((e[1]/maxMCat)*100);
-      html += '<div class="bar-row"><span class="bar-label">'+e[0]+'</span>';
-      html += '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:#B71C1C"></div></div>';
-      html += '<span class="bar-val">'+e[1]+'</span></div>';
-    });
-  }
-  html += '</div></div>';
-
-  // WhatsApp button
-  html += '<div class="rep-card"><div class="rep-title">📲 Reporte semanal</div>';
-  html += '<p style="font-size:12px;color:#555;margin-bottom:8px">Genera un resumen y envíalo por WhatsApp al dueño o supervisor.</p>';
-  html += '<button class="wa-btn" onclick="enviarReporteWhatsApp()"><span style="font-size:18px">📲</span> Enviar por WhatsApp</button>';
-  html += '</div>';
-
-  // Precios section
-  html += '<div class="rep-card" id="precios-section">';
-  html += '<div class="rep-title">💰 Precios y márgenes <button onclick="guardarPrecios()" style="padding:5px 12px;border-radius:8px;border:none;background:#1F4E79;color:#fff;font-size:11px;cursor:pointer;font-family:inherit">Guardar</button></div>';
-  html += '<div style="font-size:11px;color:#888;margin-bottom:8px">Precio venta · Costo unitario · Margen</div>';
-  prod.forEach(function(p){
-    var margen = p.precio>0&&p.costo>0 ? Math.round(((p.precio-p.costo)/p.precio)*100) : null;
-    var mClass = margen===null ? 'margen-badge' : 'margen-badge '+(margen>=40?'margen-ok':margen>=20?'margen-med':'margen-low');
-    var mText  = margen!==null ? margen+'%' : '—';
-    html += '<div class="precio-row">';
-    html += '<span class="precio-nom">'+p.nombre+'<br><span style="font-size:10px;color:#999">'+p.variante+'</span></span>';
-    html += '<input class="precio-inp" id="pr-p-'+p.id+'" type="number" value="'+(p.precio||0)+'" placeholder="Precio" min="0" step="0.01" oninput="actualizarMargen(\''+p.id+'\')">';
-    html += '<input class="precio-inp" id="pr-c-'+p.id+'" type="number" value="'+(p.costo||0)+'" placeholder="Costo" min="0" step="0.01" oninput="actualizarMargen(\''+p.id+'\')">';
-    html += '<span class="'+mClass+'" id="mg-'+p.id+'">'+mText+'</span>';
-    html += '</div>';
+window.saveNewUser = function(){
+  var nom = ((document.getElementById('nu-nom')||{}).value||'').trim();
+  var rol = (document.getElementById('nu-rol')||{}).value || 'empleado';
+  var emoji = (document.getElementById('nu-emoji')||{}).value || '😊';
+  var pin = ((document.getElementById('nu-pin')||{}).value||'').trim();
+  if(!nom){ showToast('Escribe el nombre'); return; }
+  if(!pin||pin.length < 4){ showToast('PIN debe tener 4 dígitos'); return; }
+  var id = 'u' + Date.now();
+  var color = ROL_CLR[rol] || '#888';
+  var nuevo = {id:id, nombre:nom, rol:rol, emoji:emoji, pin:pin, color:color};
+  S.usuarios.push(nuevo);
+  fbSet('inventario/usuarios/' + id, nuevo).then(function(){
+    fbLog('add', 'Creo usuario: ' + nom);
+    closeModal('modal-add');
+    showToast('Usuario ' + nom + ' creado');
+    renderUsuariosMgmt();
   });
-  html += '</div>';
-
-  // Stock notification button
-  html += '<div class="rep-card"><div class="rep-title">🔔 Notificaciones</div>';
-  html += '<p style="font-size:12px;color:#555;margin-bottom:8px">Activa las notificaciones para recibir alertas cuando un producto esté bajo de stock.</p>';
-  html += '<button onclick="pedirPermisNotificaciones()" style="width:100%;padding:11px;border-radius:12px;border:1px solid #1F4E79;background:transparent;color:#1F4E79;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">🔔 Activar notificaciones de stock</button>';
-  html += '</div>';
-
-  html += '</div>';
-  el.innerHTML = html;
-
-  // Inject stock banner in dashboard
-  checkNotificaciones();
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// FEATURE 2: REPORTE WHATSAPP
-// ══════════════════════════════════════════════════════════════════════════════
-function enviarReporteWhatsApp(){
-  var prod = S.productos;
-  var ins  = S.insumos;
-  var mermas = S.mermas || [];
-  var fecha = new Date().toLocaleDateString('es-VE',{weekday:'long',day:'numeric',month:'long'});
-  var totalVend = prod.reduce(function(s,p){return s+p.vend;},0);
-  var totalIng  = prod.reduce(function(s,p){return s+(p.vend*(p.precio||0));},0);
-  var bajosIns  = ins.filter(function(i){return stIns(i)==='reponer';});
-  var bajosProd = prod.filter(function(p){return stProd(p)==='reponer';});
-  var hoyStr    = new Date().toDateString();
-  var mermasHoy = mermas.filter(function(m){return new Date(m.ts).toDateString()===hoyStr;});
-  var perdida   = mermasHoy.reduce(function(s,m){return s+(m.perdidaTotal||0);},0);
-  var topVend   = prod.slice().sort(function(a,b){return b.vend-a.vend;}).slice(0,3);
-
-  var msg = '🦐 *DON CAMARÓN — Reporte de Inventario*\n';
-  msg += '📅 '+fecha+'\n\n';
-  msg += '📊 *RESUMEN GENERAL*\n';
-  msg += '• Unidades vendidas: *'+totalVend+'*\n';
-  msg += '• Ingresos estimados: *'+fmt$(totalIng)+'*\n';
-  msg += '• Mermas hoy: *'+mermasHoy.length+'* (pérdida: *'+fmt$(perdida)+'*)\n\n';
-  if(topVend.length>0){
-    msg += '🏆 *TOP PRODUCTOS*\n';
-    topVend.forEach(function(p,i){ msg += (i+1)+'. '+p.nombre+' · '+p.variante+': *'+p.vend+' uds*\n'; });
-    msg += '\n';
-  }
-  if(bajosIns.length>0||bajosProd.length>0){
-    msg += '⚠️ *ALERTAS DE STOCK BAJO*\n';
-    bajosIns.slice(0,5).forEach(function(i){ msg += '• 📦 '+i.nombre+': *'+i.cant+' '+i.unidad+'* (mín '+i.min+')\n'; });
-    bajosProd.slice(0,5).forEach(function(p){ msg += '• 🛍 '+p.nombre+' · '+p.variante+': stock *'+Math.max(0,p.prod-p.vend)+'* (mín '+p.min+')\n'; });
-  } else {
-    msg += '✅ *Todo el stock en niveles normales*\n';
-  }
-  msg += '\n_Generado por el sistema Don Camarón_';
-  window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// FEATURE 3: PRECIOS Y MÁRGENES
-// ══════════════════════════════════════════════════════════════════════════════
-function actualizarMargen(id){
-  var precio = parseFloat(document.getElementById('pr-p-'+id)&&document.getElementById('pr-p-'+id).value)||0;
-  var costo  = parseFloat(document.getElementById('pr-c-'+id)&&document.getElementById('pr-c-'+id).value)||0;
-  var el = document.getElementById('mg-'+id);
-  if(!el) return;
-  if(precio>0&&costo>0){
-    var m = Math.round(((precio-costo)/precio)*100);
-    el.textContent = m+'%';
-    el.className = 'margen-badge '+(m>=40?'margen-ok':m>=20?'margen-med':'margen-low');
-  } else {
-    el.textContent = '—';
-    el.className = 'margen-badge';
-  }
-}
-
-async function guardarPrecios(){
-  var prod = S.productos;
-  for(var i=0;i<prod.length;i++){
-    var p = prod[i];
-    var ep = document.getElementById('pr-p-'+p.id);
-    var ec = document.getElementById('pr-c-'+p.id);
-    if(ep) p.precio = parseFloat(ep.value)||0;
-    if(ec) p.costo  = parseFloat(ec.value)||0;
-    if(db) await firebase.database().ref('inventario/productos/'+p.id).update({precio:p.precio,costo:p.costo});
-  }
-  showToast('✅ Precios guardados');
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// FEATURE 4: NOTIFICACIONES DE STOCK BAJO
-// ══════════════════════════════════════════════════════════════════════════════
-function checkNotificaciones(){
-  var bajosIns  = S.insumos.filter(function(i){return stIns(i)==='reponer';});
-  var bajosProd = S.productos.filter(function(p){return stProd(p)==='reponer';});
-  var total = bajosIns.length + bajosProd.length;
-  var dashEl = document.getElementById('tab-dashboard');
-  if(!dashEl) return;
-  var banner = document.getElementById('stock-banner');
-  if(!banner){
-    banner = document.createElement('div');
-    banner.id = 'stock-banner';
-    var hdr = dashEl.querySelector('.sec-hdr');
-    if(hdr) hdr.parentNode.insertBefore(banner, hdr.nextSibling);
-    else dashEl.prepend(banner);
-  }
-  if(total>0){
-    banner.textContent = '';
-    banner.innerHTML = '⚠️ '+total+' item'+(total>1?'s':'')+' con stock bajo — toca para ver';
-    banner.className = 'notif-bar';
-    banner.style.display = 'flex';
-    banner.onclick = function(){ goTab('insumos'); };
-  } else {
-    banner.style.display = 'none';
-  }
-  if(total>0 && typeof Notification!=='undefined' && Notification.permission==='granted'){
-    try{
-      new Notification('🦐 Don Camarón — Stock bajo',{body:total+' producto'+(total>1?'s':'')+' necesitan reposición'});
-    }catch(e){}
-  }
-}
-
-function pedirPermisNotificaciones(){
-  if(typeof Notification==='undefined'){ showToast('Tu navegador no soporta notificaciones'); return; }
-  Notification.requestPermission().then(function(p){
-    if(p==='granted') showToast('✅ Notificaciones activadas');
-    else showToast('❌ Actívalas desde la configuración del navegador');
-  });
-}
-
-// Override updateBadges to also check notifications
-var _origUpdateBadges = updateBadges;
-updateBadges = function(){
-  _origUpdateBadges();
-  if(S.insumos&&S.insumos.length>0) checkNotificaciones();
 };
-
 </script>
 <script>
+
 /* ══ DON CAMARÓN — TODAS LAS FUNCIONES ADICIONALES ══════════════════════════ */
 
 /* ── Formato ── */
@@ -1796,9 +1160,9 @@ function pushMissingToFirebase(){
 }
 
 /* ── ROLE CONTROL ── */
-var ADMIN_TABS=['dashboard','terminados','viveres','mermas','bitacora','reportes','cierre','historial','usuarios'];
-var SUPERV_TABS=['dashboard','terminados','viveres','mermas','bitacora','reportes','cierre','historial'];
-var EMPLEADO_TABS=['dashboard','terminados','viveres','mermas'];
+var ADMIN_TABS=['dashboard','terminados','viveres','mermas','bitacora','reportes','cierre','historial','usuarios','restaurante'];
+var SUPERV_TABS=['dashboard','terminados','viveres','mermas','bitacora','reportes','cierre','historial','restaurante'];
+var EMPLEADO_TABS=['dashboard','terminados','viveres','mermas','restaurante'];
 function getRoleTabs(){
   if(!currentUser) return EMPLEADO_TABS;
   if(currentUser.rol==='admin') return ADMIN_TABS;
@@ -1810,7 +1174,7 @@ function applyRoleUI(){
   var allowed=getRoleTabs();
   var navMap={dashboard:'nav-inicio',terminados:'nav-terminados',mermas:'nav-mermas',
     bitacora:'nav-bitacora',viveres:'nav-viveres',reportes:'nav-reportes',
-    cierre:'nav-cierre',historial:'nav-historial',usuarios:'nav-usuarios',}; /* restaurante removed */
+    cierre:'nav-cierre',historial:'nav-historial',usuarios:'nav-usuarios',restaurante:'nav-restaurante'};
   Object.keys(navMap).forEach(function(tab){
     var btn=document.getElementById(navMap[tab]);
     if(btn) btn.style.display=allowed.indexOf(tab)!==-1?'flex':'none';
@@ -1840,7 +1204,7 @@ window.goTab=function(tab){
 var fViv='Todos',expViv=null;
 window.setFViv=function(cc){fViv=cc;renderViveres();};
 window.togViv=function(id){expViv=expViv===id?null:id;renderViveres();};
-window.saveViv=async function(id){
+window.saveViv=function(id){
   var item=S.productos.find(function(p){return p.id===id;}); if(!item) return;
   var ent=parseFloat((document.getElementById('vc-e-'+id)||{}).value)||0;
   var sal=parseFloat((document.getElementById('vc-s-'+id)||{}).value)||0;
@@ -1850,14 +1214,14 @@ window.saveViv=async function(id){
   var co=parseFloat((document.getElementById('vc-c-'+id)||{}).value)||0;
   var upd=Object.assign({},item,{entrada:ent,salida:sal,stock:Math.max(0,ent-sal),unidad:uni,min:mn,precio:pr,costo:co,
     mod:{userId:currentUser.id,userName:currentUser.nombre,emoji:currentUser.emoji,time:nowStr()}});
-  await fbSet('inventario/productos/'+id,upd);
+  fbSet('inventario/productos/'+id,upd);
   fbLog('edit','Edito vivere: '+item.nombre); expViv=null; showToast('Guardado');
 };
-window.delViv=async function(id){
+window.delViv=function(id){
   if(!canDelete()){showToast('Sin permiso');return;}
   var item=S.productos.find(function(p){return p.id===id;});
   if(!confirm('Eliminar '+((item&&item.nombre)||'?'))) return;
-  await fbRemove('inventario/productos/'+id); expViv=null; showToast('Eliminado');
+  fbRemove('inventario/productos/'+id); expViv=null; showToast('Eliminado');
 };
 function renderViveres(){
   var items=getViv();
@@ -1910,7 +1274,7 @@ var expProd2=null,fProd2='Todos';
 function getPescado(){ return getMar(); }
 window.setFProd=function(cc){fProd2=cc;renderProd();};
 window.togProd=function(id){expProd2=expProd2===id?null:id;renderProd();};
-window.saveProd=async function(id){
+window.saveProd=function(id){
   var item=S.productos.find(function(p){return p.id===id;}); if(!item) return;
   var ent=parseFloat((document.getElementById('pc-ent-'+id)||{}).value)||0;
   var sal=parseFloat((document.getElementById('pc-sal-'+id)||{}).value)||0;
@@ -1920,13 +1284,13 @@ window.saveProd=async function(id){
   var co=parseFloat((document.getElementById('pc-costo-'+id)||{}).value)||0;
   var upd=Object.assign({},item,{entrada:ent,salida:sal,stock:Math.max(0,ent-sal),unidad:uni,min:mn,precio:pr,costo:co,
     mod:{userId:currentUser.id,userName:currentUser.nombre,emoji:currentUser.emoji,time:nowStr()}});
-  await fbSet('inventario/productos/'+id,upd); fbLog('edit','Edito: '+item.nombre); expProd2=null; showToast('Guardado');
+  fbSet('inventario/productos/'+id,upd); fbLog('edit','Edito: '+item.nombre); expProd2=null; showToast('Guardado');
 };
-window.delProd=async function(id){
+window.delProd=function(id){
   if(!canDelete()){showToast('Sin permiso');return;}
   var item=S.productos.find(function(p){return p.id===id;});
   if(!confirm('Eliminar '+((item&&item.nombre)||'?'))) return;
-  await fbRemove('inventario/productos/'+id); expProd2=null; showToast('Eliminado');
+  fbRemove('inventario/productos/'+id); expProd2=null; showToast('Eliminado');
 };
 function renderProd(){
   var items=getMar();
@@ -1967,7 +1331,7 @@ function renderProd(){
 }
 
 /* ── SAVEINS (rewrite) ── */
-window.saveIns=async function(id){
+window.saveIns=function(id){
   var item=S.insumos.find(function(i){return i.id===id;}); if(!item) return;
   var cant=parseFloat((document.getElementById('ic-cant-'+id)||{}).value)||0;
   var costo=parseFloat((document.getElementById('ic-costo-'+id)||{}).value)||0;
@@ -1975,17 +1339,17 @@ window.saveIns=async function(id){
   var max=parseFloat((document.getElementById('ic-max-'+id)||{}).value)||0;
   var upd=Object.assign({},item,{cant:cant,costo:costo,min:min,max:max,
     mod:{userId:currentUser.id,userName:currentUser.nombre,emoji:currentUser.emoji,time:nowStr()}});
-  await fbSet('inventario/insumos/'+id,upd); fbLog('edit','Edito insumo: '+item.nombre); expIns=null; showToast('Guardado');
+  fbSet('inventario/insumos/'+id,upd); fbLog('edit','Edito insumo: '+item.nombre); expIns=null; showToast('Guardado');
 };
-window.delIns=async function(id){
+window.delIns=function(id){
   if(!canDelete()){showToast('Sin permiso');return;}
   var item=S.insumos.find(function(i){return i.id===id;});
   if(!confirm('Eliminar '+((item&&item.nombre)||'?'))) return;
-  await fbRemove('inventario/insumos/'+id); expIns=null; showToast('Eliminado');
+  fbRemove('inventario/insumos/'+id); expIns=null; showToast('Eliminado');
 };
 
 /* ── SAVEPRODNEW / SAVEINSNEW (FAB modal) ── */
-window.saveNewProd=async function(){
+window.saveNewProd=function(){
   var nom=((document.getElementById('new-nombre')||{}).value||'').trim();
   var cat=(document.getElementById('new-cat')||{}).value||'Mariscos';
   var und=(document.getElementById('new-uni')||{}).value||'Kg';
@@ -1998,10 +1362,10 @@ window.saveNewProd=async function(){
     costo:parseFloat((document.getElementById('new-costo')||{}).value)||0,
     entrada:ent,salida:0,stock:ent,
     mod:{userId:currentUser.id,userName:currentUser.nombre,emoji:currentUser.emoji,time:nowStr()}};
-  await fbSet('inventario/productos/'+id,item); fbLog('add','Agrego prod: '+nom);
+  fbSet('inventario/productos/'+id,item); fbLog('add','Agrego prod: '+nom);
   closeModal('modal-add'); showToast('Producto agregado');
 };
-window.saveNewIns=async function(){
+window.saveNewIns=function(){
   var nom=((document.getElementById('new-nombre')||{}).value||'').trim();
   var cat=(document.getElementById('new-cat')||{}).value||'Otro';
   var und=(document.getElementById('new-uni')||{}).value||'Kg';
@@ -2012,7 +1376,7 @@ window.saveNewIns=async function(){
     max:10, cant:parseFloat((document.getElementById('new-cant')||{}).value)||0,
     costo:parseFloat((document.getElementById('new-costo')||{}).value)||0,
     mod:{userId:currentUser.id,userName:currentUser.nombre,emoji:currentUser.emoji,time:nowStr()}};
-  await fbSet('inventario/insumos/'+id,item); fbLog('add','Agrego ins: '+nom);
+  fbSet('inventario/insumos/'+id,item); fbLog('add','Agrego ins: '+nom);
   closeModal('modal-add'); showToast('Insumo agregado');
 };
 
@@ -2071,7 +1435,7 @@ function _buildTurnoForm(pref,prod){
   }
   return h;
 }
-async function guardarTurno(turno){
+function guardarTurno(turno){
   var pref=turno==='manana'?'man':'tar';
   var fecha=hoy(),key=fecha.replace(/-/g,'_'),sp={},hasData=false;
   S.productos.forEach(function(p){
@@ -2084,11 +1448,11 @@ async function guardarTurno(turno){
   var hora=new Date().toLocaleTimeString('es-VE',{hour:'2-digit',minute:'2-digit'});
   var data={fecha:fecha,turno:turno,usuario:currentUser?currentUser.nombre:'',hora:hora,productos:sp,ts:Date.now()};
   if(db){
-    await firebase.database().ref('cierres/'+key+'/'+turno).set(data);
+    firebase.database().ref('cierres/'+key+'/'+turno).set(data);
     for(var pid in sp){var p2=S.productos.find(function(p){return p.id===pid;});
       if(p2){if(sp[pid].entrada)p2.entrada=(p2.entrada||0)+sp[pid].entrada;
         if(sp[pid].salida){p2.salida=(p2.salida||0)+sp[pid].salida;p2.stock=Math.max(0,(p2.stock||0)-sp[pid].salida);}
-        await firebase.database().ref('inventario/productos/'+pid).update({entrada:p2.entrada,salida:p2.salida,stock:p2.stock});}
+        firebase.database().ref('inventario/productos/'+pid).update({entrada:p2.entrada,salida:p2.salida,stock:p2.stock});}
     }
   }
   if(!S.cierres)S.cierres={};if(!S.cierres[key])S.cierres[key]={};S.cierres[key][turno]=data;
@@ -2106,16 +1470,16 @@ function calcDiferencias(){
   });
   showToast('Diferencias calculadas');
 }
-async function guardarConteoSemanal(){
+function guardarConteoSemanal(){
   var fecha=hoy(),key=fecha.replace(/-/g,'_'),ajustes={},hay=false;
   for(var i=0;i<S.productos.length;i++){
     var p=S.productos[i],el2=document.getElementById('cnt-'+p.id);
     if(!el2||el2.value==='')continue;
     p.stock=parseFloat(el2.value)||0; ajustes[p.id]=p.stock; hay=true;
-    if(db) await firebase.database().ref('inventario/productos/'+p.id).update({stock:p.stock});
+    if(db) firebase.database().ref('inventario/productos/'+p.id).update({stock:p.stock});
   }
   if(!hay){showToast('No ingresaste ningun conteo');return;}
-  if(db) await firebase.database().ref('cierres/'+key+'/conteoSemanal').set({fecha:fecha,usuario:currentUser?currentUser.nombre:'',ts:Date.now()});
+  if(db) firebase.database().ref('cierres/'+key+'/conteoSemanal').set({fecha:fecha,usuario:currentUser?currentUser.nombre:'',ts:Date.now()});
   fbLog('cierre','Conteo semanal — '+Object.keys(ajustes).length+' ajustados');
   showToast('Conteo semanal aplicado');renderCierre();
 }
@@ -2181,7 +1545,7 @@ function renderReportes(){
   el.innerHTML=html; checkNotif();
 }
 function updMg(id){var pp=parseFloat((document.getElementById('pr-p-'+id)||{}).value)||0,co=parseFloat((document.getElementById('pr-c-'+id)||{}).value)||0;var el=document.getElementById('mg-'+id);if(!el)return;if(pp>0&&co>0){var m=Math.round(((pp-co)/pp)*100);el.textContent=m+'%';el.className='margen-badge '+(m>=40?'margen-ok':m>=20?'margen-med':'margen-low');}else{el.textContent='--';el.className='margen-badge';}}
-async function guardarPrecios(){for(var i=0;i<S.productos.length;i++){var p=S.productos[i];var ep=document.getElementById('pr-p-'+p.id),ec=document.getElementById('pr-c-'+p.id);if(ep)p.precio=parseFloat(ep.value)||0;if(ec)p.costo=parseFloat(ec.value)||0;if(db)await firebase.database().ref('inventario/productos/'+p.id).update({precio:p.precio,costo:p.costo});}showToast('Precios guardados');}
+function guardarPrecios(){for(var i=0;i<S.productos.length;i++){var p=S.productos[i];var ep=document.getElementById('pr-p-'+p.id),ec=document.getElementById('pr-c-'+p.id);if(ep)p.precio=parseFloat(ep.value)||0;if(ec)p.costo=parseFloat(ec.value)||0;if(db)firebase.database().ref('inventario/productos/'+p.id).update({precio:p.precio,costo:p.costo});}showToast('Precios guardados');}
 function enviarWA(){
   var prod=S.productos,mermas=S.mermas||[];
   var hoyStr2=new Date().toDateString();
@@ -2209,9 +1573,6 @@ function pedirPermisNotificaciones(){if(typeof Notification==='undefined'){showT
 /* ── RESTAURANTE EXPRESS ── */
 
 
-function getProdStock2(pid){var p=S.productos.find(function(x){return x.id===pid;});return p?(p.stock||0):0;}
-function getProdUnidad2(pid){var p=S.productos.find(function(x){return x.id===pid;});return p?(p.unidad||'Kg'):'Kg';}
-function canMakePlato(plato){return plato.ingredientes.length===0||plato.ingredientes.every(function(ing){return getProdStock2(ing.pid)>0;});}
 
 function renderLog(){
   var fLog2='Todos';
@@ -2279,7 +1640,7 @@ window.openAddModal = function(){
   openModal('modal-add');
 };
 
-window.saveNewVivere = async function(){
+window.saveNewVivere = function(){
   var nom=((document.getElementById('new-nombre')||{}).value||'').trim();
   if(!nom){showToast('Escribe el nombre');return;}
   var cat=(document.getElementById('new-cat')||{}).value||'Salsas';
@@ -2292,11 +1653,290 @@ window.saveNewVivere = async function(){
     costo:parseFloat((document.getElementById('new-costo')||{}).value)||0,
     entrada:ent,salida:0,stock:ent,
     mod:{userId:currentUser.id,userName:currentUser.nombre,emoji:currentUser.emoji,time:nowStr()}};
-  await fbSet('inventario/productos/'+id,item);
+  fbSet('inventario/productos/'+id,item);
   fbLog('add','Agrego vivere: '+nom);
   closeModal('modal-add');
   showToast('✅ '+nom+' agregado');
 };
+
+
+/* ── Screen transitions ── */
+function showLogin(){
+  var el=document.getElementById('splash');if(el)el.style.display='none';
+  var el2=document.getElementById('screen-login');if(el2)el2.style.display='flex';
+  var el3=document.getElementById('screen-app');if(el3)el3.style.display='none';
+}
+function showApp(){
+  var el=document.getElementById('splash');if(el)el.style.display='none';
+  var el2=document.getElementById('screen-login');if(el2)el2.style.display='none';
+  var el3=document.getElementById('screen-app');if(el3){el3.style.display='flex';}
+  var bn=document.getElementById('bnav');if(bn)bn.style.display='flex';
+}
+
+/* ── GESTIÓN DE USUARIOS ──────────────────────────────────────────────────── */
+function renderUsuariosMgmt(){
+  var isAdm = currentUser && currentUser.rol === 'admin';
+  var grid = document.getElementById('user-grid-mgmt')||document.getElementById('lista-usuarios-mgmt');
+  if(!grid) return;
+  var users = (S.usuarios && S.usuarios.length > 0) ? S.usuarios : DEF_USUARIOS;
+  if(!users||!users.length){
+    grid.innerHTML='<div style="text-align:center;padding:30px;color:var(--color-text-tertiary)">Sin usuarios registrados</div>';
+    return;
+  }
+  grid.innerHTML = users.map(function(u){
+    var isSelf = currentUser && u.id === currentUser.id;
+    var h='<div style="background:var(--color-background-primary);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;border:1px solid var(--color-border-tertiary);margin-bottom:10px">';
+    h+='<div style="width:48px;height:48px;border-radius:50%;background:'+(u.color||ROL_CLR[u.rol]||'#888')+';display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">'+u.emoji+'</div>';
+    h+='<div style="flex:1"><div style="font-weight:700;font-size:14px">'+u.nombre+(isSelf?' <span style="font-size:10px;color:#888">(tu)</span>':'')+'</div>';
+    h+='<div style="font-size:12px;color:var(--color-text-tertiary);margin-top:2px">'+(ROL_LBL[u.rol]||u.rol)+' &middot; PIN: ****</div></div>';
+    if(isAdm&&!isSelf){
+      h+='<div style="display:flex;flex-direction:column;gap:6px">';
+      h+='<button data-uid="'+u.id+'" onclick="abrirEditUsuario(this.dataset.uid)" style="padding:6px 12px;border-radius:8px;border:none;background:#1F4E79;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Editar</button>';
+      h+='<button data-uid="'+u.id+'" onclick="eliminarUsuario(this.dataset.uid)" style="padding:6px 12px;border-radius:8px;border:none;background:#B71C1C;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Eliminar</button>';
+      h+='</div>';
+    }
+    h+='</div>'; return h;
+  }).join('');
+}
+
+window.abrirEditUsuario = function(id){
+  var u=(S.usuarios||[]).find(function(x){return x.id===id;});
+  if(!u) return;
+  var modal=document.getElementById('modal-add'),title=document.getElementById('modal-add-title'),body=document.getElementById('modal-add-body');
+  if(!modal||!title||!body) return;
+  title.textContent='Editar: '+u.nombre;
+  var rolopts=['admin','supervisor','empleado'].map(function(r){return '<option value="'+r+'"'+(u.rol===r?' selected':'')+'>'+r+'</option>';}).join('');
+  body.innerHTML='<div class="field-col"><div class="flabel">Nombre</div><input class="finput" id="eu-nom" value="'+u.nombre+'"></div>'
+    +'<div class="field-row"><div class="field-col"><div class="flabel">Nuevo PIN (vacío = sin cambio)</div><input class="finput" type="number" id="eu-pin" placeholder="****"></div>'
+    +'<div class="field-col"><div class="flabel">Rol</div><select class="finput" id="eu-rol">'+rolopts+'</select></div></div>'
+    +'<button class="btn-primary" data-uid="'+u.id+'" onclick="guardarEditUsuario(this.dataset.uid)" style="margin-top:12px">Guardar cambios</button>';
+  openModal('modal-add');
+};
+
+window.guardarEditUsuario = function(id){
+  var u=(S.usuarios||[]).find(function(x){return x.id===id;});
+  if(!u) return;
+  var nom=((document.getElementById('eu-nom')||{}).value||'').trim()||u.nombre;
+  var pin=((document.getElementById('eu-pin')||{}).value||'').trim();
+  var rol=(document.getElementById('eu-rol')||{}).value||u.rol;
+  if(pin) u.pin=pin; u.nombre=nom; u.rol=rol;
+  fbSet('inventario/usuarios/'+id,u).then(function(){
+    fbLog('edit','Edito usuario: '+nom); closeModal('modal-add'); showToast('Usuario actualizado'); renderUsuariosMgmt();
+  });
+};
+
+window.eliminarUsuario = function(id){
+  var u=(S.usuarios||[]).find(function(x){return x.id===id;});
+  if(!u||!confirm('Eliminar usuario '+u.nombre+'?')) return;
+  S.usuarios=S.usuarios.filter(function(x){return x.id!==id;});
+  fbRemove('inventario/usuarios/'+id).then(function(){
+    fbLog('del','Elimino: '+u.nombre); showToast('Usuario eliminado'); renderUsuariosMgmt();
+  });
+};
+
+
+
+/* ── LOGIN ────────────────────────────────────────────────────────────────── */
+var _selUserId = null;
+var _pin = '';
+
+window.selUser = function(id){
+  _selUserId = id;
+  _pin = '';
+  /* Highlight selected card */
+  document.querySelectorAll('.user-btn').forEach(function(b){
+    b.classList.remove('selected');
+  });
+  document.querySelectorAll('.user-btn').forEach(function(b){
+    if(b.dataset.uid === id) b.classList.add('selected');
+  });
+  /* Show PIN section */
+  var ps = document.getElementById('pin-section');
+  if(ps) ps.style.display = 'block';
+  /* Update dots */
+  updatePinDots();
+  /* Label */
+  var users = S.usuarios.length > 0 ? S.usuarios : DEF_USUARIOS;
+  var user = users.find(function(u){ return u.id===id; });
+  var lbl = document.querySelector('.pin-label');
+  if(lbl && user) lbl.textContent = 'PIN de ' + user.nombre;
+};
+
+function updatePinDots(){
+  for(var i=0;i<4;i++){
+    var d=document.getElementById('d'+i);
+    if(d) d.className='pin-dot'+(i<_pin.length?' filled':'');
+  }
+}
+
+window.pk = function(digit){
+  if(digit==='del'){
+    _pin=_pin.slice(0,-1);
+    updatePinDots();
+    return;
+  }
+  if(_pin.length>=4) return;
+  _pin+=digit;
+  updatePinDots();
+  if(_pin.length===4){
+    setTimeout(function(){ doLogin(_pin); }, 100);
+  }
+};
+
+function doLogin(pin){
+  if(!_selUserId){ showToast('Selecciona un usuario'); return; }
+  var users = S.usuarios.length > 0 ? S.usuarios : DEF_USUARIOS;
+  var user = users.find(function(u){ return u.id===_selUserId; });
+  if(!user){ showToast('Usuario no encontrado'); _pin=''; updatePinDots(); return; }
+  if(String(user.pin) !== String(pin)){
+    showToast('PIN incorrecto');
+    _pin=''; updatePinDots();
+    return;
+  }
+  /* Login OK */
+  currentUser = user;
+  var pillAv=document.getElementById('pill-av');
+  var pillName=document.getElementById('pill-name');
+  var pillRole=document.getElementById('pill-role');
+  if(pillAv){ pillAv.textContent=user.emoji; pillAv.style.background=user.color||ROL_CLR[user.rol]||'#888'; }
+  if(pillName) pillName.textContent=user.nombre;
+  if(pillRole) pillRole.textContent=ROL_LBL[user.rol]||user.rol;
+  fbLog('login', user.nombre+' inicio sesion');
+  if(typeof pushMissingToFirebase==='function') pushMissingToFirebase();
+  if(typeof applyRoleUI==='function') applyRoleUI();
+  document.body.className='rol-'+(user.rol||'empleado');
+  showApp();
+  goTab('dashboard');
+}
+
+window.logout = function(){
+  if(!confirm('Cerrar sesion de '+((currentUser&&currentUser.nombre)||'')+'?')) return;
+  if(currentUser) fbLog('logout', currentUser.nombre+' cerro sesion');
+  currentUser=null; _selUserId=null; _pin='';
+  document.querySelectorAll('.user-btn').forEach(function(b){b.classList.remove('selected');});
+  var ps=document.getElementById('pin-section');
+  if(ps) ps.style.display='none';
+  updatePinDots();
+  showLogin();
+};
+
+
+function renderLoginUsers(){
+  var grid = document.getElementById('user-grid');
+  if(!grid) return;
+  var users = (S.usuarios && S.usuarios.length > 0) ? S.usuarios : DEF_USUARIOS;
+  grid.innerHTML = users.map(function(u){
+    return '<button class="user-btn" data-uid="'+u.id+'" onclick="selUser(this.dataset.uid)">'
+      +'<div class="user-avatar" style="background:'+(u.color||ROL_CLR[u.rol]||'#888')+'">'+u.emoji+'</div>'
+      +'<div style="font-size:12px;color:#fff;margin-top:6px;font-weight:600">'+u.nombre+'</div>'
+      +'<div class="user-role-badge" style="background:'+(u.color||ROL_CLR[u.rol]||'#888')+'33;color:'+(u.color||ROL_CLR[u.rol]||'#888')+'">'+u.emoji+' '+(ROL_LBL[u.rol]||u.rol)+'</div>'
+      +'</button>';
+  }).join('');
+}
+
+
+
+/* ── Restored missing functions ── */
+
+/* renderDash: see appended block */
+function renderDash(){
+  var p = S.productos;
+  var ins = S.insumos;
+  var mermas = S.mermas||[];
+  var hoy = new Date().toDateString();
+  var mHoy = mermas.filter(function(m){return new Date(m.ts).toDateString()===hoy;});
+  var perdida = mHoy.reduce(function(s,m){return s+(m.perdidaTotal||0);},0);
+  var bajos = p.filter(function(x){return stProd(x)==='reponer';}).length;
+  var totalProd = p.length;
+  var ingresos = p.reduce(function(s,x){return s+((x.salida||0)*(x.precio||0));},0);
+  var vendidos = p.reduce(function(s,x){return s+(x.salida||0);},0);
+  var stockOk = p.filter(function(x){return stProd(x)==='ok';}).length;
+  
+  var fechaEl = document.getElementById('fecha-hoy');
+  if(fechaEl) fechaEl.textContent = new Date().toLocaleDateString('es-VE',{weekday:'long',day:'numeric',month:'long'});
+  
+  var stats = {
+    'INSUMOS': ins.length,
+    'BAJO STOCK': bajos,
+    'VALOR INSUMOS': fmt$(ins.reduce(function(s,i){return s+(i.cant||0)*(i.costo||0);},0)),
+    'STOCK OK': stockOk,
+    'PRODUCTOS': totalProd,
+    'REPONER': bajos,
+    'INGRESO EST.': fmt$(ingresos),
+    'VENDIDOS': vendidos,
+    'MERMAS HOY': mHoy.length,
+    'PERDIDA HOY': fmt$(perdida)
+  };
+  
+  var cards = document.querySelectorAll('.stat-card');
+  cards.forEach(function(card){
+    var lbl = card.querySelector('.stat-label');
+    var val = card.querySelector('.stat-val');
+    if(lbl && val && stats[lbl.textContent.trim()]!==undefined){
+      val.textContent = stats[lbl.textContent.trim()];
+    }
+  });
+  
+  if(typeof maskDashForEmpleado === 'function') maskDashForEmpleado();
+}
+
+function renderMermas(){
+  var el = document.getElementById('mermas-content');
+  if(!el) return;
+  var mermas = S.mermas||[];
+  var hoy = new Date().toDateString();
+  var mHoy = mermas.filter(function(m){return new Date(m.ts).toDateString()===hoy;});
+  var perdida = mHoy.reduce(function(s,m){return s+(m.perdidaTotal||0);},0);
+  var perdidaTotal = mermas.reduce(function(s,m){return s+(m.perdidaTotal||0);},0);
+  
+  var damaged = mermas.filter(function(m){return m.motivo==='danado';}).length;
+  var expired = mermas.filter(function(m){return m.motivo==='vencido';}).length;
+  var accident = mermas.filter(function(m){return m.motivo==='accidente';}).length;
+  
+  var h = '<div class="merma-summary">';
+  h += '<div class="sec-hdr"><span class="sec-ico">📊</span><span class="sec-tit">Resumen de Pérdidas</span></div>';
+  h += '<div class="merma-stat-row"><span>Total registradas</span><span>'+mermas.length+'</span></div>';
+  h += '<div class="merma-stat-row"><span>Registradas hoy</span><span style="color:#C62828">'+mHoy.length+'</span></div>';
+  h += '<div class="merma-stat-row"><span>Pérdida total acumulada</span><span style="color:#C62828">'+fmt$(perdidaTotal)+'</span></div>';
+  h += '<div class="merma-stat-row"><span>Pérdida de hoy</span><span style="color:#C62828">'+fmt$(perdida)+'</span></div>';
+  h += '<div class="merma-stat-row"><span>Dañados / Vencidos / Accidentes</span><span>'+damaged+' / '+expired+' / '+accident+'</span></div>';
+  h += '</div>';
+  
+  h += '<div class="merma-open-btn" onclick="openMermaModal()" style="background:var(--ambar-bg);border:1.5px solid var(--ambar);border-radius:14px;padding:14px;margin:12px 0;cursor:pointer;text-align:center;font-weight:600;color:var(--ambar)">⚠️ Registrar nueva pérdida / merma</div>';
+  
+  h += '<div class="sec-hdr"><span class="sec-ico">📋</span><span class="sec-tit">Historial de Pérdidas</span></div>';
+  
+  var fMerma2 = window._fMerma||'Todos';
+  var items = fMerma2==='Todos' ? mermas : mermas.filter(function(m){return m.userName===fMerma2;});
+  items = items.slice().sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+  
+  var users = ['Todos'].concat(Array.from(new Set(mermas.map(function(m){return m.userName||'';}).filter(Boolean))));
+  h += '<div class="chips" id="chips-mermas">'+users.map(function(u){return '<button class="chip'+(fMerma2===u?' active':'')+'" onclick="setFMerma(this.textContent)">'+u+'</button>';}).join('')+'</div>';
+  
+  if(!items.length){
+    h += '<div class="empty"><div class="empty-ico">✅</div><div class="empty-txt">Sin pérdidas registradas</div></div>';
+  } else {
+    h += items.map(function(m){
+      var ico = m.motivo==='danado'?'🔴':m.motivo==='vencido'?'🟡':'🟠';
+      return '<div class="merma-card"><div class="merma-head"><div class="merma-ico">'+ico+'</div>'
+        +'<div class="merma-inf"><div class="merma-prod">'+(m.itemNombre||'')+'</div>'
+        +'<div class="merma-sub">'+(m.motivo||'')+' · '+(m.cant||0)+' '+(m.itemUnidad||'')+'</div></div>'
+        +'<div class="merma-val" style="color:#C62828">'+fmt$(m.perdidaTotal||0)+'</div></div>'
+        +'<div class="merma-det"><span class="merma-chip">'+(m.tipo||'')+'</span>'
+        +'<span class="merma-chip">'+(m.userName||'')+'</span>'
+        +'<span class="merma-chip">'+(m.fecha||fmtTs(m.ts))+'</span></div></div>';
+    }).join('');
+  }
+  
+  h += '<div id="lista-mermas"></div>';
+  el.innerHTML = h;
+  if(typeof updateMermaItems==='function') updateMermaItems();
+}
+
+window._fMerma = 'Todos';
+window.setFMerma = function(u){ window._fMerma=u; renderMermas(); };
+window.openMermaModal = function(){ openModal('modal-merma'); if(typeof updateMermaItems==='function')updateMermaItems(); };
+
 </script>
 </body>
 </html>
