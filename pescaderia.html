@@ -929,6 +929,9 @@ function subscribeAll(){
   firebase.database().ref('tasas').on('value', function(snap){
     S.tasas = snap.exists() ? snap.val() : {usd:4200, ves:0.001, fecha: hoy()};
   });
+
+  /* Permisos dinámicos */
+  loadPerms();
 }
 
 /* ══ UTILS ════════════════════════════════════════════════════════════════ */
@@ -1183,21 +1186,74 @@ function pushMissingToFirebase(){
 }
 
 /* ── ROLE CONTROL ── */
-var ADMIN_TABS=['dashboard','terminados','viveres','mermas','bitacora','reportes','cierre','historial','usuarios','restaurante','ventas'];
-var SUPERV_TABS=['dashboard','terminados','viveres','mermas','bitacora','reportes','cierre','historial','restaurante','ventas'];
-var EMPLEADO_TABS=['dashboard','terminados','viveres','mermas','restaurante','ventas'];
-function getRoleTabs(){
-  if(!currentUser) return EMPLEADO_TABS;
-  if(currentUser.rol==='admin') return ADMIN_TABS;
-  if(currentUser.rol==='supervisor') return SUPERV_TABS;
-  return EMPLEADO_TABS;
+/* ══ SISTEMA DE PERMISOS DINÁMICOS ══════════════════════════════════════════ */
+
+var DEFAULT_PERMS = {
+  admin: {dashboard:1,terminados:1,viveres:1,mermas:1,bitacora:1,reportes:1,cierre:1,historial:1,usuarios:1,ventas:1},
+  supervisor: {dashboard:1,terminados:1,viveres:1,mermas:1,bitacora:1,reportes:1,cierre:1,historial:1,ventas:1},
+  empleado: {dashboard:1,terminados:1,viveres:1,mermas:1,cierre:1,ventas:1,bitacora:0,reportes:0,historial:0,usuarios:0}
+};
+
+var S_PERMS = JSON.parse(JSON.stringify(DEFAULT_PERMS));
+
+var TAB_LABELS = {
+  dashboard:'🏠 Inicio', terminados:'🛍️ Productos', viveres:'🛒 Víveres',
+  mermas:'⚠️ Mermas', bitacora:'📋 Bitácora', reportes:'📊 Reportes',
+  cierre:'📅 Cierre', historial:'📆 Historial', usuarios:'👥 Usuarios', ventas:'💰 Ventas'
+};
+
+function loadPerms(){
+  if(!db) return;
+  firebase.database().ref('permisos').once('value').then(function(snap){
+    if(snap.exists()){
+      var saved = snap.val();
+      ['admin','supervisor','empleado'].forEach(function(rol){
+        if(saved[rol]) S_PERMS[rol] = Object.assign({}, DEFAULT_PERMS[rol], saved[rol]);
+      });
+    }
+    if(typeof applyRoleUI==='function') applyRoleUI();
+  });
 }
+
+function savePerms(){
+  if(!db) return;
+  firebase.database().ref('permisos').set(S_PERMS).then(function(){
+    showToast('✅ Permisos guardados');
+    if(typeof applyRoleUI==='function') applyRoleUI();
+    if(typeof renderReportes==='function') renderReportes();
+  });
+}
+
+window.togglePerm = function(rol, tab){
+  if(rol === 'admin') { showToast('El Admin siempre tiene acceso completo'); return; }
+  S_PERMS[rol][tab] = S_PERMS[rol][tab] ? 0 : 1;
+  savePerms();
+  var btn = document.getElementById('perm-'+rol+'-'+tab);
+  if(btn){
+    var val = S_PERMS[rol][tab];
+    btn.textContent = val ? '✅' : '❌';
+    btn.style.background = val ? '#C6EFCE' : '#FFCCCC';
+    btn.style.color = val ? '#1E5631' : '#B71C1C';
+  }
+};
+
+var ADMIN_TABS=['dashboard','terminados','viveres','mermas','bitacora','reportes','cierre','historial','usuarios','ventas'];
+var SUPERV_TABS=['dashboard','terminados','viveres','mermas','bitacora','reportes','cierre','historial','ventas'];
+var EMPLEADO_TABS=['dashboard','terminados','viveres','mermas','ventas'];
+
+function getRoleTabs(){
+  var rol = currentUser ? (currentUser.rol||'empleado') : 'empleado';
+  if(rol==='admin') return Object.keys(S_PERMS.admin).filter(function(t){return S_PERMS.admin[t];});
+  if(rol==='supervisor') return Object.keys(S_PERMS.supervisor).filter(function(t){return S_PERMS.supervisor[t];});
+  return Object.keys(S_PERMS.empleado).filter(function(t){return S_PERMS.empleado[t];});
+}
+
 function isEmpleado(){ return currentUser&&currentUser.rol==='empleado'; }
 function applyRoleUI(){
   var allowed=getRoleTabs();
   var navMap={dashboard:'nav-inicio',terminados:'nav-terminados',mermas:'nav-mermas',
     bitacora:'nav-bitacora',viveres:'nav-viveres',reportes:'nav-reportes',
-    cierre:'nav-cierre',historial:'nav-historial',usuarios:'nav-usuarios',restaurante:'nav-restaurante',ventas:'nav-ventas'};
+    cierre:'nav-cierre',historial:'nav-historial',usuarios:'nav-usuarios',ventas:'nav-ventas'};
   Object.keys(navMap).forEach(function(tab){
     var btn=document.getElementById(navMap[tab]);
     if(btn) btn.style.display=allowed.indexOf(tab)!==-1?'flex':'none';
@@ -1610,9 +1666,38 @@ function renderReportes(){
   html+='</div>';
   html+='<div class="rep-card"><div class="rep-title">Reporte WhatsApp</div><button class="wa-btn" onclick="enviarWA()">Generar y enviar por WhatsApp</button></div>';
   if(bajosP.length||bajosE.length){html+='<div class="rep-card"><div class="rep-title">Alertas de stock</div><div style="background:#FFF3CD;border-radius:10px;padding:10px;font-size:12px;color:#856404;margin-bottom:10px">';bajosP.concat(bajosE).slice(0,10).forEach(function(p){html+='• '+p.nombre+': '+(p.stock||0)+' '+p.unidad+' (min '+p.min+')<br>';});html+='</div></div>';}
-  html+='<div class="rep-card"><div class="rep-title">Permisos por rol</div><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:var(--color-background-secondary)"><th style="padding:8px;text-align:left;border-bottom:1px solid var(--color-border-tertiary)">Accion</th><th style="padding:8px;text-align:center;border-bottom:1px solid var(--color-border-tertiary)">Admin</th><th style="padding:8px;text-align:center;border-bottom:1px solid var(--color-border-tertiary)">Supervisor</th><th style="padding:8px;text-align:center;border-bottom:1px solid var(--color-border-tertiary)">Empleado</th></tr></thead><tbody>';
-  [['Ver inventario',1,1,1],['Editar stock',1,1,0],['Registrar merma',1,1,1],['Cierre diario',1,1,0],['Ver historial',1,1,0],['Ver reportes',1,1,0],['Editar precios',1,0,0],['Eliminar items',1,0,0],['Gestionar usuarios',1,0,0]].forEach(function(row,i){html+='<tr style="background:'+(i%2?'var(--color-background-secondary)':'transparent')+'"><td style="padding:8px;border-bottom:1px solid var(--color-border-tertiary);color:var(--color-text-secondary)">'+row[0]+'</td>';[row[1],row[2],row[3]].forEach(function(v){html+='<td style="padding:8px;text-align:center;border-bottom:1px solid var(--color-border-tertiary)"><span style="background:'+(v?'#C6EFCE':'#FFCCCC')+';color:'+(v?'#1E5631':'#B71C1C')+';padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">'+(v?'SI':'NO')+'</span></td>';});html+='</tr>';});
-  html+='</tbody></table></div></div>';
+  var isAdmin = currentUser && currentUser.rol==='admin';
+  html+='<div class="rep-card"><div class="rep-title">🔐 Permisos por Rol</div>';
+  if(isAdmin) html+='<div style="font-size:11px;color:#888;margin-bottom:12px">Toca ✅/❌ para activar o desactivar el acceso. Los cambios aplican de inmediato.</div>';
+  html+='<table style="width:100%;border-collapse:collapse;font-size:12px">';
+  html+='<thead><tr style="background:var(--color-background-secondary)">';
+  html+='<th style="padding:8px;text-align:left;border-bottom:1px solid var(--color-border-tertiary)">Sección</th>';
+  html+='<th style="padding:8px;text-align:center;border-bottom:1px solid var(--color-border-tertiary)">Admin</th>';
+  html+='<th style="padding:8px;text-align:center;border-bottom:1px solid var(--color-border-tertiary)">Supervisor</th>';
+  html+='<th style="padding:8px;text-align:center;border-bottom:1px solid var(--color-border-tertiary)">Empleado</th>';
+  html+='</tr></thead><tbody>';
+  var TABS_ORDER=['dashboard','terminados','viveres','mermas','cierre','ventas','bitacora','reportes','historial','usuarios'];
+  TABS_ORDER.forEach(function(tab,i){
+    var lbl=TAB_LABELS[tab]||tab;
+    html+='<tr style="background:'+(i%2?'var(--color-background-secondary)':'transparent')+'">';
+    html+='<td style="padding:8px;border-bottom:1px solid var(--color-border-tertiary);color:var(--color-text-secondary);font-weight:500">'+lbl+'</td>';
+    ['admin','supervisor','empleado'].forEach(function(rol){
+      var val=S_PERMS[rol][tab]!==undefined?S_PERMS[rol][tab]:(rol==='admin'?1:0);
+      var locked=rol==='admin';
+      html+='<td style="padding:6px;text-align:center;border-bottom:1px solid var(--color-border-tertiary)">';
+      if(isAdmin&&!locked){
+        html+='<button id="perm-'+rol+'-'+tab+'" onclick="togglePerm(\''+rol+'\',\''+tab+'\')" ';
+        html+='style="border:none;cursor:pointer;padding:3px 10px;border-radius:10px;font-size:13px;font-weight:700;background:'+(val?'#C6EFCE':'#FFCCCC')+';color:'+(val?'#1E5631':'#B71C1C')+'">'+( val?'✅':'❌')+'</button>';
+      } else {
+        html+='<span style="background:'+(val?'#C6EFCE':'#FFCCCC')+';color:'+(val?'#1E5631':'#B71C1C')+';padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">'+(val?'SI':'NO')+'</span>';
+      }
+      html+='</td>';
+    });
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  if(isAdmin) html+='<div style="margin-top:10px;font-size:11px;color:#aaa;text-align:center">Los cambios se sincronizan automáticamente con todos los usuarios</div>';
+  html+='</div></div>';
   el.innerHTML=html; checkNotif();
 }
 function updMg(id){var pp=parseFloat((document.getElementById('pr-p-'+id)||{}).value)||0,co=parseFloat((document.getElementById('pr-c-'+id)||{}).value)||0;var el=document.getElementById('mg-'+id);if(!el)return;if(pp>0&&co>0){var m=Math.round(((pp-co)/pp)*100);el.textContent=m+'%';el.className='margen-badge '+(m>=40?'margen-ok':m>=20?'margen-med':'margen-low');}else{el.textContent='--';el.className='margen-badge';}}
