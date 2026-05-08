@@ -420,6 +420,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--negro);color:var(--negro)
     </div>
     <!-- MERMAS -->
     <div id="tab-mermas" class="tab-panel"><div id="mermas-content"></div></div>
+    <!-- VENTAS DIARIAS -->
+    <div id="tab-ventas" class="tab-panel"><div id="ventas-content"></div></div>
     <!-- REPORTES -->
     <div id="tab-reportes" class="tab-panel">
       <div class="sec-hdr">📊 Reportes & <span>Analítica</span></div>
@@ -444,6 +446,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--negro);color:var(--negro)
   <button class="nav-btn" id="nav-insumos" style="display:none!important" onclick="goTab('insumos')"><span class="nav-icon">📦</span><span>Insumos</span></button>
   <button class="nav-btn" id="nav-terminados" onclick="goTab('terminados')"><span class="nav-wrap"><span class="nav-icon">🛍</span><span class="nbadge" id="badge-prod">0</span></span><span>Productos</span></button>
   <button class="nav-btn" id="nav-mermas" onclick="goTab('mermas')"><span class="nav-icon">⚠️</span><span>Mermas</span></button>
+  <button class="nav-btn" id="nav-ventas" onclick="goTab('ventas')"><span class="nav-icon">💰</span><span>Ventas</span></button>
   <button class="nav-btn" id="nav-bitacora" onclick="goTab('bitacora')"><span class="nav-icon">📋</span><span>Bitácora</span></button>
   <button class="nav-btn" id="nav-viveres" onclick="goTab('viveres')"><span class="nav-wrap"><span class="nav-icon">🛒</span><span class="nbadge" id="badge-viv" style="display:none">0</span></span><span>Viveres</span></button>
   <button class="nav-btn" id="nav-reportes" onclick="goTab('reportes')"><span class="nav-icon">📊</span><span>Reportes</span></button>
@@ -734,13 +737,14 @@ function goTab(tab){
   if(tab==='reportes'){if(typeof renderReportes==='function')renderReportes();}
   if(tab==='cierre'){if(typeof renderCierre==='function')renderCierre();}
   if(tab==='historial'){if(typeof renderHistorial==='function')renderHistorial();}
+  if(tab==='ventas'){if(typeof renderVentas==='function')renderVentas();}
   if(tab==='restaurante'){if(typeof renderRestaurante==='function')renderRestaurante();}
   if(tab==='usuarios'){if(typeof renderUsuariosMgmt==='function')renderUsuariosMgmt();}
 }
 
 
 /* ══ ESTADO GLOBAL ══════════════════════════════════════════════════════════ */
-var S = { usuarios:[], insumos:[], productos:[], bitacora:[], mermas:[], cierres:{} };
+var S = { usuarios:[], insumos:[], productos:[], bitacora:[], mermas:[], cierres:{}, ventas:{}, tasas:{usd:4200,ves:0.001,fecha:''} };
 var currentUser = null;
 var currentTab = 'dashboard';
 var listeners = [];
@@ -907,6 +911,18 @@ function subscribeAll(){
     if(currentTab === 'historial' && typeof renderHistorial === 'function') renderHistorial();
     if(currentTab === 'cierre'    && typeof renderCierre    === 'function') renderCierre();
   });
+
+  /* Ventas Diarias */
+  firebase.database().ref('ventas').on('value', function(snap){
+    S.ventas = snap.exists() ? snap.val() : {};
+    if(currentTab === 'ventas' && typeof renderVentas === 'function') renderVentas();
+    if(currentTab === 'dashboard') renderDash();
+  });
+
+  /* Tasas de cambio */
+  firebase.database().ref('tasas').on('value', function(snap){
+    S.tasas = snap.exists() ? snap.val() : {usd:4200, ves:0.001, fecha: hoy()};
+  });
 }
 
 /* ══ UTILS ════════════════════════════════════════════════════════════════ */
@@ -989,6 +1005,7 @@ function goTab(tab){
   if(tab==='cierre'    && typeof renderCierre      === 'function') renderCierre();
   if(tab==='historial' && typeof renderHistorial   === 'function') renderHistorial();
   if(tab==='reportes'  && typeof renderReportes    === 'function') renderReportes();
+  if(tab==='ventas'    && typeof renderVentas      === 'function') renderVentas();
   if(tab==='usuarios'  && typeof renderUsuariosMgmt=== 'function') renderUsuariosMgmt();
 }
 
@@ -1160,9 +1177,9 @@ function pushMissingToFirebase(){
 }
 
 /* ── ROLE CONTROL ── */
-var ADMIN_TABS=['dashboard','terminados','viveres','mermas','bitacora','reportes','cierre','historial','usuarios','restaurante'];
-var SUPERV_TABS=['dashboard','terminados','viveres','mermas','bitacora','reportes','cierre','historial','restaurante'];
-var EMPLEADO_TABS=['dashboard','terminados','viveres','mermas','restaurante'];
+var ADMIN_TABS=['dashboard','terminados','viveres','mermas','bitacora','reportes','cierre','historial','usuarios','restaurante','ventas'];
+var SUPERV_TABS=['dashboard','terminados','viveres','mermas','bitacora','reportes','cierre','historial','restaurante','ventas'];
+var EMPLEADO_TABS=['dashboard','terminados','viveres','mermas','restaurante','ventas'];
 function getRoleTabs(){
   if(!currentUser) return EMPLEADO_TABS;
   if(currentUser.rol==='admin') return ADMIN_TABS;
@@ -1174,7 +1191,7 @@ function applyRoleUI(){
   var allowed=getRoleTabs();
   var navMap={dashboard:'nav-inicio',terminados:'nav-terminados',mermas:'nav-mermas',
     bitacora:'nav-bitacora',viveres:'nav-viveres',reportes:'nav-reportes',
-    cierre:'nav-cierre',historial:'nav-historial',usuarios:'nav-usuarios',restaurante:'nav-restaurante'};
+    cierre:'nav-cierre',historial:'nav-historial',usuarios:'nav-usuarios',restaurante:'nav-restaurante',ventas:'nav-ventas'};
   Object.keys(navMap).forEach(function(tab){
     var btn=document.getElementById(navMap[tab]);
     if(btn) btn.style.display=allowed.indexOf(tab)!==-1?'flex':'none';
@@ -1936,6 +1953,464 @@ function renderMermas(){
 window._fMerma = 'Todos';
 window.setFMerma = function(u){ window._fMerma=u; renderMermas(); };
 window.openMermaModal = function(){ openModal('modal-merma'); if(typeof updateMermaItems==='function')updateMermaItems(); };
+
+/* ══════════════════════════════════════════════════════════════════
+   MÓDULO VENTAS DIARIAS — Pescadería La Fría
+   ══════════════════════════════════════════════════════════════════ */
+
+function fmtCOP(n){
+  return '$\u00a0'+Math.round(n||0).toLocaleString('es-CO');
+}
+
+function getTasas(){
+  return S.tasas || {usd:4200, ves:0.001, fecha:''};
+}
+
+function renderVentas(){
+  var el = document.getElementById('ventas-content');
+  if(!el) return;
+  var tasas = getTasas();
+  var hoyKey = hoy();
+  var registroHoy = (S.ventas && S.ventas[hoyKey]) ? S.ventas[hoyKey] : null;
+
+  var totalVentasHoy = registroHoy ? (registroHoy.totalVentas||0) : 0;
+  var totalGastosHoy = registroHoy ? (registroHoy.totalGastos||0) : 0;
+  var utilidadHoy    = totalVentasHoy - totalGastosHoy;
+
+  var h = '';
+
+  h += '<div class="cierre-card">';
+  h += '<div class="cierre-title">💱 Tasas de Cambio del Día <span style="font-size:10px;color:#888;font-weight:400">'+hoyKey+'</span></div>';
+  h += '<div class="cierre-row"><span class="cierre-label">💵 1 USD = ? COP</span>';
+  h += '<input class="cierre-inp" type="number" id="tasa-usd" value="'+(tasas.usd||4200)+'" min="1" oninput="previewTasas()"></div>';
+  h += '<div class="cierre-row"><span class="cierre-label">🇻🇪 1 Bs = ? COP</span>';
+  h += '<input class="cierre-inp" type="number" id="tasa-ves" value="'+(tasas.ves||0)+'" min="0" step="0.0001" oninput="previewTasas()"></div>';
+  h += '<div style="font-size:11px;color:#888;padding:6px 0 2px">Equivalencias: <span id="tasa-preview">1 USD = $'+Math.round(tasas.usd||4200).toLocaleString('es-CO')+' COP · 1.000 Bs = $'+Math.round((tasas.ves||0)*1000).toLocaleString('es-CO')+ ' COP</span></div>';
+  h += '<button class="btn-cierre" onclick="guardarTasas()">💾 Actualizar Tasas</button>';
+  h += '</div>';
+
+  h += '<div class="kpi-grid">';
+  h += '<div class="kpi-box"><div class="kpi-val" style="color:#1E5631">'+fmtCOP(totalVentasHoy)+'</div><div class="kpi-lbl">VENTAS HOY</div></div>';
+  h += '<div class="kpi-box"><div class="kpi-val" style="color:#B71C1C">'+fmtCOP(totalGastosHoy)+'</div><div class="kpi-lbl">GASTOS HOY</div></div>';
+  h += '<div class="kpi-box" style="grid-column:span 2"><div class="kpi-val" style="color:'+(utilidadHoy>=0?'#1F4E79':'#B71C1C')+'">'+fmtCOP(utilidadHoy)+'</div><div class="kpi-lbl">UTILIDAD HOY</div></div>';
+  h += '</div>';
+
+  h += '<div class="cierre-card">';
+  h += '<div class="cierre-title">📅 Fecha del Cierre</div>';
+  h += '<div class="cierre-row">';
+  h += '<span class="cierre-label">Selecciona el día a registrar</span>';
+  h += '<input type="date" id="fecha-cierre" value="'+hoyKey+'" max="'+hoyKey+'" ';
+  h += 'style="border:1px solid #ddd;border-radius:8px;padding:5px 8px;font-size:13px;font-family:inherit;color:#333" ';
+  h += 'onchange="cambiarFechaCierre(this.value)">';
+  h += '</div>';
+  h += '<div id="aviso-fecha-cierre" style="font-size:11px;color:#E65100;padding:4px 0;display:none">⚠️ Estás registrando un cierre de un día anterior</div>';
+  h += '</div>';
+
+  var fechaCierreKey = window._fechaCierre || hoyKey;
+  var registroDia = (S.ventas && S.ventas[fechaCierreKey]) ? S.ventas[fechaCierreKey] : null;
+  var totalVentasDia = registroDia ? (registroDia.totalVentas||0) : 0;
+  var totalGastosDia = registroDia ? (registroDia.totalGastos||0) : 0;
+
+  h += '<div class="cierre-card">';
+  h += '<div class="cierre-title">💰 Ventas del Día <span id="lbl-fecha-cierre" style="font-size:11px;color:#888;font-weight:400">'+new Date(fechaCierreKey+'T12:00:00').toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long'})+'</span></div>';
+
+  h += '<div style="font-size:11px;font-weight:700;color:#1F4E79;margin:8px 0 4px;text-transform:uppercase;letter-spacing:.5px">💵 Ingresos por Forma de Pago</div>';
+  var formasPago = [
+    {id:'ef_cop',  label:'💴 Efectivo COP',       hint:'en pesos'},
+    {id:'ef_usd',  label:'💵 Efectivo USD',        hint:'en dólares'},
+    {id:'ef_ves',  label:'🇻🇪 Efectivo Bolívares', hint:'en bolívares'},
+    {id:'nequi',   label:'📱 Nequi / Daviplata',   hint:'en pesos'},
+    {id:'bancol',  label:'🏦 Bancolombia',          hint:'en pesos'},
+    {id:'zelle',   label:'💱 Zelle',               hint:'en dólares'},
+    {id:'otros',   label:'🏛️ Otros bancos',         hint:'en pesos'},
+  ];
+  var vDia = registroDia ? (registroDia.ventas||{}) : {};
+  formasPago.forEach(function(fp){
+    h += '<div class="cierre-row">';
+    h += '<span class="cierre-label">'+fp.label+'<br><span style="font-size:10px;color:#aaa">'+fp.hint+'</span></span>';
+    h += '<div style="text-align:right">';
+    h += '<input class="cierre-inp" type="number" min="0" step="100" id="v-'+fp.id+'" value="'+(vDia[fp.id]||0)+'" oninput="calcVentasTotales()" placeholder="0">';
+    if(fp.id==='ef_usd'||fp.id==='zelle'){
+      h += '<div style="font-size:10px;color:#888;margin-top:2px" id="conv-'+fp.id+'">= '+fmtCOP((vDia[fp.id]||0)*(tasas.usd||4200))+'</div>';
+    } else if(fp.id==='ef_ves'){
+      h += '<div style="font-size:10px;color:#888;margin-top:2px" id="conv-'+fp.id+'">= '+fmtCOP((vDia[fp.id]||0)*(tasas.ves||0))+'</div>';
+    }
+    h += '</div></div>';
+  });
+  h += '<div class="cierre-row" style="background:#f0f8f4;border-radius:8px;padding:8px;margin-top:4px">';
+  h += '<span class="cierre-label" style="font-weight:700;color:#1E5631">TOTAL VENTAS (COP)</span>';
+  h += '<span class="cierre-val" id="total-ventas-cop" style="color:#1E5631;font-size:15px">'+fmtCOP(totalVentasDia)+'</span>';
+  h += '</div>';
+
+  h += '<div style="font-size:11px;font-weight:700;color:#B71C1C;margin:14px 0 4px;text-transform:uppercase;letter-spacing:.5px">📊 Gastos del Día</div>';
+  var conceptosGasto = [
+    {id:'insumos',    label:'🥩 Insumos / Compras'},
+    {id:'bebidas',    label:'🍹 Bebidas / Barra'},
+    {id:'empaques',   label:'📦 Empaques'},
+    {id:'nomina',     label:'👷 Nómina del día'},
+    {id:'domicilios', label:'🚗 Domicilios / Moto'},
+    {id:'servicios',  label:'💡 Servicios (luz/agua/gas)'},
+    {id:'aseo',       label:'🧹 Aseo / Limpieza'},
+    {id:'publicidad', label:'📢 Publicidad'},
+    {id:'mant',       label:'🔧 Mantenimiento'},
+    {id:'otros',      label:'💰 Otros gastos'},
+  ];
+  var gDia = registroDia ? (registroDia.gastos||{}) : {};
+  conceptosGasto.forEach(function(g){
+    h += '<div class="cierre-row">';
+    h += '<span class="cierre-label">'+g.label+'</span>';
+    h += '<input class="cierre-inp" type="number" min="0" step="100" id="g-'+g.id+'" value="'+(gDia[g.id]||0)+'" oninput="calcVentasTotales()" placeholder="0">';
+    h += '</div>';
+  });
+  h += '<div class="cierre-row" style="background:#fff5f5;border-radius:8px;padding:8px;margin-top:4px">';
+  h += '<span class="cierre-label" style="font-weight:700;color:#B71C1C">TOTAL GASTOS (COP)</span>';
+  h += '<span class="cierre-val" id="total-gastos-cop" style="color:#B71C1C;font-size:15px">'+fmtCOP(totalGastosDia)+'</span>';
+  h += '</div>';
+
+  h += '<div style="margin-top:12px"><div class="flabel" style="font-size:11px;color:#888;margin-bottom:4px">📝 Observaciones del día (opcional)</div>';
+  h += '<textarea id="v-notas" rows="2" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:10px;font-family:inherit;font-size:12px;resize:none">'+(registroDia?registroDia.notas||'':'')+'</textarea></div>';
+
+  h += '<button class="btn-cierre verde" onclick="guardarVentasDia()" style="margin-top:12px">✅ Guardar Cierre del Día</button>';
+
+  /* Selector de mes para descarga */
+  var ahoraX = new Date();
+  var opcionesMes = '';
+  for(var mx=0; mx<12; mx++){
+    var fechaOp = new Date(ahoraX.getFullYear(), ahoraX.getMonth()-mx, 1);
+    var valOp   = fechaOp.getFullYear()+'-'+String(fechaOp.getMonth()+1).padStart(2,'0');
+    var lblOp   = fechaOp.toLocaleDateString('es-CO',{month:'long',year:'numeric'});
+    opcionesMes += '<option value="'+valOp+'"'+(mx===0?' selected':'')+'>'+lblOp.charAt(0).toUpperCase()+lblOp.slice(1)+'</option>';
+  }
+  h += '<div style="display:flex;gap:8px;margin-top:8px;align-items:center">';
+  h += '<select id="sel-mes-excel" style="flex:1;padding:10px 12px;border:1px solid #ddd;border-radius:10px;font-size:13px;font-family:inherit;background:#fff">'+opcionesMes+'</select>';
+  h += '<button class="btn-cierre" onclick="exportarVentasExcel()" style="margin-top:0;padding:10px 14px;width:auto;background:#1E5631;white-space:nowrap">📥 Descargar Excel</button>';
+  h += '</div>';
+  h += '</div>';
+
+  /* ── Resumen por período ── */
+  h += '<div class="sec-hdr" style="margin-top:4px">📊 Resumen por <span>Período</span></div>';
+  h += '<div class="cierre-card" style="padding:14px">';
+  h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">';
+  h += '<button class="chip active" id="per-btn-semana" onclick="setPeriodo(\'semana\')">Esta semana</button>';
+  h += '<button class="chip" id="per-btn-semana_ant" onclick="setPeriodo(\'semana_ant\')">Semana pasada</button>';
+  h += '<button class="chip" id="per-btn-mes" onclick="setPeriodo(\'mes\')">Este mes</button>';
+  h += '<button class="chip" id="per-btn-custom" onclick="setPeriodo(\'custom\')">Personalizado</button>';
+  h += '</div>';
+  h += '<div id="per-custom-dates" style="display:none;gap:8px;margin-bottom:12px;flex-wrap:wrap">';
+  h += '<div style="flex:1;min-width:120px"><div style="font-size:10px;color:#888;margin-bottom:3px">Desde</div>';
+  h += '<input type="date" id="per-desde" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:8px;font-size:12px;font-family:inherit"></div>';
+  h += '<div style="flex:1;min-width:120px"><div style="font-size:10px;color:#888;margin-bottom:3px">Hasta</div>';
+  h += '<input type="date" id="per-hasta" style="width:100%;padding:7px;border:1px solid #ddd;border-radius:8px;font-size:12px;font-family:inherit"></div>';
+  h += '<button class="btn-cierre" style="margin-top:20px;padding:8px 14px;width:auto" onclick="calcResumenPeriodo()">Ver</button>';
+  h += '</div>';
+  h += '<div id="resumen-periodo-content"></div>';
+  h += '</div>';
+
+  h += '<div class="sec-hdr" style="margin-top:4px">📆 Historial de <span>Cierres</span></div>';
+  var keys = Object.keys(S.ventas||{}).sort().reverse().slice(0,30);
+  if(!keys.length){
+    h += '<div class="empty"><div class="empty-ico">📋</div><div class="empty-txt">Sin registros aún</div></div>';
+  } else {
+    keys.forEach(function(k){
+      var reg = S.ventas[k];
+      var tv = reg.totalVentas||0;
+      var tg = reg.totalGastos||0;
+      var util = tv - tg;
+      h += '<div class="hist-day">';
+      h += '<div class="hist-day-hdr" onclick="this.nextElementSibling.classList.toggle(\'open\')">';
+      h += '<span>📅 '+fmtFecha(k)+'</span>';
+      h += '<span style="color:'+(util>=0?'#a5d6a7':'#ef9a9a')+'">'+fmtCOP(util)+'</span>';
+      h += '</div>';
+      h += '<div class="hist-day-body">';
+      h += '<div class="hist-stat"><span>💰 Total Ventas</span><span style="color:#1E5631;font-weight:700">'+fmtCOP(tv)+'</span></div>';
+      h += '<div class="hist-stat"><span>📊 Total Gastos</span><span style="color:#B71C1C;font-weight:700">'+fmtCOP(tg)+'</span></div>';
+      h += '<div class="hist-stat"><span>💹 Utilidad</span><span style="color:'+(util>=0?'#1F4E79':'#B71C1C')+';font-weight:700">'+fmtCOP(util)+'</span></div>';
+      if(reg.ventas){
+        var vl = reg.ventas;
+        var tasD = reg.tasas||tasas;
+        if(vl.ef_cop)  h += '<div class="hist-stat"><span>💴 Efectivo COP</span><span>'+fmtCOP(vl.ef_cop)+'</span></div>';
+        if(vl.ef_usd)  h += '<div class="hist-stat"><span>💵 Efectivo USD</span><span>USD '+Number(vl.ef_usd).toFixed(2)+' = '+fmtCOP(vl.ef_usd*tasD.usd)+'</span></div>';
+        if(vl.ef_ves)  h += '<div class="hist-stat"><span>🇻🇪 Bolívares</span><span>Bs '+Number(vl.ef_ves).toLocaleString()+' = '+fmtCOP(vl.ef_ves*tasD.ves)+'</span></div>';
+        if(vl.nequi)   h += '<div class="hist-stat"><span>📱 Nequi/Daviplata</span><span>'+fmtCOP(vl.nequi)+'</span></div>';
+        if(vl.bancol)  h += '<div class="hist-stat"><span>🏦 Bancolombia</span><span>'+fmtCOP(vl.bancol)+'</span></div>';
+        if(vl.zelle)   h += '<div class="hist-stat"><span>💱 Zelle</span><span>USD '+Number(vl.zelle).toFixed(2)+' = '+fmtCOP(vl.zelle*tasD.usd)+'</span></div>';
+        if(vl.otros)   h += '<div class="hist-stat"><span>🏛️ Otros bancos</span><span>'+fmtCOP(vl.otros)+'</span></div>';
+      }
+      if(reg.notas) h += '<div class="hist-stat"><span>📝 Notas</span><span style="color:#555;font-style:italic">'+reg.notas+'</span></div>';
+      h += '</div></div>';
+    });
+  }
+
+  el.innerHTML = h;
+  calcVentasTotales();
+  setTimeout(function(){ if(typeof calcResumenPeriodo==='function') calcResumenPeriodo(); }, 50);
+}
+
+var _periodoActual = 'semana';
+
+function setPeriodo(p){
+  _periodoActual = p;
+  document.querySelectorAll('[id^="per-btn-"]').forEach(function(b){ b.classList.remove('active'); });
+  var btn = document.getElementById('per-btn-'+p);
+  if(btn) btn.classList.add('active');
+  var customDiv = document.getElementById('per-custom-dates');
+  if(customDiv) customDiv.style.display = p==='custom' ? 'flex' : 'none';
+  if(p !== 'custom') calcResumenPeriodo();
+}
+
+function calcResumenPeriodo(){
+  var ventas = S.ventas||{};
+  var ahora = new Date();
+  var desde, hasta;
+
+  if(_periodoActual === 'semana'){
+    var diaSem = ahora.getDay();
+    desde = new Date(ahora); desde.setDate(ahora.getDate() - diaSem);
+    hasta = new Date(ahora);
+  } else if(_periodoActual === 'semana_ant'){
+    var diaSem2 = ahora.getDay();
+    hasta = new Date(ahora); hasta.setDate(ahora.getDate() - diaSem2 - 1);
+    desde = new Date(hasta); desde.setDate(hasta.getDate() - 6);
+  } else if(_periodoActual === 'mes'){
+    desde = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+    hasta = new Date(ahora);
+  } else {
+    var desdeEl = document.getElementById('per-desde');
+    var hastaEl = document.getElementById('per-hasta');
+    if(!desdeEl||!hastaEl||!desdeEl.value||!hastaEl.value){ showToast('Elige las fechas'); return; }
+    desde = new Date(desdeEl.value+'T00:00:00');
+    hasta = new Date(hastaEl.value+'T00:00:00');
+  }
+
+  function toKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  var desdeKey = toKey(desde);
+  var hastaKey = toKey(hasta);
+
+  var tot = { ef_cop:0,ef_usd:0,ef_usd_cop:0,ef_ves:0,ef_ves_cop:0,
+              nequi:0,bancol:0,zelle:0,zelle_cop:0,otros:0,
+              totalVentas:0,totalGastos:0,
+              g_insumos:0,g_bebidas:0,g_empaques:0,g_nomina:0,g_domicilios:0,
+              g_servicios:0,g_aseo:0,g_publicidad:0,g_mant:0,g_otros:0,dias:0 };
+
+  Object.keys(ventas).forEach(function(k){
+    if(k < desdeKey || k > hastaKey) return;
+    var reg = ventas[k];
+    var v = reg.ventas||{};
+    var g = reg.gastos||{};
+    var t = reg.tasas||{usd:4200,ves:0.001};
+    tot.ef_cop     += v.ef_cop||0;
+    tot.ef_usd     += v.ef_usd||0;
+    tot.ef_usd_cop += (v.ef_usd||0)*(t.usd||4200);
+    tot.ef_ves     += v.ef_ves||0;
+    tot.ef_ves_cop += (v.ef_ves||0)*(t.ves||0);
+    tot.nequi      += v.nequi||0;
+    tot.bancol     += v.bancol||0;
+    tot.zelle      += v.zelle||0;
+    tot.zelle_cop  += (v.zelle||0)*(t.usd||4200);
+    tot.otros      += v.otros||0;
+    tot.totalVentas+= reg.totalVentas||0;
+    tot.totalGastos+= reg.totalGastos||0;
+    tot.g_insumos  += g.insumos||0;  tot.g_bebidas  += g.bebidas||0;
+    tot.g_empaques += g.empaques||0; tot.g_nomina   += g.nomina||0;
+    tot.g_domicilios+=g.domicilios||0;tot.g_servicios+= g.servicios||0;
+    tot.g_aseo     += g.aseo||0;     tot.g_publicidad+=g.publicidad||0;
+    tot.g_mant     += g.mant||0;     tot.g_otros    += g.otros||0;
+    tot.dias++;
+  });
+
+  var util = tot.totalVentas - tot.totalGastos;
+  var etiqueta = {semana:'Esta semana',semana_ant:'Semana pasada',mes:'Este mes',custom:'Período seleccionado'}[_periodoActual]||'';
+  var subtitulo = desdeKey === hastaKey ? desdeKey : desdeKey+' → '+hastaKey;
+
+  var r = '<div style="font-size:11px;color:#888;margin-bottom:10px">'+etiqueta+' · '+subtitulo+' · <strong>'+tot.dias+' día'+(tot.dias!==1?'s':'')+'</strong></div>';
+
+  r += '<div class="kpi-grid" style="margin-bottom:12px">';
+  r += '<div class="kpi-box"><div class="kpi-val" style="color:#1E5631;font-size:18px">'+fmtCOP(tot.totalVentas)+'</div><div class="kpi-lbl">TOTAL VENTAS</div></div>';
+  r += '<div class="kpi-box"><div class="kpi-val" style="color:#B71C1C;font-size:18px">'+fmtCOP(tot.totalGastos)+'</div><div class="kpi-lbl">TOTAL GASTOS</div></div>';
+  r += '<div class="kpi-box" style="grid-column:span 2"><div class="kpi-val" style="color:'+(util>=0?'#1F4E79':'#B71C1C')+';font-size:18px">'+fmtCOP(util)+'</div><div class="kpi-lbl">UTILIDAD DEL PERÍODO</div></div>';
+  r += '</div>';
+
+  r += '<div style="font-size:11px;font-weight:700;color:#1F4E79;margin:10px 0 6px;text-transform:uppercase;letter-spacing:.5px">💵 Ingresos por Forma de Pago</div>';
+  r += '<div class="cierre-resumen">';
+  if(tot.ef_cop)  r += '<div class="cierre-resumen-row"><span>💴 Efectivo COP</span><span style="font-weight:700">'+fmtCOP(tot.ef_cop)+'</span></div>';
+  if(tot.ef_usd)  r += '<div class="cierre-resumen-row"><span>💵 Efectivo USD</span><span style="font-weight:700">USD '+tot.ef_usd.toFixed(2)+' <span style="color:#888;font-size:10px">= '+fmtCOP(tot.ef_usd_cop)+'</span></span></div>';
+  if(tot.ef_ves)  r += '<div class="cierre-resumen-row"><span>🇻🇪 Bolívares</span><span style="font-weight:700">Bs '+Math.round(tot.ef_ves).toLocaleString('es-CO')+' <span style="color:#888;font-size:10px">= '+fmtCOP(tot.ef_ves_cop)+'</span></span></div>';
+  if(tot.nequi)   r += '<div class="cierre-resumen-row"><span>📱 Nequi / Daviplata</span><span style="font-weight:700">'+fmtCOP(tot.nequi)+'</span></div>';
+  if(tot.bancol)  r += '<div class="cierre-resumen-row"><span>🏦 Bancolombia</span><span style="font-weight:700">'+fmtCOP(tot.bancol)+'</span></div>';
+  if(tot.zelle)   r += '<div class="cierre-resumen-row"><span>💱 Zelle</span><span style="font-weight:700">USD '+tot.zelle.toFixed(2)+' <span style="color:#888;font-size:10px">= '+fmtCOP(tot.zelle_cop)+'</span></span></div>';
+  if(tot.otros)   r += '<div class="cierre-resumen-row"><span>🏛️ Otros bancos</span><span style="font-weight:700">'+fmtCOP(tot.otros)+'</span></div>';
+  r += '<div class="cierre-resumen-row" style="border-top:2px solid #e0d8cc;margin-top:6px;padding-top:6px"><span style="font-weight:700;color:#1E5631">TOTAL VENTAS</span><span style="font-weight:700;color:#1E5631">'+fmtCOP(tot.totalVentas)+'</span></div>';
+  r += '</div>';
+
+  r += '<div style="font-size:11px;font-weight:700;color:#B71C1C;margin:10px 0 6px;text-transform:uppercase;letter-spacing:.5px">📊 Desglose de Gastos</div>';
+  r += '<div class="cierre-resumen">';
+  var gs=[['🥩 Insumos',tot.g_insumos],['🍹 Bebidas',tot.g_bebidas],['📦 Empaques',tot.g_empaques],['👷 Nómina',tot.g_nomina],['🚗 Domicilios',tot.g_domicilios],['💡 Servicios',tot.g_servicios],['🧹 Aseo',tot.g_aseo],['📢 Publicidad',tot.g_publicidad],['🔧 Mantenimiento',tot.g_mant],['💰 Otros',tot.g_otros]];
+  gs.forEach(function(g){ if(g[1]) r += '<div class="cierre-resumen-row"><span>'+g[0]+'</span><span style="font-weight:700;color:#B71C1C">'+fmtCOP(g[1])+'</span></div>'; });
+  r += '<div class="cierre-resumen-row" style="border-top:2px solid #e0d8cc;margin-top:6px;padding-top:6px"><span style="font-weight:700;color:#B71C1C">TOTAL GASTOS</span><span style="font-weight:700;color:#B71C1C">'+fmtCOP(tot.totalGastos)+'</span></div>';
+  r += '</div>';
+
+  if(!tot.dias){
+    r = '<div class="empty"><div class="empty-ico">📭</div><div class="empty-txt">Sin registros en este período</div></div>';
+  }
+
+  var el = document.getElementById('resumen-periodo-content');
+  if(el) el.innerHTML = r;
+}
+
+/* ── Cambio de fecha del cierre ── */
+window._fechaCierre = null;
+
+function cambiarFechaCierre(fecha){
+  window._fechaCierre = fecha;
+  var hoyKey = hoy();
+  var aviso = document.getElementById('aviso-fecha-cierre');
+  if(aviso) aviso.style.display = fecha < hoyKey ? 'block' : 'none';
+  var lbl = document.getElementById('lbl-fecha-cierre');
+  if(lbl) lbl.textContent = new Date(fecha+'T12:00:00').toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long'});
+  var reg = (S.ventas && S.ventas[fecha]) ? S.ventas[fecha] : null;
+  var v = reg ? (reg.ventas||{}) : {};
+  var g = reg ? (reg.gastos||{}) : {};
+  ['ef_cop','ef_usd','ef_ves','nequi','bancol','zelle','otros'].forEach(function(id){
+    var el = document.getElementById('v-'+id);
+    if(el) el.value = v[id]||0;
+  });
+  ['insumos','bebidas','empaques','nomina','domicilios','servicios','aseo','publicidad','mant','otros'].forEach(function(id){
+    var el = document.getElementById('g-'+id);
+    if(el) el.value = g[id]||0;
+  });
+  var notasEl = document.getElementById('v-notas');
+  if(notasEl) notasEl.value = reg ? (reg.notas||'') : '';
+  calcVentasTotales();
+}
+
+function guardarVentasDia(){
+  var fechaGuardar = window._fechaCierre || hoy();
+  var tasas = {
+    usd: parseFloat((document.getElementById('tasa-usd')||{}).value)||S.tasas.usd||4200,
+    ves: parseFloat((document.getElementById('tasa-ves')||{}).value)||S.tasas.ves||0
+  };
+  function v(id){ return parseFloat((document.getElementById(id)||{}).value)||0; }
+  var ventas = {
+    ef_cop:v('v-ef_cop'),ef_usd:v('v-ef_usd'),ef_ves:v('v-ef_ves'),
+    nequi:v('v-nequi'),bancol:v('v-bancol'),zelle:v('v-zelle'),otros:v('v-otros')
+  };
+  var gastos = {
+    insumos:v('g-insumos'),bebidas:v('g-bebidas'),empaques:v('g-empaques'),
+    nomina:v('g-nomina'),domicilios:v('g-domicilios'),servicios:v('g-servicios'),
+    aseo:v('g-aseo'),publicidad:v('g-publicidad'),mant:v('g-mant'),otros:v('g-otros')
+  };
+  var totalVentas = ventas.ef_cop + ventas.ef_usd*tasas.usd + ventas.ef_ves*tasas.ves
+                  + ventas.nequi + ventas.bancol + ventas.zelle*tasas.usd + ventas.otros;
+  var totalGastos = Object.values(gastos).reduce(function(s,x){return s+x;},0);
+  var notas = (document.getElementById('v-notas')||{}).value||'';
+  var registro = {
+    fecha:fechaGuardar, ts:Date.now(), tasas:tasas, ventas:ventas, gastos:gastos,
+    totalVentas:Math.round(totalVentas), totalGastos:Math.round(totalGastos),
+    utilidad:Math.round(totalVentas-totalGastos), notas:notas,
+    creadoPor: currentUser ? currentUser.nombre : 'Sistema',
+    registradoEl: hoy() !== fechaGuardar ? 'Registrado el '+hoy()+' (día anterior)' : ''
+  };
+  fbSet('ventas/'+fechaGuardar, registro).then(function(){
+    var msg = fechaGuardar === hoy() ? '✅ Cierre del día guardado' : '✅ Cierre del '+fechaGuardar+' guardado';
+    showToast(msg);
+    fbLog('add','Cierre '+fechaGuardar+' — Ventas: '+fmtCOP(totalVentas)+' · Gastos: '+fmtCOP(totalGastos));
+  });
+}
+
+function previewTasas(){
+  var usd = parseFloat(document.getElementById('tasa-usd').value)||4200;
+  var ves = parseFloat(document.getElementById('tasa-ves').value)||0;
+  var el = document.getElementById('tasa-preview');
+  if(el) el.textContent = '1 USD = $'+Math.round(usd).toLocaleString('es-CO')+' COP · 1.000 Bs = $'+Math.round(ves*1000).toLocaleString('es-CO')+' COP';
+  calcVentasTotales();
+}
+
+function guardarTasas(){
+  var usd = parseFloat(document.getElementById('tasa-usd').value)||4200;
+  var ves = parseFloat(document.getElementById('tasa-ves').value)||0;
+  fbSet('tasas', {usd:usd, ves:ves, fecha:hoy()});
+  S.tasas = {usd:usd, ves:ves, fecha:hoy()};
+  showToast('✅ Tasas actualizadas');
+  calcVentasTotales();
+}
+
+function calcVentasTotales(){
+  var tasas = {
+    usd: parseFloat((document.getElementById('tasa-usd')||{}).value)||S.tasas.usd||4200,
+    ves: parseFloat((document.getElementById('tasa-ves')||{}).value)||S.tasas.ves||0
+  };
+  function v(id){ return parseFloat((document.getElementById(id)||{}).value)||0; }
+  var ef_usd_cop = v('v-ef_usd')*tasas.usd;
+  var ef_ves_cop = v('v-ef_ves')*tasas.ves;
+  var zelle_cop  = v('v-zelle')*tasas.usd;
+  ['ef_usd','zelle'].forEach(function(id){
+    var el = document.getElementById('conv-'+id);
+    if(el) el.textContent = '= '+fmtCOP(id==='zelle'?zelle_cop:ef_usd_cop);
+  });
+  var elVes = document.getElementById('conv-ef_ves');
+  if(elVes) elVes.textContent = '= '+fmtCOP(ef_ves_cop);
+  var totalVentas = v('v-ef_cop') + ef_usd_cop + ef_ves_cop + v('v-nequi') + v('v-bancol') + zelle_cop + v('v-otros');
+  var totalGastos = v('g-insumos')+v('g-bebidas')+v('g-empaques')+v('g-nomina')+v('g-domicilios')+v('g-servicios')+v('g-aseo')+v('g-publicidad')+v('g-mant')+v('g-otros');
+  var tvEl = document.getElementById('total-ventas-cop');
+  var tgEl = document.getElementById('total-gastos-cop');
+  if(tvEl) tvEl.textContent = fmtCOP(totalVentas);
+  if(tgEl) tgEl.textContent = fmtCOP(totalGastos);
+}
+
+function exportarVentasExcel(){
+  var ventas = S.ventas||{};
+  var tasas  = S.tasas||{usd:4200,ves:0.001};
+
+  var selEl = document.getElementById('sel-mes-excel');
+  var selVal = selEl ? selEl.value : null;
+  var ahora  = new Date();
+  var anioActual, mesActual;
+  if(selVal){
+    var partes = selVal.split('-');
+    anioActual = parseInt(partes[0]);
+    mesActual  = parseInt(partes[1]) - 1;
+  } else {
+    anioActual = ahora.getFullYear();
+    mesActual  = ahora.getMonth();
+  }
+
+  var fechaMes = new Date(anioActual, mesActual, 1);
+  var mes = fechaMes.toLocaleDateString('es-CO',{month:'long',year:'numeric'}).toUpperCase();
+  var dias   = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  var rows = [
+    ['🦐  PESCADERÍA LA FRÍA  —  REGISTRO DIARIO DE VENTAS Y GASTOS  |  '+mes],[],
+    ['VENTAS DIARIAS (COP)','','','','','','','','GASTOS DIARIOS (COP)','','','','','','','','','','RESULTADO'],
+    ['DÍA','SEMANA','💵 Ef. USD (×'+tasas.usd+')','💴 Ef. COP','🇻🇪 Bolívares (×'+tasas.ves+')','📱 Nequi/Daviplata','🏦 Bancolombia','💱 Zelle (×'+tasas.usd+')','🏛️ Otros bancos','TOTAL VENTAS $','','🥩 Insumos','🍹 Bebidas','📦 Empaques','👷 Nómina','🚗 Domicilios','💡 Servicios','🧹 Aseo','📢 Publicidad','🔧 Mant.','💰 Otros','TOTAL GASTOS $','💹 UTILIDAD $','Notas']
+  ];
+  var diasMes = new Date(anioActual, mesActual+1, 0).getDate();
+  var totalVentas=0, totalGastos=0;
+  for(var d=1; d<=diasMes; d++){
+    var fechaKey = anioActual+'-'+String(mesActual+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    var reg = ventas[fechaKey]||null;
+    var diaSem = dias[new Date(anioActual,mesActual,d).getDay()];
+    var vv = reg?(reg.ventas||{}):{};
+    var g  = reg?(reg.gastos||{}):{};
+    var tv = reg?(reg.totalVentas||0):0;
+    var tg = reg?(reg.totalGastos||0):0;
+    totalVentas+=tv; totalGastos+=tg;
+    rows.push([d,diaSem,vv.ef_usd||0,vv.ef_cop||0,vv.ef_ves||0,vv.nequi||0,vv.bancol||0,vv.zelle||0,vv.otros||0,tv,'',g.insumos||0,g.bebidas||0,g.empaques||0,g.nomina||0,g.domicilios||0,g.servicios||0,g.aseo||0,g.publicidad||0,g.mant||0,g.otros||0,tg,tv-tg,reg&&reg.notas?reg.notas:'']);
+  }
+  rows.push([]);
+  rows.push(['TOTALES DEL MES','','','','','','','','',totalVentas,'','','','','','','','','','','',totalGastos,totalVentas-totalGastos,'']);
+  rows.push([]);
+  rows.push(['TASA USD: $'+tasas.usd+' COP/USD  |  TASA Bs: $'+tasas.ves+' COP/Bs']);
+  var csv = rows.map(function(r){
+    return r.map(function(c){var s=String(c===null||c===undefined?'':c);return s.indexOf(',')>-1||s.indexOf('"')>-1?'"'+s.replace(/"/g,'""')+'"':s;}).join(',');
+  }).join('\n');
+  var blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href   = url;
+  a.download = 'PescaderiaLaFria_Ventas_'+mes.replace(/ /g,'_').replace(/\//g,'-')+'.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('📥 Descargando reporte...');
+}
 
 </script>
 </body>
