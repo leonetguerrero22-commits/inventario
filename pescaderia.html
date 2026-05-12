@@ -421,6 +421,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--negro);color:var(--negro)
 
     <div id="tab-bitacora" class="tab-panel">
       <div class="sec-hdr">📋 Registro de <span>Actividad</span></div>
+      <div id="bitacora-vista-btns" style="display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap"></div>
+      <div id="bitacora-vista-content"></div>
       <div class="chips" id="chips-log"></div>
       <div id="lista-log"></div>
     </div>
@@ -1512,8 +1514,14 @@ function renderCierre(){
     h+='<span id="cnt-dif-'+p.id+'" style="min-width:44px;text-align:right;font-size:11px;font-weight:600"></span></div></div>';
   });
   h+='</div>';
-  h+='<button class="btn-cierre" onclick="calcDiferencias()" style="background:#6A1B9A;margin-top:10px">Ver diferencias</button>';
-  h+='<button class="btn-cierre" onclick="guardarConteoSemanal()" style="background:#4A148C;margin-top:6px">Aplicar conteo al inventario</button>';
+  h+='<button class="btn-cierre" onclick="calcDiferenciasV2()" style="background:#6A1B9A;margin-top:10px">📊 Ver diferencias</button>';
+  h+='<div id="conteo-resumen-difs" style="margin-top:8px"></div>';
+  h+='<div id="conteo-pin-wrap" style="display:none;margin-top:8px">';
+  h+='<div style="font-size:12px;font-weight:700;color:#B71C1C;margin-bottom:6px">⚠️ Hay diferencias. Se requiere PIN de Admin para aplicar.</div>';
+  h+='<div style="display:flex;gap:8px"><input type="password" inputmode="numeric" maxlength="4" id="conteo-pin" placeholder="PIN Admin" style="flex:1;padding:10px;border:2px solid #B71C1C;border-radius:10px;font-size:16px;letter-spacing:6px;text-align:center;font-family:inherit">';
+  h+='<button class="btn-cierre" onclick="aplicarConteoConPin()" style="margin-top:0;flex:1;background:#B71C1C;padding:10px">✅ Aprobar y Aplicar</button></div></div>';
+  h+='<button class="btn-cierre" id="btn-aplicar-conteo-libre" onclick="aplicarConteoLibre()" style="background:#4A148C;margin-top:6px;display:none">✅ Aplicar conteo (sin diferencias)</button>';
+  h+='</div></div>';
   h+='</div></div>';
   el.innerHTML=h;
 }
@@ -1586,30 +1594,208 @@ function guardarTurno(turno){
   fbLog('cierre','Turno '+turno+' — '+Object.keys(sp).length+' productos');
   showToast('Turno '+(turno==='manana'?'manana':'tarde')+' guardado');renderCierre();
 }
-function calcDiferencias(){
+/* ══ CONTEO SEMANAL v2 — control + PIN + exportar ══ */
+window._conteoDifs = [];
+
+function calcDiferenciasV2(){
+  window._conteoDifs = [];
+  var sinDatos = true;
   S.productos.forEach(function(p){
-    var el=document.getElementById('cnt-'+p.id),dEl=document.getElementById('cnt-dif-'+p.id);
-    if(!el||!dEl||el.value==='')return;
+    var el=document.getElementById('cnt-'+p.id);
+    var dEl=document.getElementById('cnt-dif-'+p.id);
+    if(!el||el.value==='') return;
+    sinDatos=false;
     var cnt=parseFloat(el.value)||0,sis=p.stock||0,dif=cnt-sis;
-    if(dif===0){dEl.textContent='OK';dEl.style.color='#1E5631';}
-    else if(dif>0){dEl.textContent='+'+dif.toFixed(2);dEl.style.color='#1F4E79';}
-    else{dEl.textContent=dif.toFixed(2);dEl.style.color='#B71C1C';}
+    if(dEl){
+      if(dif===0){dEl.textContent='✅';dEl.style.color='#1E5631';}
+      else if(dif>0){dEl.textContent='+'+dif.toFixed(2);dEl.style.color='#1F4E79';}
+      else{dEl.textContent=dif.toFixed(2);dEl.style.color='#B71C1C';}
+    }
+    window._conteoDifs.push({id:p.id,nombre:p.nombre,unidad:p.unidad,costo:p.costo||0,sistema:sis,contado:cnt,diferencia:dif});
   });
-  showToast('Diferencias calculadas');
-}
-function guardarConteoSemanal(){
-  var fecha=hoy(),key=fecha.replace(/-/g,'_'),ajustes={},hay=false;
-  for(var i=0;i<S.productos.length;i++){
-    var p=S.productos[i],el2=document.getElementById('cnt-'+p.id);
-    if(!el2||el2.value==='')continue;
-    p.stock=parseFloat(el2.value)||0; ajustes[p.id]=p.stock; hay=true;
-    if(db) firebase.database().ref('inventario/productos/'+p.id).update({stock:p.stock});
+  if(sinDatos){showToast('Ingresa al menos un conteo');return;}
+  var conDif=window._conteoDifs.filter(function(d){return d.diferencia!==0;});
+  var sinDif=window._conteoDifs.filter(function(d){return d.diferencia===0;});
+  var resEl=document.getElementById('conteo-resumen-difs');
+  var pinWrap=document.getElementById('conteo-pin-wrap');
+  var btnLibre=document.getElementById('btn-aplicar-conteo-libre');
+  var h='<div style="background:#f8f4ee;border-radius:10px;padding:12px;margin-top:8px">';
+  h+='<div style="font-size:12px;font-weight:700;color:#333;margin-bottom:8px">📊 Resumen del Conteo</div>';
+  h+='<div style="display:flex;gap:8px;margin-bottom:8px">';
+  h+='<div style="flex:1;background:#C6EFCE;border-radius:8px;padding:8px;text-align:center"><div style="font-size:18px;font-weight:700;color:#1E5631">'+sinDif.length+'</div><div style="font-size:10px;color:#1E5631">Sin diferencia</div></div>';
+  h+='<div style="flex:1;background:'+(conDif.length?'#FFCCCC':'#C6EFCE')+';border-radius:8px;padding:8px;text-align:center"><div style="font-size:18px;font-weight:700;color:'+(conDif.length?'#B71C1C':'#1E5631')+'">'+conDif.length+'</div><div style="font-size:10px;color:'+(conDif.length?'#B71C1C':'#1E5631')+'">Con diferencia</div></div>';
+  h+='</div>';
+  if(conDif.length){
+    h+='<div style="font-size:11px;font-weight:700;color:#B71C1C;margin-bottom:6px">⚠️ Productos con diferencia:</div>';
+    conDif.forEach(function(d){
+      var esPos=d.diferencia>0;
+      var valorDif=Math.abs(d.diferencia)*(d.costo||0);
+      h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f0e8e8;font-size:12px">';
+      h+='<span style="flex:1;color:#333">'+d.nombre+'</span>';
+      h+='<span style="color:#888;font-size:10px;margin:0 6px">Sis:'+d.sistema+' Cnt:'+d.contado+'</span>';
+      h+='<span style="font-weight:700;color:'+(esPos?'#1F4E79':'#B71C1C')+'">'+(esPos?'+':'')+d.diferencia.toFixed(2)+' '+d.unidad+'</span>';
+      h+='</div>';
+    });
+    var perdidaTotal=conDif.reduce(function(s,d){return s+Math.abs(d.diferencia)*(d.costo||0);},0);
+    if(perdidaTotal>0) h+='<div style="font-size:12px;font-weight:700;color:#B71C1C;margin-top:6px">Pérdida estimada: '+fmt$(perdidaTotal)+'</div>';
+  } else {
+    h+='<div style="text-align:center;color:#1E5631;font-size:13px;font-weight:600;padding:6px">✅ Inventario cuadra perfectamente</div>';
   }
-  if(!hay){showToast('No ingresaste ningun conteo');return;}
-  if(db) firebase.database().ref('cierres/'+key+'/conteoSemanal').set({fecha:fecha,usuario:currentUser?currentUser.nombre:'',ts:Date.now()});
-  fbLog('cierre','Conteo semanal — '+Object.keys(ajustes).length+' ajustados');
-  showToast('Conteo semanal aplicado');renderCierre();
+  h+='</div>';
+  if(resEl) resEl.innerHTML=h;
+  if(conDif.length>0){if(pinWrap)pinWrap.style.display='block';if(btnLibre)btnLibre.style.display='none';}
+  else{if(pinWrap)pinWrap.style.display='none';if(btnLibre)btnLibre.style.display='block';}
 }
+
+window.aplicarConteoConPin=function(){
+  var pinEl=document.getElementById('conteo-pin');
+  var pin=pinEl?pinEl.value:'';
+  if(!pin){showToast('Ingresa el PIN de Admin');return;}
+  var users=(S.usuarios&&S.usuarios.length>0)?S.usuarios:DEF_USUARIOS;
+  var admin=users.find(function(u){return (u.rol==='admin'||u.rol==='supervisor')&&String(u.pin)===String(pin);});
+  if(!admin){showToast('❌ PIN incorrecto');if(pinEl)pinEl.value='';return;}
+  _ejecutarConteo(admin.nombre);
+};
+
+window.aplicarConteoLibre=function(){
+  _ejecutarConteo(currentUser?currentUser.nombre:'Sistema');
+};
+
+function _ejecutarConteo(aprobadoPor){
+  var fecha=hoy(),key=fecha.replace(/-/g,'_');
+  var difs=window._conteoDifs||[];
+  if(!difs.length){showToast('Primero calcula las diferencias');return;}
+  var conDif=difs.filter(function(d){return d.diferencia!==0;});
+  var ajustes={};
+  /* Snapshot del inventario ANTES de aplicar */
+  var snapshotAntes={};
+  S.productos.forEach(function(p){ snapshotAntes[p.id]={nombre:p.nombre,unidad:p.unidad,stock:p.stock||0,costo:p.costo||0}; });
+  difs.forEach(function(d){
+    var p=S.productos.find(function(x){return x.id===d.id;});
+    if(!p) return;
+    p.stock=d.contado;
+    ajustes[d.id]={nombre:d.nombre,unidad:d.unidad,costo:d.costo||0,stockAntes:d.sistema,stockDespues:d.contado,diferencia:d.diferencia};
+    if(db) firebase.database().ref('inventario/productos/'+p.id).update({stock:d.contado});
+  });
+  var perdidaTotal=conDif.reduce(function(s,d){return s+Math.abs(d.diferencia)*(d.costo||0);},0);
+  var registro={
+    fecha:fecha,ts:Date.now(),
+    usuario:currentUser?currentUser.nombre:'Sistema',
+    aprobadoPor:aprobadoPor,
+    totalProductos:difs.length,
+    conDiferencias:conDif.length,
+    perdidaEstimada:perdidaTotal,
+    ajustes:ajustes,
+    snapshotCompleto:snapshotAntes
+  };
+  if(db) firebase.database().ref('cierres/'+key+'/conteoSemanal').set(registro);
+  var resumen=conDif.map(function(d){return d.nombre+': '+d.sistema+'→'+d.contado+' ('+(d.diferencia>0?'+':'')+d.diferencia.toFixed(2)+' '+d.unidad+')';}).join(' | ');
+  fbLog('cierre','📦 Conteo semanal — '+difs.length+' productos, '+conDif.length+' difs, pérdida: '+fmt$(perdidaTotal)+'. Aprobado: '+aprobadoPor+(resumen?' | '+resumen:''));
+  /* Mostrar modal de exportación */
+  _mostrarExportConteo(registro,aprobadoPor);
+  window._conteoDifs=[];
+}
+
+function _mostrarExportConteo(registro,aprobadoPor){
+  var modal=document.getElementById('modal-add');
+  var title=document.getElementById('modal-add-title');
+  var body=document.getElementById('modal-add-body');
+  if(!modal||!title||!body) return;
+  title.textContent='📦 Conteo Aplicado';
+  var conDif=Object.values(registro.ajustes||{}).filter(function(a){return a.diferencia!==0;});
+  var sinDif=Object.values(registro.ajustes||{}).filter(function(a){return a.diferencia===0;});
+  var h='<div style="background:#e8f5e9;border-radius:10px;padding:12px;margin-bottom:12px">';
+  h+='<div style="font-size:13px;font-weight:700;color:#1E5631;margin-bottom:4px">✅ Conteo aplicado correctamente</div>';
+  h+='<div style="font-size:11px;color:#555">'+registro.fecha+' · Contó: '+registro.usuario+' · Aprobó: '+aprobadoPor+'</div>';
+  h+='<div style="font-size:11px;color:#555;margin-top:2px">'+registro.totalProductos+' productos · '+registro.conDiferencias+' diferencias</div>';
+  if(registro.perdidaEstimada>0) h+='<div style="font-size:12px;font-weight:700;color:#B71C1C;margin-top:4px">Pérdida estimada: '+fmt$(registro.perdidaEstimada)+'</div>';
+  h+='</div>';
+  if(conDif.length){
+    h+='<div style="font-size:11px;font-weight:700;color:#B71C1C;margin-bottom:6px">⚠️ Productos ajustados con diferencia:</div>';
+    conDif.forEach(function(a){
+      var esPos=a.diferencia>0;
+      h+='<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f0ece4;font-size:12px">';
+      h+='<span>'+a.nombre+'</span>';
+      h+='<span style="color:#888;font-size:10px">'+a.stockAntes+'→'+a.stockDespues+' '+a.unidad+'</span>';
+      h+='<span style="font-weight:700;color:'+(esPos?'#1F4E79':'#B71C1C')+'">'+(esPos?'+':'')+a.diferencia.toFixed(2)+' '+a.unidad+'</span>';
+      h+='</div>';
+    });
+  }
+  /* Botones exportar */
+  h+='<div style="display:flex;gap:8px;margin-top:14px">';
+  h+='<button onclick="exportarConteoCSV()" style="flex:1;padding:12px;border-radius:10px;border:none;background:#1E5631;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">📥 Descargar CSV</button>';
+  h+='<button onclick="compartirConteoWA()" style="flex:1;padding:12px;border-radius:10px;border:none;background:#25D366;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">📲 Copiar para WA</button>';
+  h+='</div>';
+  h+='<button onclick="closeModal(\'modal-add\');renderCierre();" style="width:100%;padding:11px;border-radius:10px;border:1px solid #ddd;background:transparent;color:#888;font-size:12px;cursor:pointer;font-family:inherit;margin-top:8px">Cerrar</button>';
+  body.innerHTML=h;
+  /* Guardar registro para exportar */
+  window._ultimoConteo=registro;
+  openModal('modal-add');
+}
+
+window.exportarConteoCSV=function(){
+  var reg=window._ultimoConteo;
+  if(!reg){showToast('Sin datos de conteo');return;}
+  function cell(v){var s=String(v===null||v===undefined?'':v);if(s.indexOf(',')>-1||s.indexOf('"')>-1||s.indexOf('\n')>-1){s='"'+s.split('"').join('""')+'"';}return s;}
+  function row(arr){return arr.map(cell).join(',');}
+  var lines=[];
+  lines.push(row(['DON CAMARON - CONTEO SEMANAL']));
+  lines.push(row(['Fecha:',reg.fecha,'Conto:',reg.usuario,'Aprobo:',reg.aprobadoPor]));
+  lines.push(row(['Total productos:',reg.totalProductos,'Con diferencias:',reg.conDiferencias,'Perdida estimada:',reg.perdidaEstimada||0]));
+  lines.push('');
+  lines.push(row(['PRODUCTO','UNIDAD','SISTEMA','CONTEO','DIFERENCIA','COSTO','VALOR DIF','ESTADO']));
+  var snap=reg.snapshotCompleto||{};var ajustes=reg.ajustes||{};
+  Object.keys(snap).forEach(function(pid){
+    var s=snap[pid];var a=ajustes[pid];
+    var cnt=a?a.stockDespues:s.stock;var dif=a?a.diferencia:0;
+    lines.push(row([s.nombre,s.unidad,s.stock,cnt,dif,s.costo||0,Math.abs(dif)*(s.costo||0),dif===0?'OK':dif>0?'SOBRANTE':'FALTANTE']));
+  });
+  lines.push('');
+  lines.push(row(['PERDIDA TOTAL','','','','','',reg.perdidaEstimada||0,'']));
+  var csv='\uFEFF'+lines.join('\n');
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Conteo_'+reg.fecha+'.csv';a.click();
+  showToast('Descargando...');
+};
+
+window.compartirConteoWA=function(){
+  var reg=window._ultimoConteo;
+  if(!reg){showToast('Sin datos');return;}
+  var conDif=Object.values(reg.ajustes||{}).filter(function(a){return a.diferencia!==0;});
+  var msg='';
+  msg+='[CONTEO SEMANAL - DON CAMARON]\n';
+  msg+='Fecha: '+reg.fecha+'\n';
+  msg+='Conto: '+reg.usuario+'\n';
+  msg+='Aprobo: '+reg.aprobadoPor+'\n\n';
+  msg+='RESUMEN:\n';
+  msg+='- Total productos: '+reg.totalProductos+'\n';
+  msg+='- Sin diferencia: '+(reg.totalProductos-reg.conDiferencias)+'\n';
+  msg+='- Con diferencia: '+reg.conDiferencias+'\n';
+  if(reg.perdidaEstimada>0) msg+='- Perdida estimada: '+fmt$(reg.perdidaEstimada)+'\n';
+  if(conDif.length){
+    msg+='\nPRODUCTOS CON DIFERENCIA:\n';
+    conDif.forEach(function(a){
+      var esPos=a.diferencia>0;
+      msg+='- '+a.nombre+': '+a.stockAntes+' -> '+a.stockDespues+' ('+(esPos?'+':'')+a.diferencia.toFixed(2)+' '+a.unidad+')\n';
+    });
+  } else {
+    msg+='\nInventario cuadra perfectamente.\n';
+  }
+  msg+='\nGenerado por sistema Don Camaron';
+  _fallbackCopy(msg);
+};
+
+function _fallbackCopy(txt){
+  var ta=document.createElement('textarea');
+  ta.value=txt; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{document.execCommand('copy');showToast('📋 Copiado — pégalo en WhatsApp');}catch(e){showToast('No se pudo copiar');}
+  document.body.removeChild(ta);
+}
+
+function calcDiferencias(){calcDiferenciasV2();}
+function guardarConteoSemanal(){showToast('Usa "Ver diferencias" primero');}
+
 
 /* ── HISTORIAL ── */
 function renderHistorial(){
@@ -2496,6 +2682,588 @@ function exportarVentasExcel(){
   a.download='PescaderiaLaFria_Ventas_'+mes.replace(/ /g,'_').replace(/\//g,'-')+'.csv';
   a.click();URL.revokeObjectURL(url);showToast('📥 Descargando reporte...');
 }
+
+
+/* ══════════════════════════════════════════════════════════════════
+   CAMBIO B — Buscador en Descuento Rápido
+   ══════════════════════════════════════════════════════════════════ */
+window.filtrarProductosDQ = function(){
+  var q = (document.getElementById('dq-search')||{}).value||'';
+  var lista = document.getElementById('dq-lista-prods');
+  if(!lista) return;
+  if(!q.trim()){ lista.style.display='none'; return; }
+  var term = q.toLowerCase().trim();
+  var prods = S.productos.filter(function(p){ return p.nombre.toLowerCase().indexOf(term)!==-1; });
+  if(!prods.length){
+    lista.innerHTML='<div style="padding:10px 14px;font-size:12px;color:#888">Sin resultados para "'+q+'"</div>';
+    lista.style.display='block';
+    return;
+  }
+  lista.innerHTML = prods.map(function(p){
+    var stk = p.stock||0;
+    var stkColor = stk<=0?'#B71C1C':stk<=p.min?'#E65100':'#1E5631';
+    return '<div onclick="selProductoDQ(\''+p.id+'\',\''+p.nombre+'\','+stk+',\''+p.unidad+'\')" style="padding:10px 14px;border-bottom:1px solid #f0ece4;cursor:pointer;display:flex;justify-content:space-between;align-items:center">'
+      +'<div><div style="font-size:13px;font-weight:600;color:#222">'+p.nombre+'</div>'
+      +'<div style="font-size:11px;color:#888;margin-top:1px">'+p.cat+'</div></div>'
+      +'<span style="font-size:12px;font-weight:700;color:'+stkColor+'">'+stk+' '+p.unidad+'</span>'
+      +'</div>';
+  }).join('');
+  lista.style.display='block';
+};
+
+window.selProductoDQ = function(pid, nombre, stock, unidad){
+  var hiddenSel = document.getElementById('dq-prod');
+  var display   = document.getElementById('dq-sel-display');
+  var lista     = document.getElementById('dq-lista-prods');
+  var search    = document.getElementById('dq-search');
+  if(hiddenSel) hiddenSel.value = pid;
+  if(display){
+    display.textContent = '✅ '+nombre+' — Stock: '+stock+' '+unidad;
+    display.style.display='block';
+  }
+  if(lista) lista.style.display='none';
+  if(search) search.value = nombre;
+};
+
+/* ══════════════════════════════════════════════════════════════════
+   CAMBIOS C y D — Historial en Bitácora
+   ══════════════════════════════════════════════════════════════════ */
+window._bitacoraVista = 'log'; /* log | producto | dia */
+
+/* ══ BITÁCORA VISTAS — botones arriba, lógica unificada ══ */
+window._bitacoraVista = 'log';
+
+function renderBitacoraVistaBtns(){
+  var el = document.getElementById('bitacora-vista-btns');
+  if(!el) return;
+  var vistas = [
+    {id:'log',     label:'📋 Actividad'},
+    {id:'dia',     label:'📅 Por Día'},
+    {id:'producto',label:'📦 Por Producto'},
+  ];
+  el.innerHTML = vistas.map(function(v){
+    var sel = window._bitacoraVista===v.id;
+    return '<button onclick="setBitacoraVista(\''+v.id+'\')" style="flex:1;min-width:80px;padding:9px 6px;border-radius:10px;border:2px solid '+(sel?'var(--dorado)':'#e0d8cc')+';background:'+(sel?'var(--dorado-bg)':'transparent')+';color:'+(sel?'var(--dorado)':'#888')+';font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">'+v.label+'</button>';
+  }).join('');
+}
+
+window.setBitacoraVista = function(v){
+  window._bitacoraVista = v;
+  renderBitacoraVistaBtns();
+  renderBitacoraVistaContent();
+  /* Mostrar/ocultar lista de log */
+  var logEl  = document.getElementById('lista-log');
+  var chipEl = document.getElementById('chips-log');
+  var show   = v==='log';
+  if(logEl)  logEl.style.display  = show?'':'none';
+  if(chipEl) chipEl.style.display = show?'':'none';
+};
+
+function renderBitacoraVistaContent(){
+  var el = document.getElementById('bitacora-vista-content');
+  if(!el) return;
+  if(window._bitacoraVista==='log'){ el.innerHTML=''; return; }
+  if(window._bitacoraVista==='dia'){ el.innerHTML = renderResumenDiaUI(); return; }
+  if(window._bitacoraVista==='producto'){ el.innerHTML = renderHistorialProductoUI(); return; }
+}
+
+/* ── Historial por Producto ── */
+function renderHistorialProductoUI(){
+  var h = '<div style="font-size:14px;font-weight:700;color:#1F4E79;margin-bottom:10px">📦 Historial por Producto</div>';
+  h += '<div class="search-wrap" style="margin-bottom:8px"><span class="s-ico">🔍</span>';
+  h += '<input type="text" id="hist-prod-search" class="finput" placeholder="Busca el producto..." oninput="filtrarHistProd()" autocomplete="off" style="padding-left:36px"></div>';
+  h += '<div id="hist-prod-lista" style="max-height:180px;overflow-y:auto;border:1px solid #e0d8cc;border-radius:10px;margin-bottom:10px;display:none"></div>';
+  h += '<div class="field-row" style="margin-bottom:10px">';
+  h += '<div class="field-col"><div class="flabel">Desde</div><input type="date" id="hist-desde" class="finput" value="'+getFechaXDiasAtras(30)+'"></div>';
+  h += '<div class="field-col"><div class="flabel">Hasta</div><input type="date" id="hist-hasta" class="finput" value="'+hoy()+'"></div>';
+  h += '</div>';
+  h += '<button onclick="cargarHistorialProducto()" style="width:100%;padding:11px;border-radius:10px;border:none;background:#1F4E79;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:12px">Ver historial</button>';
+  h += '<div style="font-size:11px;color:#aaa;margin-bottom:8px">ℹ️ El historial detallado se acumula desde la activación del nuevo sistema. Para fechas anteriores se muestran los cierres de turno.</div>';
+  h += '<div id="hist-prod-resultado"></div>';
+  return h;
+}
+
+function getFechaXDiasAtras(dias){
+  var d=new Date(); d.setDate(d.getDate()-dias);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+window.filtrarHistProd = function(){
+  var q=(document.getElementById('hist-prod-search')||{}).value||'';
+  var lista=document.getElementById('hist-prod-lista');
+  if(!lista) return;
+  if(!q.trim()){lista.style.display='none';return;}
+  var term=q.toLowerCase();
+  var prods=S.productos.filter(function(p){return p.nombre.toLowerCase().indexOf(term)!==-1;});
+  if(!prods.length){lista.innerHTML='<div style="padding:10px 14px;font-size:12px;color:#888">Sin resultados</div>';lista.style.display='block';return;}
+  lista.innerHTML=prods.map(function(p){
+    return '<div onclick="selHistProd(\''+p.id+'\',\''+p.nombre.replace(/'/g,"\\'")+'\')" style="padding:10px 14px;border-bottom:1px solid #f0ece4;cursor:pointer;font-size:13px;font-weight:600;color:#222">'+p.nombre+' <span style="color:#888;font-size:11px;font-weight:400">— Stock:'+(p.stock||0)+' '+p.unidad+'</span></div>';
+  }).join('');
+  lista.style.display='block';
+};
+
+window.selHistProd = function(pid,nombre){
+  window._histProdId=pid;
+  var lista=document.getElementById('hist-prod-lista');
+  var search=document.getElementById('hist-prod-search');
+  if(lista) lista.style.display='none';
+  if(search) search.value=nombre;
+};
+
+window.cargarHistorialProducto = function(){
+  var pid    = window._histProdId;
+  var desde  = (document.getElementById('hist-desde')||{}).value||getFechaXDiasAtras(30);
+  var hasta  = (document.getElementById('hist-hasta')||{}).value||hoy();
+  var resEl  = document.getElementById('hist-prod-resultado');
+  if(!resEl) return;
+  if(!pid){showToast('Selecciona un producto primero');return;}
+  var prod=S.productos.find(function(p){return p.id===pid;});
+  if(!prod){showToast('Producto no encontrado');return;}
+  resEl.innerHTML='<div style="text-align:center;padding:16px;color:#888">Cargando...</div>';
+  if(!db){resEl.innerHTML='<div style="text-align:center;padding:16px;color:#888">Sin conexión</div>';return;}
+
+  /* Cargar historialInventario + cierres de turno para el rango */
+  var promises=[firebase.database().ref('historialInventario/'+pid).orderByChild('ts').once('value')];
+
+  /* Generar claves de fechas en el rango para leer cierres */
+  var fechas=[];
+  var cur=new Date(desde+'T12:00:00');
+  var fin=new Date(hasta+'T12:00:00');
+  while(cur<=fin){
+    var k=cur.getFullYear()+'-'+String(cur.getMonth()+1).padStart(2,'0')+'-'+String(cur.getDate()).padStart(2,'0');
+    fechas.push(k);
+    cur.setDate(cur.getDate()+1);
+    if(fechas.length>90) break;
+  }
+  fechas.forEach(function(f){
+    promises.push(firebase.database().ref('cierres/'+f.replace(/-/g,'_')).once('value'));
+  });
+
+  Promise.all(promises).then(function(snaps){
+    var registros=[];
+
+    /* Historial directo */
+    if(snaps[0].exists()) snaps[0].forEach(function(c){
+      var r=c.val();
+      if(r.fecha>=desde&&r.fecha<=hasta) registros.push({fecha:r.fecha,hora:r.hora||'',cantidad:r.cantidad,unidad:r.unidad||prod.unidad,motivo:r.motivo||r.origen||'Descuento rápido',usuario:r.usuario||'',stockAntes:r.stockAntes,stockDespues:r.stockDespues,ts:r.ts||0});
+    });
+
+    /* Cierres de turno */
+    snaps.slice(1).forEach(function(snap,i){
+      if(!snap.exists()) return;
+      var fechaCierre=fechas[i];
+      var d=snap.val();
+      ['manana','tarde'].forEach(function(turno){
+        var t=d[turno];
+        if(!t||!t.productos) return;
+        var prods=t.productos;
+        if(prods[pid]){
+          var pr=prods[pid];
+          var sal=pr.salida||pr.sal||0;
+          if(sal>0) registros.push({
+            fecha:fechaCierre,hora:t.hora||'',
+            cantidad:-sal,unidad:prod.unidad,
+            motivo:'Cierre turno '+(turno==='manana'?'mañana':'tarde'),
+            usuario:t.usuario||'',ts:t.ts||0
+          });
+        }
+        /* También buscar en productos por nombre */
+        Object.keys(prods).forEach(function(k){
+          var pr2=prods[k];
+          if((pr2.nombre||'').toLowerCase()===prod.nombre.toLowerCase()&&k!==pid){
+            var sal2=pr2.salida||pr2.sal||0;
+            if(sal2>0) registros.push({
+              fecha:fechaCierre,hora:t.hora||'',
+              cantidad:-sal2,unidad:prod.unidad,
+              motivo:'Cierre turno '+(turno==='manana'?'mañana':'tarde')+' (por nombre)',
+              usuario:t.usuario||'',ts:t.ts||0
+            });
+          }
+        });
+      });
+
+      /* Descuentos rápidos del restaurante guardados en restaurante/log */
+    });
+
+    /* Leer también restaurante/log para descuentos rápidos del producto */
+    var restPromises=fechas.map(function(f){
+      return firebase.database().ref('restaurante/log/'+f.replace(/-/g,'_')).once('value');
+    });
+
+    Promise.all(restPromises).then(function(restSnaps){
+      restSnaps.forEach(function(snap,i){
+        if(!snap.exists()) return;
+        var fechaRest=fechas[i];
+        snap.forEach(function(c){
+          var l=c.val();
+          if(l.tipo==='rapido'&&l.prodId===pid){
+            registros.push({
+              fecha:fechaRest,hora:l.hora||'',
+              cantidad:-(parseFloat(l.cantidad)||0),
+              unidad:l.unidad||prod.unidad,
+              motivo:'Descuento rápido restaurante'+(l.obs?' — '+l.obs:''),
+              usuario:l.usuario||'',ts:l.ts||0
+            });
+          }
+        });
+      });
+
+      /* Deduplicar y ordenar */
+      registros.sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+
+      if(!registros.length){
+        resEl.innerHTML='<div style="text-align:center;padding:20px;color:#888"><div style="font-size:28px;margin-bottom:8px">📭</div>Sin movimientos registrados para <b>'+prod.nombre+'</b><br><span style="font-size:11px;color:#aaa">en el período '+desde+' → '+hasta+'</span></div>';
+        return;
+      }
+
+      var h='<div style="font-size:12px;font-weight:700;color:#1F4E79;margin-bottom:8px">'+registros.length+' movimientos · '+prod.nombre+'</div>';
+      h+='<div style="font-size:11px;font-weight:700;color:#555;margin-bottom:10px">Stock actual: <span style="font-size:15px;color:#1E5631">'+(prod.stock||0)+' '+prod.unidad+'</span></div>';
+      registros.forEach(function(r){
+        var esNeg=r.cantidad<0;
+        var color=esNeg?'#B71C1C':'#1E5631';
+        var signo=esNeg?'':'+';
+        h+='<div style="padding:10px 0;border-bottom:1px solid #f5f0ea;display:flex;justify-content:space-between;align-items:flex-start">';
+        h+='<div style="flex:1"><div style="font-size:12px;font-weight:600;color:#333">'+(r.fecha||'')+(r.hora?' · '+r.hora:'')+'</div>';
+        h+='<div style="font-size:11px;color:#888;margin-top:2px">'+(r.motivo||'—')+(r.usuario?' · '+r.usuario:'')+'</div>';
+        if(r.stockAntes!==undefined&&r.stockDespues!==undefined) h+='<div style="font-size:10px;color:#aaa;margin-top:1px">'+r.stockAntes+' → '+r.stockDespues+' '+prod.unidad+'</div>';
+        h+='</div>';
+        h+='<div style="font-size:14px;font-weight:700;color:'+color+';white-space:nowrap">'+signo+r.cantidad+' '+prod.unidad+'</div>';
+        h+='</div>';
+      });
+      resEl.innerHTML=h;
+    });
+  }).catch(function(e){
+    resEl.innerHTML='<div style="text-align:center;padding:16px;color:#B71C1C">Error: '+e.message+'</div>';
+  });
+};
+
+/* ── Resumen por Día (igual al Historial — lee cierres de turno) ── */
+function renderResumenDiaUI(){
+  var h='<div style="font-size:14px;font-weight:700;color:#1F4E79;margin-bottom:10px">📅 Resumen por Día</div>';
+  h+='<div class="field-col" style="margin-bottom:10px"><div class="flabel">Selecciona el día</div>';
+  h+='<input type="date" id="resdia-fecha" class="finput" value="'+hoy()+'" max="'+hoy()+'"></div>';
+  h+='<button onclick="cargarResumenDia()" style="width:100%;padding:11px;border-radius:10px;border:none;background:#1F4E79;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:12px">Ver resumen del día</button>';
+  h+='<div id="resdia-resultado"></div>';
+  return h;
+}
+
+window.cargarResumenDia = function(){
+  var fecha=(document.getElementById('resdia-fecha')||{}).value||hoy();
+  var resEl=document.getElementById('resdia-resultado');
+  if(!resEl) return;
+  resEl.innerHTML='<div style="text-align:center;padding:16px;color:#888">Cargando...</div>';
+  var fechaKey=fecha.replace(/-/g,'_');
+  var fechaLabel=new Date(fecha+'T12:00:00').toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  if(!db){resEl.innerHTML='<div style="text-align:center;padding:16px;color:#888">Sin conexión</div>';return;}
+
+  var fbKey = fechaKey.replace(/-/g,'_');
+  Promise.all([
+    firebase.database().ref('cierres/'+fbKey).once('value'),
+    firebase.database().ref('restaurante/log/'+fbKey).once('value'),
+  ]).then(function(snaps){
+    var cierre=snaps[0].exists()?snaps[0].val():{};
+    var restLog=[];
+    if(snaps[1].exists()) snaps[1].forEach(function(c){restLog.push(c.val());});
+
+    var h='<div style="font-size:14px;font-weight:700;color:#333;margin-bottom:12px">'+fechaLabel+'</div>';
+
+    /* ── Movimiento del día (ambos turnos) — igual al historial ── */
+    var movTotales={};
+    ['manana','tarde'].forEach(function(turno){
+      var t=cierre[turno];
+      if(!t||!t.productos) return;
+      Object.values(t.productos).forEach(function(p){
+        var sal=p.salida||p.sal||0;
+        if(!sal) return;
+        if(!movTotales[p.nombre]) movTotales[p.nombre]={nombre:p.nombre,unidad:p.unidad||'',total:0};
+        movTotales[p.nombre].total+=sal;
+      });
+    });
+
+    if(Object.keys(movTotales).length){
+      h+='<div style="background:#fff3e0;border-radius:10px;padding:12px;margin-bottom:10px">';
+      h+='<div style="font-size:11px;font-weight:700;color:#E65100;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📦 Movimiento del Día (Ambos Turnos)</div>';
+      Object.values(movTotales).forEach(function(m){
+        h+='<div style="display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid #ffe0b2"><span>'+m.nombre+'</span><span style="font-weight:700;color:#B71C1C">−'+m.total+' '+m.unidad+'</span></div>';
+      });
+      h+='</div>';
+    }
+
+    /* ── Turno Mañana ── */
+    var man=cierre.manana;
+    if(man&&man.productos&&Object.keys(man.productos).length){
+      h+='<div style="background:#e3f2fd;border-radius:10px;padding:12px;margin-bottom:10px">';
+      h+='<div style="font-size:11px;font-weight:700;color:#1565C0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">🌅 Turno Mañana — '+(man.usuario||'')+(man.hora?' '+man.hora:'')+'</div>';
+      Object.values(man.productos).forEach(function(p){
+        var ent=p.entrada||p.ent||0;
+        var sal=p.salida||p.sal||0;
+        h+='<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #bbdefb"><span>'+p.nombre+'</span><span style="color:#555">E:'+ent+' S:'+sal+' '+(p.unidad||'')+'</span></div>';
+      });
+      h+='</div>';
+    }
+
+    /* ── Turno Tarde ── */
+    var tar=cierre.tarde;
+    if(tar&&tar.productos&&Object.keys(tar.productos).length){
+      h+='<div style="background:#e8f5e9;border-radius:10px;padding:12px;margin-bottom:10px">';
+      h+='<div style="font-size:11px;font-weight:700;color:#1B5E20;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">🌙 Turno Tarde — '+(tar.usuario||'')+(tar.hora?' '+tar.hora:'')+'</div>';
+      Object.values(tar.productos).forEach(function(p){
+        var ent=p.entrada||p.ent||0;
+        var sal=p.salida||p.sal||0;
+        h+='<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #c8e6c9"><span>'+p.nombre+'</span><span style="color:#555">E:'+ent+' S:'+sal+' '+(p.unidad||'')+'</span></div>';
+      });
+      h+='</div>';
+    }
+
+    /* ── Restaurante del día — platos ── */
+    var platos=restLog.filter(function(l){return l.tipo==='plato';});
+    if(platos.length){
+      h+='<div style="background:#f3e5f5;border-radius:10px;padding:12px;margin-bottom:10px">';
+      h+='<div style="font-size:11px;font-weight:700;color:#6A1B9A;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">🍽️ Restaurante del Día</div>';
+      h+='<div style="font-size:10px;color:#888;font-weight:600;margin-bottom:4px">PLATOS VENDIDOS</div>';
+      var gP={};
+      platos.forEach(function(l){if(!gP[l.nombre])gP[l.nombre]={nombre:l.nombre,precio:l.precio||0,cantidad:0};gP[l.nombre].cantidad+=l.cantidad||1;});
+      Object.values(gP).forEach(function(p){
+        h+='<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #e9d8fd"><span>'+p.cantidad+'× '+p.nombre+'</span><span style="font-weight:700;color:#6A1B9A">'+fmtCOP(p.precio*p.cantidad)+'</span></div>';
+      });
+      h+='</div>';
+    }
+
+    /* ── Descuentos rápidos del restaurante ── */
+    /* Solo leer restaurante/log con tipo rapido — es donde todos los usuarios guardan */
+    var todosDesc=restLog.filter(function(l){return l.tipo==='rapido';});
+    if(todosDesc.length){
+      h+='<div style="background:#fce4ec;border-radius:10px;padding:12px;margin-bottom:10px">';
+      h+='<div style="font-size:11px;font-weight:700;color:#880E4F;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">⚡ Descuentos Rápidos</div>';
+      var gD={};
+      todosDesc.forEach(function(d){var k=d.nombre;if(!gD[k])gD[k]={nombre:k,unidad:d.unidad||'',total:0};gD[k].total+=parseFloat(d.cantidad)||0;});
+      Object.values(gD).forEach(function(d){
+        h+='<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #f8bbd0"><span>'+d.nombre+'</span><span style="font-weight:700;color:#B71C1C">−'+d.total+' '+d.unidad+'</span></div>';
+      });
+      h+='</div>';
+    }
+
+    /* ── Ventas del día ── */
+    var regVentas=S.ventas&&S.ventas[fecha];
+    if(regVentas){
+      h+='<div style="background:#e8f5e9;border-radius:10px;padding:12px;margin-bottom:10px">';
+      h+='<div style="font-size:11px;font-weight:700;color:#1E5631;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">💰 Cierre de Ventas</div>';
+      h+='<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0"><span>Total ventas</span><span style="font-weight:700;color:#1F4E79">'+fmtCOP(regVentas.ventaBruta||0)+'</span></div>';
+      h+='<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0"><span>Total ingresos</span><span style="font-weight:700;color:#1E5631">'+fmtCOP(regVentas.totalVentas||0)+'</span></div>';
+      h+='<div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0"><span>Total gastos</span><span style="font-weight:700;color:#B71C1C">'+fmtCOP(regVentas.totalGastos||0)+'</span></div>';
+      if(regVentas.creadoPor) h+='<div style="font-size:10px;color:#888;margin-top:4px">Registrado por: '+regVentas.creadoPor+'</div>';
+      h+='</div>';
+    }
+
+    /* ── Mermas ── */
+    var mermasD=(S.mermas||[]).filter(function(m){return m.fecha===fecha||new Date(m.ts||0).toISOString().split('T')[0]===fecha;});
+    if(mermasD.length){
+      h+='<div style="background:#ffebee;border-radius:10px;padding:12px;margin-bottom:10px">';
+      h+='<div style="font-size:11px;font-weight:700;color:#B71C1C;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">⚠️ Mermas del Día</div>';
+      mermasD.forEach(function(m){
+        h+='<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #ffcdd2"><span>'+m.itemNombre+' <span style="color:#aaa;font-size:10px">'+m.motivo+'</span></span><span style="font-weight:700;color:#B71C1C">'+m.cant+' '+(m.itemUnidad||'')+'</span></div>';
+      });
+      var perdidaD=mermasD.reduce(function(s,m){return s+(m.perdidaTotal||0);},0);
+      h+='<div style="font-size:12px;font-weight:700;padding:5px 0;color:#B71C1C">Pérdida estimada: '+fmt$(perdidaD)+'</div>';
+      h+='</div>';
+    }
+
+    if(!Object.keys(movTotales).length&&!platos.length&&!todosDesc.length&&!regVentas&&!mermasD.length){
+      h+='<div style="text-align:center;padding:20px;color:#888"><div style="font-size:28px;margin-bottom:8px">📭</div>Sin registros para este día</div>';
+    }
+
+    resEl.innerHTML=h;
+  }).catch(function(e){
+    resEl.innerHTML='<div style="text-align:center;padding:16px;color:#B71C1C">Error: '+e.message+'</div>';
+  });
+};
+
+/* ── Inicializar bitácora al entrar a la pestaña ── */
+(function patchBitacora(){
+  var _origGoTab=window.goTab;
+  if(!_origGoTab) return;
+  window.goTab=function(tab){
+    _origGoTab(tab);
+    if(tab==='bitacora'){
+      setTimeout(function(){
+        window._bitacoraVista=window._bitacoraVista||'log';
+        renderBitacoraVistaBtns();
+        renderBitacoraVistaContent();
+        /* Mostrar log por defecto */
+        var logEl=document.getElementById('lista-log');
+        var chipEl=document.getElementById('chips-log');
+        if(logEl) logEl.style.display=window._bitacoraVista==='log'?'':'none';
+        if(chipEl) chipEl.style.display=window._bitacoraVista==='log'?'':'none';
+      },200);
+    }
+  };
+})();
+
+
+
+window.abrirEditorDiaAnterior = function(){
+  /* Solo admin puede usar esto */
+  if(!currentUser || (currentUser.rol !== 'admin' && currentUser.rol !== 'supervisor')){
+    showToast('⚠️ Solo el administrador puede editar días anteriores');
+    return;
+  }
+
+  var modal = document.getElementById('modal-add');
+  var title = document.getElementById('modal-add-title');
+  var body  = document.getElementById('modal-add-body');
+  if(!modal||!title||!body) return;
+
+  title.textContent = '✏️ Editar Día Anterior';
+
+  var h = '<div style="font-size:12px;color:#888;margin-bottom:14px">Solo Admin · Cada cambio queda en bitácora con fecha y usuario</div>';
+
+  /* Selector de fecha */
+  h += '<div class="field-col" style="margin-bottom:12px"><div class="flabel">📅 Selecciona el día a editar</div>';
+  h += '<input type="date" id="edit-dia-fecha" class="finput" max="'+hoy()+'" value="'+hoy()+'" onchange="cargarDiaAnterior(this.value)">';
+  h += '</div>';
+  h += '<div id="edit-dia-content" style="margin-top:12px"><div style="text-align:center;color:#aaa;padding:20px;font-size:13px">Selecciona una fecha para ver sus registros</div></div>';
+
+  body.innerHTML = h;
+  openModal('modal-add');
+};
+
+window.cargarDiaAnterior = function(fecha){
+  if(!fecha){ return; }
+  var el = document.getElementById('edit-dia-content');
+  if(!el) return;
+
+  var reg = (S.ventas && S.ventas[fecha]) ? S.ventas[fecha] : null;
+  var v = reg ? (reg.ventas||{}) : {};
+  var g = reg ? (reg.gastos||{}) : {};
+  var fechaLabel = new Date(fecha+'T12:00:00').toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  var h = '<div style="font-size:13px;font-weight:700;color:#1F4E79;margin-bottom:12px">'+fechaLabel+'</div>';
+
+  if(!reg){
+    h += '<div style="background:#fff3e0;border-radius:10px;padding:10px 12px;font-size:12px;color:#E65100;margin-bottom:12px">⚠️ No hay registros para este día. Se creará uno nuevo.</div>';
+  } else {
+    h += '<div style="background:#e8f5e9;border-radius:10px;padding:10px 12px;font-size:12px;color:#1E5631;margin-bottom:12px">✅ Registro existente — Creado por: '+(reg.creadoPor||'—')+(reg.registradoEl?' · '+reg.registradoEl:'')+'</div>';
+  }
+
+  /* Ventas */
+  h += '<div style="font-size:11px;font-weight:700;color:#1F4E79;margin-bottom:8px;text-transform:uppercase">💵 Ingresos</div>';
+  var formasPago = [
+    {id:'eda-ef_cop',  label:'💴 Efectivo COP',       val:v.ef_cop||0},
+    {id:'eda-ef_usd',  label:'💵 Efectivo USD',        val:v.ef_usd||0},
+    {id:'eda-ef_ves',  label:'🇻🇪 Bolívares',          val:v.ef_ves||0},
+    {id:'eda-nequi',   label:'📱 Nequi/Daviplata',     val:v.nequi||0},
+    {id:'eda-bancol',  label:'🏦 Bancolombia',         val:v.bancol||0},
+    {id:'eda-zelle',   label:'💱 Zelle',               val:v.zelle||0},
+    {id:'eda-otros',   label:'🏛️ Otros bancos',        val:v.otros||0},
+  ];
+  formasPago.forEach(function(fp){
+    h += '<div class="cierre-row"><span class="cierre-label">'+fp.label+'</span>';
+    h += '<input class="cierre-inp" type="number" min="0" step="1000" id="'+fp.id+'" value="'+fp.val+'"></div>';
+  });
+
+  /* Gastos */
+  h += '<div style="font-size:11px;font-weight:700;color:#B71C1C;margin:14px 0 8px;text-transform:uppercase">📊 Gastos</div>';
+  var gastos = [
+    {id:'eda-g-insumos',    label:'🥩 Insumos',      val:g.insumos||0},
+    {id:'eda-g-bebidas',    label:'🍹 Bebidas',       val:g.bebidas||0},
+    {id:'eda-g-empaques',   label:'📦 Empaques',      val:g.empaques||0},
+    {id:'eda-g-nomina',     label:'👷 Nómina',        val:g.nomina||0},
+    {id:'eda-g-domicilios', label:'🚗 Domicilios',    val:g.domicilios||0},
+    {id:'eda-g-servicios',  label:'💡 Servicios',     val:g.servicios||0},
+    {id:'eda-g-aseo',       label:'🧹 Aseo',          val:g.aseo||0},
+    {id:'eda-g-publicidad', label:'📢 Publicidad',    val:g.publicidad||0},
+    {id:'eda-g-mant',       label:'🔧 Mantenimiento', val:g.mant||0},
+    {id:'eda-g-otros',      label:'💰 Otros gastos',  val:g.otros||0},
+  ];
+  gastos.forEach(function(gx){
+    h += '<div class="cierre-row"><span class="cierre-label">'+gx.label+'</span>';
+    h += '<input class="cierre-inp" type="number" min="0" step="1000" id="'+gx.id+'" value="'+gx.val+'"></div>';
+  });
+
+  /* Motivo de edición */
+  h += '<div style="margin-top:12px"><div class="flabel">📝 Motivo de la edición (requerido)</div>';
+  h += '<input class="finput" id="eda-motivo" placeholder="Ej: Se olvidó registrar el efectivo del cierre" style="margin-top:4px"></div>';
+
+  /* Botón guardar */
+  h += '<button class="btn-primary" style="margin-top:14px;background:#1F4E79" onclick="guardarEdicionDia(\''+fecha+'\')">💾 Guardar Edición del Día</button>';
+  h += '<div style="font-size:10px;color:#aaa;text-align:center;margin-top:8px">Esta edición quedará registrada en bitácora con tu usuario y la hora exacta</div>';
+
+  el.innerHTML = h;
+};
+
+window.guardarEdicionDia = function(fecha){
+  var motivo = (document.getElementById('eda-motivo')||{}).value||'';
+  if(!motivo.trim()){ showToast('⚠️ Debes ingresar el motivo de la edición'); return; }
+
+  function v(id){ return parseFloat((document.getElementById(id)||{}).value)||0; }
+
+  var ventas = {
+    ef_cop:v('eda-ef_cop'), ef_usd:v('eda-ef_usd'), ef_ves:v('eda-ef_ves'),
+    nequi:v('eda-nequi'),   bancol:v('eda-bancol'),  zelle:v('eda-zelle'),
+    otros:v('eda-otros')
+  };
+  var gastos = {
+    insumos:v('eda-g-insumos'),    bebidas:v('eda-g-bebidas'),
+    empaques:v('eda-g-empaques'),  nomina:v('eda-g-nomina'),
+    domicilios:v('eda-g-domicilios'), servicios:v('eda-g-servicios'),
+    aseo:v('eda-g-aseo'),          publicidad:v('eda-g-publicidad'),
+    mant:v('eda-g-mant'),          otros:v('eda-g-otros')
+  };
+
+  var tasas = S.tasas||{usd:4200,ves:0.001};
+  var totalVentas = ventas.ef_cop + ventas.ef_usd*tasas.usd + ventas.ef_ves*tasas.ves
+                  + ventas.nequi + ventas.bancol + ventas.zelle*tasas.usd + ventas.otros;
+  var totalGastos = Object.values(gastos).reduce(function(s,x){ return s+x; }, 0);
+
+  var regActual = (S.ventas && S.ventas[fecha]) || {};
+  var registro = Object.assign({}, regActual, {
+    fecha: fecha,
+    ventas: ventas,
+    gastos: gastos,
+    totalVentas: Math.round(totalVentas),
+    totalGastos: Math.round(totalGastos),
+    utilidad: Math.round(totalVentas - totalGastos),
+    ultimaEdicion: {
+      fecha: hoy(),
+      hora: new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'}),
+      usuario: currentUser ? currentUser.nombre : '—',
+      motivo: motivo,
+      ts: Date.now()
+    }
+  });
+
+  fbSet('ventas/'+fecha, registro).then(function(){
+    fbLog('edit', '✏️ Edición día anterior: '+fecha+' — Motivo: '+motivo+' — Admin: '+(currentUser?currentUser.nombre:''));
+    showToast('✅ Día '+fecha+' actualizado correctamente');
+    closeModal('modal-add');
+  }).catch(function(e){
+    showToast('❌ Error al guardar: '+e.message);
+  });
+};
+
+/* Agregar botón "Editar día anterior" en la vista de ventas (solo admin) */
+(function agregarBtnEditarDia(){
+  var _rv = typeof renderVentas==='function' ? window.renderVentas : null;
+  if(!_rv) return;
+  window.renderVentas = function(){
+    _rv();
+    setTimeout(function(){
+      /* Solo mostrar si es admin o supervisor */
+      if(!currentUser) return;
+      if(currentUser.rol !== 'admin' && currentUser.rol !== 'supervisor') return;
+      var el = document.getElementById('ventas-content');
+      if(!el) return;
+      /* Agregar botón al final si no existe */
+      if(el.querySelector('#btn-editar-dia-ant')) return;
+      var btn = document.createElement('button');
+      btn.id = 'btn-editar-dia-ant';
+      btn.style.cssText = 'width:100%;padding:13px;border-radius:12px;border:2px dashed #1F4E79;background:transparent;color:#1F4E79;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px';
+      btn.innerHTML = '✏️ Editar / Corregir día anterior (Admin)';
+      btn.onclick = window.abrirEditorDiaAnterior;
+      el.appendChild(btn);
+    }, 300);
+  };
+})();
 
 </script>
 </body>
