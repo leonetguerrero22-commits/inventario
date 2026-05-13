@@ -143,8 +143,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--negro);color:var(--negro)
 .tab-panel.active{display:block;animation:fadeIn .2s ease;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
 
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--negro);display:flex;padding:10px 0 max(14px,env(safe-area-inset-bottom));border-top:1px solid #222;z-index:200;}
-.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;color:#444;font-family:'DM Sans',sans-serif;font-size:9px;font-weight:600;letter-spacing:.5px;padding:3px 0;transition:color .2s;text-transform:uppercase;}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--negro);display:flex;overflow-x:auto;overflow-y:hidden;padding:10px 0 max(14px,env(safe-area-inset-bottom));border-top:1px solid #222;z-index:200;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+.bottom-nav::-webkit-scrollbar{display:none;}
+.nav-btn{flex:0 0 auto;min-width:58px;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;color:#444;font-family:'DM Sans',sans-serif;font-size:9px;font-weight:600;letter-spacing:.5px;padding:3px 0;transition:color .2s;text-transform:uppercase;}
 .nav-btn.active{color:var(--dorado);}
 .nav-icon{font-size:19px;line-height:1;}
 .nav-wrap{position:relative;display:inline-block;}
@@ -2994,6 +2995,7 @@ window.cargarResumenDia = function(){
     if(man&&man.productos&&Object.keys(man.productos).length){
       h+='<div style="background:#e3f2fd;border-radius:10px;padding:12px;margin-bottom:10px">';
       h+='<div style="font-size:11px;font-weight:700;color:#1565C0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">🌅 Turno Mañana — '+(man.usuario||'')+(man.hora?' '+man.hora:'')+'</div>';
+      if(currentUser&&(currentUser.rol==='admin'||currentUser.rol==='supervisor'))h+='<button onclick="abrirMoverCierre(\''+k+'\',\'manana\')\" style="font-size:10px;padding:3px 9px;margin:4px 0 6px;border-radius:6px;border:1px solid #E65100;background:transparent;color:#E65100;cursor:pointer">📅 Mover a otra fecha</button>';
       Object.values(man.productos).forEach(function(p){
         var ent=p.entrada||p.ent||0;
         var sal=p.salida||p.sal||0;
@@ -3007,6 +3009,7 @@ window.cargarResumenDia = function(){
     if(tar&&tar.productos&&Object.keys(tar.productos).length){
       h+='<div style="background:#e8f5e9;border-radius:10px;padding:12px;margin-bottom:10px">';
       h+='<div style="font-size:11px;font-weight:700;color:#1B5E20;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">🌙 Turno Tarde — '+(tar.usuario||'')+(tar.hora?' '+tar.hora:'')+'</div>';
+      if(currentUser&&(currentUser.rol==='admin'||currentUser.rol==='supervisor'))h+='<button onclick="abrirMoverCierre(\''+k+'\',\'tarde\')\" style="font-size:10px;padding:3px 9px;margin:4px 0 6px;border-radius:6px;border:1px solid #1B5E20;background:transparent;color:#1B5E20;cursor:pointer">📅 Mover a otra fecha</button>';
       Object.values(tar.productos).forEach(function(p){
         var ent=p.entrada||p.ent||0;
         var sal=p.salida||p.sal||0;
@@ -3265,6 +3268,108 @@ window.guardarEdicionDia = function(fecha){
   };
 })();
 
+
+window.abrirMoverCierre = function(fechaOrigen, turno) {
+  if(!currentUser || (currentUser.rol !== 'admin' && currentUser.rol !== 'supervisor')) {
+    showToast('Solo el administrador puede mover cierres'); return;
+  }
+  var modal = document.getElementById('modal-add');
+  var title = document.getElementById('modal-add-title');
+  var body  = document.getElementById('modal-add-body');
+  if(!modal||!title||!body) return;
+  title.textContent = '📅 Mover Cierre a Otra Fecha';
+
+  var turnoLabel = turno === 'manana' ? 'Turno Mañana' : 'Turno Tarde';
+  var cierre = S.cierres && S.cierres[fechaOrigen.replace(/-/g,'_')];
+  var datosTurno = cierre ? cierre[turno] : null;
+
+  var h = '';
+  h += '<div style="background:#fff3e0;border-radius:10px;padding:12px;margin-bottom:14px;border:1px solid #E65100">';
+  h += '<div style="font-size:12px;font-weight:700;color:#E65100;margin-bottom:4px">⚠️ '+turnoLabel+' del '+fechaOrigen+'</div>';
+  h += '<div style="font-size:11px;color:#555">Este cierre se moverá a la fecha que selecciones. La fecha original quedará sin ese turno.</div>';
+  h += '</div>';
+
+  if(datosTurno) {
+    h += '<div style="font-size:11px;color:#888;margin-bottom:10px">Usuario: <b>'+(datosTurno.usuario||'—')+'</b> · Hora: '+(datosTurno.hora||'—')+'</div>';
+    var prods = Object.values(datosTurno.productos||{}).slice(0,4);
+    if(prods.length) {
+      h += '<div style="font-size:11px;color:#888;margin-bottom:10px">Productos: '+prods.map(function(p){return p.nombre+' (S:'+( p.salida||p.sal||0)+')'}).join(', ')+(Object.keys(datosTurno.productos||{}).length>4?'...':'')+'</div>';
+    }
+  }
+
+  h += '<div class="field-col" style="margin-bottom:12px"><div class="flabel">Mover a la fecha correcta</div>';
+  h += '<input type="date" id="mc-fecha-dest" class="finput" value="'+hoy()+'" max="'+hoy()+'">';
+  h += '</div>';
+  h += '<div class="field-col" style="margin-bottom:12px"><div class="flabel">Motivo (requerido)</div>';
+  h += '<input class="finput" id="mc-motivo" placeholder="Ej: Cierre del turno tarde del 12 guardado por error en el 13">';
+  h += '</div>';
+  h += '<button class="btn-primary" style="background:#1F4E79" onclick="ejecutarMoverCierre(\''+fechaOrigen+'\',\''+turno+'\')">📅 Confirmar y Mover</button>';
+  h += '<button class="btn-primary" style="background:transparent;border:1px solid #ddd;color:#888;margin-top:6px" onclick="closeModal(\'modal-add\')">Cancelar</button>';
+
+  body.innerHTML = h;
+  openModal('modal-add');
+};
+
+window.ejecutarMoverCierre = function(fechaOrigen, turno) {
+  var fechaDest = (document.getElementById('mc-fecha-dest')||{}).value;
+  var motivo    = (document.getElementById('mc-motivo')||{}).value||'';
+  if(!fechaDest) { showToast('Selecciona la fecha destino'); return; }
+  if(!motivo.trim()) { showToast('Ingresa el motivo'); return; }
+  if(fechaDest === fechaOrigen) { showToast('La fecha destino debe ser diferente'); return; }
+
+  var keyOrig = fechaOrigen.replace(/-/g,'_');
+  var keyDest = fechaDest.replace(/-/g,'_');
+
+  var cierre = S.cierres && S.cierres[keyOrig];
+  var datosTurno = cierre ? cierre[turno] : null;
+  if(!datosTurno) { showToast('No se encontró el cierre'); return; }
+
+  // Agregar metadatos de la corrección
+  datosTurno._movido = {
+    fechaOriginal: fechaOrigen,
+    fechaDestino:  fechaDest,
+    motivo:        motivo,
+    movidoPor:     currentUser ? currentUser.nombre : '—',
+    ts:            Date.now()
+  };
+
+  if(db) {
+    // Guardar en fecha destino
+    firebase.database().ref('cierres/'+keyDest+'/'+turno).set(datosTurno).then(function(){
+      // Eliminar de fecha origen
+      firebase.database().ref('cierres/'+keyOrig+'/'+turno).remove();
+      // Log en bitácora
+      fbLog('edit', 'Cierre movido: '+turno+' del '+fechaOrigen+' → '+fechaDest+' · Motivo: '+motivo+' · Admin: '+(currentUser?currentUser.nombre:''));
+      showToast('✅ Cierre movido al '+fechaDest);
+      closeModal('modal-add');
+      renderHistorial();
+    }).catch(function(e){ showToast('Error: '+e.message); });
+  } else {
+    showToast('Sin conexión a Firebase');
+  }
+};
+</script>
+</body>
+</html>
+
+
+
+function initDescuentosRapidosListener(){
+  if(!db) return;
+  var hoyKey = hoy().replace(/-/g,'_');
+  firebase.database().ref('descuentosRapidos/'+hoyKey).on('value', function(snap){
+    var lista = [];
+    if(snap.exists()){
+      snap.forEach(function(child){ lista.push(child.val()); });
+    }
+    S.descuentosRapidos = lista;
+    /* Si estamos en la vista de descuento, refrescar */
+    if(restView==='descuento') renderRestaurante();
+  });
+}
+
+
+(function initDescFix(){var c2=setInterval(function(){if(typeof db!=="undefined"&&db){clearInterval(c2);initDescuentosRapidosListener();}},600);})();
 </script>
 </body>
 </html>
