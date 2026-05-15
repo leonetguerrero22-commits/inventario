@@ -791,8 +791,9 @@ function fbRemove(path){
   syncDot('syncing');
   return firebase.database().ref(path).remove().then(function(){
     syncDot('online');
-  }).catch(function(){
+  }).catch(function(e){
     syncDot('offline');
+    throw e;
   });
 }
 
@@ -1186,14 +1187,9 @@ updateBadges=function(){_obVBadge();if(typeof updateBadgeViv==='function')update
 function pushMissingToFirebase(){
   if(!db||typeof DEF_PROD==='undefined') return;
   firebase.database().ref('inventario/productos').once('value').then(function(snap){
-    /* Cargar lista de eliminados primero */
-    if(!S._deletedProds) S._deletedProds={};
     var existing=snap.exists()?Object.keys(snap.val()):[];
     DEF_PROD.forEach(function(p){
-      /* No restaurar productos que fueron eliminados permanentemente */
-      if(existing.indexOf(p.id)===-1 && !(S._deletedProds&&S._deletedProds[p.id])){
-        firebase.database().ref('inventario/productos/'+p.id).set(p);
-      }
+      if(existing.indexOf(p.id)===-1&&!(S._deletedProds&&S._deletedProds[p.id])) firebase.database().ref('inventario/productos/'+p.id).set(p);
     });
   });
 }
@@ -1313,22 +1309,24 @@ window.saveViv=function(id){
 window.delViv=function(id){
   if(!canDelete()){showToast('Sin permiso');return;}
   var item=S.productos.find(function(p){return p.id===id;});
-  if(!confirm('Eliminar '+((item&&item.nombre)||'?'))) return;
-  fbRemove('inventario/productos/'+id).then(function(){
+  if(!confirm('Eliminar '+((item&&item.nombre)||id)+'?\n\nEsta acción no se puede deshacer.')) return;
+  firebase.database().ref('inventario/productos/'+id).remove().then(function(){
     S.productos = S.productos.filter(function(p){return p.id!==id;});
     if(!S._deletedProds) S._deletedProds={};
     S._deletedProds[id]=true;
-    if(db) firebase.database().ref('inventario/eliminados/'+id).set({
+    firebase.database().ref('inventario/eliminados/'+id).set({
       id:id, nombre:(item&&item.nombre)||id,
-      eliminadoPor:currentUser?currentUser.nombre:'',
-      ts:Date.now()
+      eliminadoPor:currentUser?currentUser.nombre:'admin', ts:Date.now()
     });
     expViv=null;
     renderViv();
-    showToast('Eliminado correctamente');
-    fbLog('edit','Víveres eliminado: '+((item&&item.nombre)||id));
-  }).catch(function(){ showToast('Error al eliminar'); });
+    showToast('✅ Eliminado correctamente');
+    fbLog('edit','Viveres eliminado: '+((item&&item.nombre)||id));
+  }).catch(function(e){
+    showToast('Error al eliminar: '+e.message);
+  });
 };
+
 function renderViveres(){
   var items=getViv();
   var cats=['Todos'].concat(Array.from(new Set(items.map(function(p){return p.cat;}))));
@@ -1395,25 +1393,16 @@ window.saveProd=function(id){
 window.delProd=function(id){
   if(!canDelete()){showToast('Sin permiso');return;}
   var item=S.productos.find(function(p){return p.id===id;});
-  if(!confirm('Eliminar '+((item&&item.nombre)||'?')+'\n\nEsta acción no se puede deshacer.')) return;
-  /* Eliminar primero de Firebase, luego del estado local */
-  fbRemove('inventario/productos/'+id).then(function(){
-    S.productos = S.productos.filter(function(p){return p.id!==id;});
-    /* Marcar como eliminado permanentemente en Firebase y local */
+  if(!confirm('Eliminar '+((item&&item.nombre)||id)+'?\n\nEsta acción no se puede deshacer.')) return;
+  firebase.database().ref('inventario/productos/'+id).remove().then(function(){
+    S.productos=S.productos.filter(function(p){return p.id!==id;});
     if(!S._deletedProds) S._deletedProds={};
     S._deletedProds[id]=true;
-    if(db) firebase.database().ref('inventario/eliminados/'+id).set({
-      id:id, nombre:(item&&item.nombre)||id,
-      eliminadoPor:currentUser?currentUser.nombre:'',
-      ts:Date.now()
-    });
-    expProd2=null;
-    renderProd();
+    firebase.database().ref('inventario/eliminados/'+id).set({id:id,nombre:(item&&item.nombre)||id,eliminadoPor:currentUser?currentUser.nombre:'admin',ts:Date.now()});
+    expProd2=null; renderProd();
     showToast('Eliminado correctamente');
     fbLog('edit','Producto eliminado: '+((item&&item.nombre)||id));
-  }).catch(function(){
-    showToast('Error al eliminar — intenta de nuevo');
-  });
+  }).catch(function(e){ showToast('Error: '+e.message); });
 };
 function renderProd(){
   var items=getMar();
@@ -3748,21 +3737,6 @@ window.exportarTransfsCSV = function(){
       });
     }
   },600);
-})();
-
-/* Cargar productos eliminados permanentemente desde Firebase */
-(function loadEliminados(){
-  var chk = setInterval(function(){
-    if(typeof db !== 'undefined' && db){
-      clearInterval(chk);
-      firebase.database().ref('inventario/eliminados').once('value').then(function(snap){
-        if(!S._deletedProds) S._deletedProds = {};
-        if(snap.exists()){
-          snap.forEach(function(c){ S._deletedProds[c.key] = true; });
-        }
-      });
-    }
-  }, 400);
 })();
 </script>
 </body>
