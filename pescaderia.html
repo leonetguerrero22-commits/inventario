@@ -868,6 +868,11 @@ function subscribeAll(){
   });
 
   /* Productos */
+  /* Cargar eliminados permanentes ANTES del listener de productos */
+  if(!S._deletedProds) S._deletedProds={};
+  firebase.database().ref('inventario/eliminados').once('value').then(function(snap){
+    if(snap.exists()) snap.forEach(function(c){ S._deletedProds[c.key]=true; });
+  });
   firebase.database().ref('inventario/productos').on('value', function(snap){
     var fromDB = snap.exists() ? Object.values(snap.val()) : [];
     /* Filtrar productos marcados como eliminados localmente */
@@ -886,10 +891,14 @@ function subscribeAll(){
     });
     if(fromDB.length > 0){
       var dbIds = mapped.map(function(p){ return p.id; });
-      var missing = JSON.parse(JSON.stringify(DEF_PROD)).filter(function(p){ return dbIds.indexOf(p.id) === -1; });
+      var missing = JSON.parse(JSON.stringify(DEF_PROD)).filter(function(p){
+        return dbIds.indexOf(p.id) === -1 && !(S._deletedProds && S._deletedProds[p.id]);
+      });
       S.productos = mapped.concat(missing);
     } else {
-      S.productos = JSON.parse(JSON.stringify(DEF_PROD));
+      S.productos = JSON.parse(JSON.stringify(DEF_PROD)).filter(function(p){
+        return !(S._deletedProds && S._deletedProds[p.id]);
+      });
     }
     if(currentTab === 'terminados') renderProd();
     if(currentTab === 'dashboard')  renderDash();
@@ -1188,7 +1197,7 @@ function pushMissingToFirebase(){
   firebase.database().ref('inventario/productos').once('value').then(function(snap){
     var existing=snap.exists()?Object.keys(snap.val()):[];
     DEF_PROD.forEach(function(p){
-      if(existing.indexOf(p.id)===-1&&!(S._deletedProds&&S._deletedProds[p.id])) firebase.database().ref('inventario/productos/'+p.id).set(p);
+      if(existing.indexOf(p.id)===-1) firebase.database().ref('inventario/productos/'+p.id).set(p);
     });
   });
 }
@@ -1308,16 +1317,16 @@ window.saveViv=function(id){
 window.delViv=function(id){
   if(!canDelete()){showToast('Sin permiso');return;}
   var item=S.productos.find(function(p){return p.id===id;});
-  if(!confirm('Eliminar '+((item&&item.nombre)||id)+'?\n\nEsta acción no se puede deshacer.')) return;
-  firebase.database().ref('inventario/productos/'+id).remove().then(function(){
-    S.productos=S.productos.filter(function(p){return p.id!==id;});
+  if(!confirm('Eliminar '+((item&&item.nombre)||'?'))) return;
+  fbRemove('inventario/productos/'+id).then(function(){
+    S.productos = S.productos.filter(function(p){return p.id!==id;});
     if(!S._deletedProds) S._deletedProds={};
     S._deletedProds[id]=true;
-    firebase.database().ref('inventario/eliminados/'+id).set({id:id,nombre:(item&&item.nombre)||id,eliminadoPor:currentUser?currentUser.nombre:'admin',ts:Date.now()});
-    expViv=null; renderViveres();
+    expViv=null;
+    renderViveres();
     showToast('Eliminado correctamente');
-    fbLog('edit','Eliminado viveres: '+((item&&item.nombre)||id));
-  }).catch(function(e){ showToast('Error: '+e.message); });
+    fbLog('edit','Víveres eliminado: '+((item&&item.nombre)||id));
+  }).catch(function(){ showToast('Error al eliminar'); });
 };
 function renderViveres(){
   var items=getViv();
@@ -1385,16 +1394,20 @@ window.saveProd=function(id){
 window.delProd=function(id){
   if(!canDelete()){showToast('Sin permiso');return;}
   var item=S.productos.find(function(p){return p.id===id;});
-  if(!confirm('Eliminar '+((item&&item.nombre)||id)+'?\n\nEsta acción no se puede deshacer.')) return;
+  if(!confirm('Eliminar '+((item&&item.nombre)||'?')+'\n\nEsta acción no se puede deshacer.')) return;
+  /* Eliminar primero de Firebase, luego del estado local */
   firebase.database().ref('inventario/productos/'+id).remove().then(function(){
-    S.productos=S.productos.filter(function(p){return p.id!==id;});
+    S.productos = S.productos.filter(function(p){return p.id!==id;});
     if(!S._deletedProds) S._deletedProds={};
     S._deletedProds[id]=true;
-    firebase.database().ref('inventario/eliminados/'+id).set({id:id,nombre:(item&&item.nombre)||id,eliminadoPor:currentUser?currentUser.nombre:'admin',ts:Date.now()});
-    expProd2=null; renderProd();
+    firebase.database().ref('inventario/eliminados/'+id).set({id:id,nombre:(item&&item.nombre)||id,ts:Date.now()});
+    expProd2=null;
+    renderProd();
     showToast('Eliminado correctamente');
-    fbLog('edit','Eliminado: '+((item&&item.nombre)||id));
-  }).catch(function(e){ showToast('Error: '+e.message); });
+    fbLog('edit','Producto eliminado: '+((item&&item.nombre)||id));
+  }).catch(function(e){
+    showToast('Error: '+(e&&e.message?e.message:'intenta de nuevo'));
+  });
 };
 function renderProd(){
   var items=getMar();
