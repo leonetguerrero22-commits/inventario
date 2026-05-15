@@ -1186,9 +1186,14 @@ updateBadges=function(){_obVBadge();if(typeof updateBadgeViv==='function')update
 function pushMissingToFirebase(){
   if(!db||typeof DEF_PROD==='undefined') return;
   firebase.database().ref('inventario/productos').once('value').then(function(snap){
+    /* Cargar lista de eliminados primero */
+    if(!S._deletedProds) S._deletedProds={};
     var existing=snap.exists()?Object.keys(snap.val()):[];
     DEF_PROD.forEach(function(p){
-      if(existing.indexOf(p.id)===-1) firebase.database().ref('inventario/productos/'+p.id).set(p);
+      /* No restaurar productos que fueron eliminados permanentemente */
+      if(existing.indexOf(p.id)===-1 && !(S._deletedProds&&S._deletedProds[p.id])){
+        firebase.database().ref('inventario/productos/'+p.id).set(p);
+      }
     });
   });
 }
@@ -1313,6 +1318,11 @@ window.delViv=function(id){
     S.productos = S.productos.filter(function(p){return p.id!==id;});
     if(!S._deletedProds) S._deletedProds={};
     S._deletedProds[id]=true;
+    if(db) firebase.database().ref('inventario/eliminados/'+id).set({
+      id:id, nombre:(item&&item.nombre)||id,
+      eliminadoPor:currentUser?currentUser.nombre:'',
+      ts:Date.now()
+    });
     expViv=null;
     renderViv();
     showToast('Eliminado correctamente');
@@ -1389,9 +1399,14 @@ window.delProd=function(id){
   /* Eliminar primero de Firebase, luego del estado local */
   fbRemove('inventario/productos/'+id).then(function(){
     S.productos = S.productos.filter(function(p){return p.id!==id;});
-    /* Marcar como eliminado para que el listener no lo restaure */
+    /* Marcar como eliminado permanentemente en Firebase y local */
     if(!S._deletedProds) S._deletedProds={};
     S._deletedProds[id]=true;
+    if(db) firebase.database().ref('inventario/eliminados/'+id).set({
+      id:id, nombre:(item&&item.nombre)||id,
+      eliminadoPor:currentUser?currentUser.nombre:'',
+      ts:Date.now()
+    });
     expProd2=null;
     renderProd();
     showToast('Eliminado correctamente');
@@ -3733,6 +3748,21 @@ window.exportarTransfsCSV = function(){
       });
     }
   },600);
+})();
+
+/* Cargar productos eliminados permanentemente desde Firebase */
+(function loadEliminados(){
+  var chk = setInterval(function(){
+    if(typeof db !== 'undefined' && db){
+      clearInterval(chk);
+      firebase.database().ref('inventario/eliminados').once('value').then(function(snap){
+        if(!S._deletedProds) S._deletedProds = {};
+        if(snap.exists()){
+          snap.forEach(function(c){ S._deletedProds[c.key] = true; });
+        }
+      });
+    }
+  }, 400);
 })();
 </script>
 </body>
