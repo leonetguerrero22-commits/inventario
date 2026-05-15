@@ -791,9 +791,8 @@ function fbRemove(path){
   syncDot('syncing');
   return firebase.database().ref(path).remove().then(function(){
     syncDot('online');
-  }).catch(function(e){
+  }).catch(function(){
     syncDot('offline');
-    throw e;
   });
 }
 
@@ -1311,22 +1310,15 @@ window.delViv=function(id){
   var item=S.productos.find(function(p){return p.id===id;});
   if(!confirm('Eliminar '+((item&&item.nombre)||id)+'?\n\nEsta acción no se puede deshacer.')) return;
   firebase.database().ref('inventario/productos/'+id).remove().then(function(){
-    S.productos = S.productos.filter(function(p){return p.id!==id;});
+    S.productos=S.productos.filter(function(p){return p.id!==id;});
     if(!S._deletedProds) S._deletedProds={};
     S._deletedProds[id]=true;
-    firebase.database().ref('inventario/eliminados/'+id).set({
-      id:id, nombre:(item&&item.nombre)||id,
-      eliminadoPor:currentUser?currentUser.nombre:'admin', ts:Date.now()
-    });
-    expViv=null;
-    renderViv();
-    showToast('✅ Eliminado correctamente');
-    fbLog('edit','Viveres eliminado: '+((item&&item.nombre)||id));
-  }).catch(function(e){
-    showToast('Error al eliminar: '+e.message);
-  });
+    firebase.database().ref('inventario/eliminados/'+id).set({id:id,nombre:(item&&item.nombre)||id,eliminadoPor:currentUser?currentUser.nombre:'admin',ts:Date.now()});
+    expViv=null; renderViveres();
+    showToast('Eliminado correctamente');
+    fbLog('edit','Eliminado viveres: '+((item&&item.nombre)||id));
+  }).catch(function(e){ showToast('Error: '+e.message); });
 };
-
 function renderViveres(){
   var items=getViv();
   var cats=['Todos'].concat(Array.from(new Set(items.map(function(p){return p.cat;}))));
@@ -1401,7 +1393,7 @@ window.delProd=function(id){
     firebase.database().ref('inventario/eliminados/'+id).set({id:id,nombre:(item&&item.nombre)||id,eliminadoPor:currentUser?currentUser.nombre:'admin',ts:Date.now()});
     expProd2=null; renderProd();
     showToast('Eliminado correctamente');
-    fbLog('edit','Producto eliminado: '+((item&&item.nombre)||id));
+    fbLog('edit','Eliminado: '+((item&&item.nombre)||id));
   }).catch(function(e){ showToast('Error: '+e.message); });
 };
 function renderProd(){
