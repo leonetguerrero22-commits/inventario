@@ -18,11 +18,8 @@
   --rojo:#B71C1C;--rojo-l:#FFEBEE;--rojo-m:#C62828;
   --ambar:#E65100;--ambar-l:#FFF3E0;--ambar-bg:#FFF3E0;
   --azul:#0D47A1;--azul-l:#E3F2FD;
-  /* Variables de diseño requeridas por componentes */
   --color-background-primary:#ffffff;
   --color-background-secondary:#f4f0ea;
-  --color-background-tertiary:#FDF8F0;
-  --color-border-primary:#c8bfb0;
   --color-border-secondary:#e0d8cc;
   --color-border-tertiary:#ece6db;
   --color-text-primary:#111111;
@@ -384,33 +381,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--negro);color:var(--negro)
   </div>
   <div class="content" id="content">
     <!-- DASHBOARD -->
-    <div id="tab-dashboard" class="tab-panel active">
-      <div class="date-chip">📅 <span id="fecha-hoy"></span></div>
-      <div class="kpi-grid">
-        <div class="kpi blue"><div class="kpi-ico">📦</div><div class="kpi-label">Total Items</div><div class="kpi-val" id="k-tot-items">—</div></div>
-        <div class="kpi red"><div class="kpi-ico">⚠️</div><div class="kpi-label">Stock Bajo</div><div class="kpi-val" id="k-tot-bajo">—</div></div>
-      </div>
-      <div class="kpi-grid">
-        <div class="kpi"><div class="kpi-ico">💲</div><div class="kpi-label">Valor Stock (Costo)</div><div class="kpi-val sm" id="k-valor-costo">—</div></div>
-        <div class="kpi green"><div class="kpi-ico">💰</div><div class="kpi-label">Valor Venta</div><div class="kpi-val sm" id="k-valor-venta">—</div></div>
-      </div>
-      <div style="background:var(--color-background-primary,#fff);border-radius:14px;padding:14px 16px;margin-bottom:10px;border:1px solid var(--color-border-tertiary,#eee);display:flex;justify-content:space-between;align-items:center">
-        <div><div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gris3,#aaa);margin-bottom:4px">💹 Utilidad Potencial del Stock</div>
-        <div class="kpi-val sm" id="k-utilidad" style="font-size:20px;color:#1E5631">—</div></div>
-        <div style="text-align:right"><div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gris3,#aaa);margin-bottom:4px">Margen</div>
-        <div id="k-margen" style="font-size:18px;font-weight:700;color:#1F4E79">—%</div></div>
-      </div>
-      <div class="kpi-grid">
-        <div class="kpi blue"><div class="kpi-ico">🐟</div><div class="kpi-label">Productos Mar</div><div class="kpi-val" id="k-prod-tot">—</div></div>
-        <div class="kpi"><div class="kpi-ico">🛒</div><div class="kpi-label">Víveres</div><div class="kpi-val" id="k-viv-tot">—</div></div>
-      </div>
-      <div class="kpi-grid">
-        <div class="kpi red"><div class="kpi-ico">⚠️</div><div class="kpi-label">Mermas Hoy</div><div class="kpi-val" id="k-mermas-hoy">0</div></div>
-        <div class="kpi red"><div class="kpi-ico">💸</div><div class="kpi-label">Pérdida Hoy</div><div class="kpi-val sm" id="k-perdida-hoy">$0</div></div>
-      </div>
-      <div class="sec-hdr">⚠️ Alertas de <span>Stock</span></div>
-      <div id="alertas-dash"></div>
-    </div>
+    <div id="tab-dashboard" class="tab-panel active"><div id="dash-content" style="padding:4px 0"></div></div>
     <!-- INSUMOS -->
     <div id="tab-insumos" class="tab-panel">
       <div class="search-wrap"><span class="s-ico">🔍</span><input type="text" id="srch-ins" placeholder="Buscar insumo..." oninput="renderIns()"></div>
@@ -424,9 +395,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--negro);color:var(--negro)
       <div id="lista-prod"></div>
     </div>
     <div id="tab-viveres" class="tab-panel"><div class="search-wrap"><span class="s-ico">🔍</span><input type="text" id="srch-viv" placeholder="Buscar viveres, salsas..." oninput="renderViveres()"></div><div class="chips" id="chips-viv"></div><div id="lista-viv"></div></div>
+    <div id="tab-cierre" class="tab-panel"><div id="cierre-content"></div></div>
+    <div id="tab-historial" class="tab-panel"><div id="historial-content"></div></div>
+    <div id="tab-reportes" class="tab-panel"><div id="reportes-content"></div></div>
     <!-- BITÁCORA -->
     <!-- USUARIOS -->
-    <div id="tab-restaurante" class="tab-panel"><div id="restaurante-content" style="padding:0 0 100px"></div></div>
+    <div id="tab-restaurante" class="tab-panel"><div id="restaurante-content"></div></div>
     <div id="tab-usuarios" class="tab-panel"><div style="padding:12px"><div class="sec-hdr" style="margin-bottom:12px">👥 Gestión de <span style="color:var(--dorado)">Usuarios</span></div><div id="user-grid-mgmt"></div><button class="btn-primary" style="margin-top:14px;width:100%" onclick="abrirCrearUsuario()">＋ Crear nuevo usuario</button></div></div>
 
     <div id="tab-bitacora" class="tab-panel">
@@ -737,7 +711,7 @@ function showToast(msg){
 }
 function openModal(id){var m=document.getElementById(id);if(m)m.style.display='flex';}
 function closeModal(id){var m=document.getElementById(id);if(m)m.style.display='none';}
-/* goTab definido más adelante */
+/* goTab principal definida abajo */
 
 
 /* ══ ESTADO GLOBAL ══════════════════════════════════════════════════════════ */
@@ -1004,17 +978,16 @@ function goTab(tab){
   var fab = document.getElementById('fab');
   if(fab) fab.style.display = (tab==='terminados'||tab==='viveres'||tab==='insumos') ? 'flex' : 'none';
   document.getElementById('content').scrollTop = 0;
-  if(tab==='dashboard'  && typeof renderDash       === 'function') { try{ renderDash(); }catch(e){ console.error('renderDash',e); } }
-  if(tab==='terminados' && typeof renderProd       === 'function') { try{ renderProd(); }catch(e){ console.error('renderProd',e); } }
-  if(tab==='mermas'     && typeof renderMermas     === 'function') { try{ renderMermas(); }catch(e){ console.error('renderMermas',e); } }
-  if(tab==='bitacora'   && typeof renderLog        === 'function') renderLog();
-  if(tab==='viveres'    && typeof renderViveres    === 'function') renderViveres();
-  if(tab==='cierre'     && typeof renderCierre     === 'function') renderCierre();
-  if(tab==='historial'  && typeof renderHistorial  === 'function') renderHistorial();
-  if(tab==='reportes'   && typeof renderReportes   === 'function') renderReportes();
-  if(tab==='ventas'     && typeof renderVentas     === 'function') renderVentas();
-  if(tab==='usuarios'   && typeof renderUsuariosMgmt==='function') renderUsuariosMgmt();
-  if(tab==='restaurante'&& typeof renderRestauranteInt==='function') setTimeout(renderRestauranteInt, 80);
+  if(tab==='dashboard')  renderDash();
+  if(tab==='terminados') renderProd();
+  if(tab==='mermas')     renderMermas();
+  if(tab==='bitacora'  && typeof renderLog        === 'function') renderLog();
+  if(tab==='viveres'   && typeof renderViveres     === 'function') renderViveres();
+  if(tab==='cierre'    && typeof renderCierre      === 'function') renderCierre();
+  if(tab==='historial' && typeof renderHistorial   === 'function') renderHistorial();
+  if(tab==='reportes'  && typeof renderReportes    === 'function') renderReportes();
+  if(tab==='ventas'    && typeof renderVentas      === 'function') renderVentas();
+  if(tab==='usuarios'  && typeof renderUsuariosMgmt=== 'function') renderUsuariosMgmt();
 }
 
 /* ══ EXPORT ═══════════════════════════════════════════════════════════════ */
@@ -2198,39 +2171,93 @@ function renderLoginUsers(){
 
 /* renderDash: see appended block */
 function renderDash(){
+  var el = document.getElementById('dash-content');
+  if(!el) return;
   var p   = S.productos || [];
   var ins = S.insumos   || [];
   var mermas = S.mermas || [];
   var hoyStr = new Date().toDateString();
   var mHoy   = mermas.filter(function(m){ return new Date(m.ts).toDateString()===hoyStr; });
   var perdida = mHoy.reduce(function(s,m){ return s+(m.perdidaTotal||0); }, 0);
-  var VIV = typeof getViv==='function' ? getViv() : p.filter(function(x){ return ['Víveres','Salsas','Empaque','Limpieza','Aseo'].indexOf(x.cat)!==-1; });
-  var MAR = typeof getMar==='function' ? getMar() : p.filter(function(x){ return ['Víveres','Salsas','Empaque','Limpieza','Aseo'].indexOf(x.cat)===-1; });
+  var VIV_C   = ['Víveres','Salsas','Empaque','Limpieza','Aseo','Viveres'];
+  var VIV = typeof getViv==='function' ? getViv() : p.filter(function(x){ return VIV_C.indexOf(x.cat)!==-1; });
+  var MAR = typeof getMar==='function' ? getMar() : p.filter(function(x){ return VIV_C.indexOf(x.cat)===-1; });
   var todosItems = p.concat(ins);
-  var bajosP = p.filter(function(x){ return typeof stProd==='function' && stProd(x)==='reponer'; }).length;
-  var bajosI = ins.filter(function(x){ return typeof stIns==='function'  && stIns(x)==='bajo'; }).length;
+  var bajosP = p.filter(function(x){ return typeof stProd==='function' ? stProd(x)==='reponer' : (x.stock||0)<=(x.min||0); }).length;
+  var bajosI = ins.filter(function(x){ return typeof stIns==='function' ? stIns(x)==='bajo' : (x.cant||0)<=(x.min||0); }).length;
   var valorCosto = p.reduce(function(s,x){ return s+(x.stock||0)*(x.costo||0); },0) + ins.reduce(function(s,i){ return s+(i.cant||0)*(i.costo||0); },0);
   var valorVenta = p.reduce(function(s,x){ return s+(x.stock||0)*(x.precio||0); },0);
   var utilidad = valorVenta - valorCosto;
   var margen   = valorVenta > 0 ? Math.round((utilidad/valorVenta)*100) : 0;
-  var fechaEl = document.getElementById('fecha-hoy');
-  if(fechaEl) fechaEl.textContent = new Date().toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long'});
-  function set(id,val){ var el=document.getElementById(id); if(el) el.textContent=val; }
-  set('k-tot-items',  todosItems.length);
-  set('k-tot-bajo',   bajosP+bajosI);
-  set('k-valor-costo',fmt$(valorCosto));
-  set('k-valor-venta',fmt$(valorVenta));
-  set('k-utilidad',   fmt$(utilidad));
-  set('k-prod-tot',   MAR.length);
-  set('k-viv-tot',    VIV.length+ins.length);
-  set('k-mermas-hoy', mHoy.length);
-  set('k-perdida-hoy',fmt$(perdida));
-  var margenEl=document.getElementById('k-margen');
-  if(margenEl){ margenEl.textContent=margen+'%'; margenEl.style.color=margen>=40?'#1E5631':margen>=20?'#856404':'#B71C1C'; }
-  var utilEl=document.getElementById('k-utilidad');
-  if(utilEl) utilEl.style.color=utilidad>=0?'#1E5631':'#B71C1C';
-  if(typeof maskDashForEmpleado==='function') maskDashForEmpleado();
-  if(typeof checkNotif==='function') checkNotif();
+  var fecha = new Date().toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long'});
+  var margenColor = margen>=40?'#1E5631':margen>=20?'#856404':'#B71C1C';
+  var utilColor   = utilidad>=0?'#1E5631':'#B71C1C';
+  var bajosList   = p.filter(function(x){ return typeof stProd==='function' ? stProd(x)==='reponer' : (x.stock||0)<=(x.min||0); });
+
+  var h = '';
+  // Fecha
+  h += '<div style="display:inline-flex;align-items:center;gap:5px;background:#111;color:#D4A843;padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;margin-bottom:13px">📅 '+fecha+'</div>';
+
+  // KPI fila 1
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">';
+  h += _kpi('📦','Total Items', todosItems.length, 'blue');
+  h += _kpi('⚠️','Stock Bajo',  bajosP+bajosI, 'red');
+  h += '</div>';
+
+  // KPI fila 2
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">';
+  h += _kpi('💲','Valor Costo',  fmt$(valorCosto), '');
+  h += _kpi('💰','Valor Venta',  fmt$(valorVenta), 'green');
+  h += '</div>';
+
+  // Utilidad + Margen
+  h += '<div style="background:#fff;border-radius:15px;padding:14px 16px;margin-bottom:9px;box-shadow:0 1px 10px rgba(0,0,0,.07);display:flex;justify-content:space-between;align-items:center;position:relative;overflow:hidden">';
+  h += '<div style="position:absolute;top:0;left:0;right:0;height:3px;background:'+margenColor+'"></div>';
+  h += '<div><div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#b0a898;margin-bottom:3px">💹 Utilidad Potencial</div>';
+  h += '<div style="font-family:Playfair Display,serif;font-size:22px;font-weight:700;color:'+utilColor+'">'+fmt$(utilidad)+'</div></div>';
+  h += '<div style="text-align:right"><div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#b0a898;margin-bottom:3px">Margen</div>';
+  h += '<div style="font-size:22px;font-weight:700;color:'+margenColor+'">'+margen+'%</div></div>';
+  h += '</div>';
+
+  // KPI fila 3
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">';
+  h += _kpi('🐟','Productos Mar', MAR.length, 'blue');
+  h += _kpi('🛒','Víveres',       VIV.length+ins.length, '');
+  h += '</div>';
+
+  // KPI fila 4
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px">';
+  h += _kpi('⚠️','Mermas Hoy',   mHoy.length, 'red');
+  h += _kpi('💸','Pérdida Hoy',  fmt$(perdida), 'red');
+  h += '</div>';
+
+  // Alertas stock
+  h += '<div style="font-family:Playfair Display,serif;font-size:18px;font-weight:700;margin-bottom:9px;color:#111">⚠️ Alertas de <span style="color:#D4A843">Stock</span></div>';
+  if(!bajosList.length){
+    h += '<div style="background:#E8F5ED;border-radius:13px;padding:14px;text-align:center;color:#1E5631;font-weight:600;font-size:13px">✅ Todo el stock en niveles normales</div>';
+  } else {
+    bajosList.forEach(function(x){
+      h += '<div style="background:#fff;border-radius:13px;padding:11px 13px;margin-bottom:7px;box-shadow:0 1px 5px rgba(0,0,0,.05);border-left:3px solid #C62828;display:flex;justify-content:space-between;align-items:center">';
+      h += '<div><div style="font-weight:600;font-size:13px">'+x.nombre+'</div><div style="font-size:10px;color:#888">Min: '+(x.min||0)+' '+( x.unidad||'')+'</div></div>';
+      h += '<div style="background:#FFEBEE;color:#C62828;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px">'+( x.stock||0)+' '+(x.unidad||'')+'</div>';
+      h += '</div>';
+    });
+  }
+
+  el.innerHTML = h;
+
+  // Notificación badge
+  if(typeof checkNotif==='function') try{ checkNotif(); }catch(e){}
+}
+
+function _kpi(ico, lbl, val, color){
+  var bar = color==='red'?'#C62828':color==='green'?'#2E7D32':color==='blue'?'#0D47A1':'#D4A843';
+  return '<div style="background:#fff;border-radius:15px;padding:13px;box-shadow:0 1px 10px rgba(0,0,0,.07);position:relative;overflow:hidden">'
+    +'<div style="position:absolute;top:0;left:0;right:0;height:3px;background:'+bar+'"></div>'
+    +'<div style="position:absolute;right:11px;top:9px;font-size:19px;opacity:.12">'+ico+'</div>'
+    +'<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#b0a898;margin-bottom:3px">'+lbl+'</div>'
+    +'<div style="font-family:Playfair Display,serif;font-size:26px;font-weight:700;line-height:1;color:#111">'+val+'</div>'
+    +'</div>';
 }
 
 function renderMermas(){
@@ -3391,9 +3418,7 @@ function initDescuentosRapidosListener(){
    MÓDULO RESTAURANTE — Transferencias internas Pescadería → Restaurante
    ══════════════════════════════════════════════════════════════════ */
 
-function renderTransferencias(){
-  renderRestauranteInt();
-}
+function renderTransferencias(){ renderRestauranteInt(); }
 
 function calcResumenRestPeriodo(periodo){
   var trans = S.transRestaurante||[];
@@ -3489,242 +3514,278 @@ window.exportarTransferencias = function(){
 
 function renderRestauranteInt(){
   var el = document.getElementById('restaurante-content');
-  if(!el){ console.log('ERROR: restaurante-content not found'); return; }
+  if(!el) return;
+
+  // Esperar productos
   if(!S.productos || S.productos.length === 0){
-    el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:16px"><div style="font-size:40px">🍽️</div><div style="font-size:15px;font-weight:700;color:#1F4E79">Cargando inventario...</div><div style="font-size:12px;color:#888;text-align:center">Conectando con la base de datos.<br>Esto tomará solo un momento.</div><div style="width:40px;height:40px;border:4px solid #e0e0e0;border-top-color:#1F4E79;border-radius:50%;animation:spin 0.8s linear infinite"></div></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
-    setTimeout(function(){ renderRestauranteInt(); }, 900);
+    el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:16px">'
+      +'<div style="font-size:48px">🍽️</div>'
+      +'<div style="font-size:16px;font-weight:700;color:#1F4E79">Cargando inventario...</div>'
+      +'<div style="font-size:12px;color:#888;text-align:center">Conectando con Firebase.<br>Solo un momento.</div>'
+      +'<div style="width:36px;height:36px;border:4px solid #e0e0e0;border-top-color:#1F4E79;border-radius:50%;animation:restSpin .8s linear infinite"></div>'
+      +'<style>@keyframes restSpin{to{transform:rotate(360deg)}}</style></div>';
+    setTimeout(renderRestauranteInt, 800);
     return;
   }
+
   var hoyStr = hoy();
-  var transfersHoy = (S.transfsRest && S.transfsRest[hoyStr]) ? S.transfsRest[hoyStr] : [];
-  var totalCostoHoy  = transfersHoy.reduce(function(s,t){ return s+(t.costo||0); },0);
-  var totalVentaHoy  = transfersHoy.reduce(function(s,t){ return s+(t.precioVenta||0); },0);
+  if(!S.transfsRest) S.transfsRest = {};
+  var transHoy = S.transfsRest[hoyStr] || [];
+  var costoHoy = transHoy.reduce(function(s,t){ return s+(t.costo||0); }, 0);
+  var ventaHoy = transHoy.reduce(function(s,t){ return s+(t.precioVenta||0); }, 0);
 
-  var h = '<div style="padding:12px 0 100px">';
+  var h = '<div style="padding:8px 0 100px">';
 
-  /* KPIs */
-  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">';
-  h += '<div style="background:#fff;border-radius:14px;padding:14px;border:1px solid #ece6db;text-align:center"><div style="font-size:10px;color:#888;margin-bottom:4px">💰 Costo hoy</div><div style="font-size:18px;font-weight:700;color:#B71C1C">'+fmt$(totalCostoHoy)+'</div></div>';
-  h += '<div style="background:#fff;border-radius:14px;padding:14px;border:1px solid #ece6db;text-align:center"><div style="font-size:10px;color:#888;margin-bottom:4px">📈 Valor venta hoy</div><div style="font-size:18px;font-weight:700;color:#1E5631">'+fmt$(totalVentaHoy)+'</div></div>';
+  // ── Header ──────────────────────────────────────────
+  h += '<div style="background:linear-gradient(135deg,#0d2318,#1a3a2a);color:#fff;padding:16px;border-radius:18px;margin-bottom:14px;display:flex;align-items:center;gap:12px">';
+  h += '<div style="font-size:36px">🍽️</div>';
+  h += '<div><div style="font-size:16px;font-weight:700">Transferencias al Restaurante</div>';
+  h += '<div style="font-size:11px;opacity:.7;margin-top:2px">Los productos salen del inventario de la Pescadería</div></div>';
   h += '</div>';
 
-  /* Formulario */
-  h += '<div style="background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;border:1px solid #ece6db">';
-  h += '<div style="font-size:13px;font-weight:700;color:#1F4E79;margin-bottom:10px">🍽️ Transferir al Restaurante</div>';
-  h += '<div style="font-size:11px;color:#888;margin-bottom:12px">Estos productos salen del inventario de la Pescadería hacia el Restaurante sin pago inmediato.</div>';
+  // ── KPIs del día ───────────────────────────────────
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">';
+  h += '<div style="background:#fff;border-radius:12px;padding:12px;text-align:center;border:1px solid #ece6db"><div style="font-size:9px;color:#888;margin-bottom:3px">Transferencias hoy</div><div style="font-size:22px;font-weight:700;color:#1F4E79">'+transHoy.length+'</div></div>';
+  h += '<div style="background:#fff;border-radius:12px;padding:12px;text-align:center;border:1px solid #ece6db"><div style="font-size:9px;color:#888;margin-bottom:3px">Costo hoy</div><div style="font-size:14px;font-weight:700;color:#B71C1C">'+fmt$(costoHoy)+'</div></div>';
+  h += '<div style="background:#fff;border-radius:12px;padding:12px;text-align:center;border:1px solid #ece6db"><div style="font-size:9px;color:#888;margin-bottom:3px">Valor venta</div><div style="font-size:14px;font-weight:700;color:#1E5631">'+fmt$(ventaHoy)+'</div></div>';
+  h += '</div>';
 
-  /* Buscador producto */
-  h += '<div style="font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#888;margin-bottom:4px">Producto</div>';
+  // ── Formulario transferencia ────────────────────────
+  h += '<div style="background:#fff;border-radius:18px;padding:16px;margin-bottom:14px;border:1px solid #ece6db;box-shadow:0 2px 8px rgba(0,0,0,.06)">';
+  h += '<div style="font-size:14px;font-weight:700;color:#1F4E79;margin-bottom:4px">📦 Nueva Transferencia</div>';
+  h += '<div style="font-size:11px;color:#888;margin-bottom:14px">Busca el producto, indica la cantidad y confirma.</div>';
+
+  // Buscador
+  h += '<div style="font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#888;margin-bottom:5px">Producto</div>';
   h += '<div style="position:relative;margin-bottom:8px">';
-  h += '<input type="text" id="ri-search" placeholder="🔍 Buscar producto..." oninput="filtrarRIProds()" autocomplete="off" style="width:100%;padding:10px 12px;border:2px solid #ddd;border-radius:10px;font-size:14px;font-family:inherit;box-sizing:border-box">';
+  h += '<span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none">🔍</span>';
+  h += '<input type="text" id="rt-search" placeholder="Buscar producto..." oninput="rtFiltrar()" onfocus="rtFiltrar()" autocomplete="off"';
+  h += ' style="width:100%;padding:10px 12px 10px 34px;border:2px solid #ddd;border-radius:11px;font-size:14px;font-family:inherit;box-sizing:border-box;outline:none">';
   h += '</div>';
-  h += '<div id="ri-prod-lista" style="max-height:200px;overflow-y:auto;border:1px solid #ddd;border-radius:10px;margin-bottom:10px;display:none;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.1)"></div>';
-  h += '<input type="hidden" id="ri-prod-id">';
-  h += '<div id="ri-prod-display" style="display:none;padding:8px 12px;background:#f0f7f0;border-radius:10px;font-size:13px;font-weight:600;color:#1E5631;margin-bottom:10px;border:1px solid #c8e6c9"></div>';
+  h += '<div id="rt-lista" style="max-height:190px;overflow-y:auto;border:1px solid #ddd;border-radius:11px;margin-bottom:10px;display:none;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.1)"></div>';
+  h += '<div id="rt-prod-sel" style="display:none;padding:9px 12px;background:#e8f5ed;border-radius:10px;font-size:13px;font-weight:600;color:#1E5631;margin-bottom:10px;border:1px solid #c8e6c9"></div>';
 
-  /* Cantidad y unidad */
+  // Cantidad + Unidad
   h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">';
-  h += '<div><div style="font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#888;margin-bottom:4px">Cantidad</div>';
-  h += '<input type="number" id="ri-qty" placeholder="0" min="0.001" step="0.001" oninput="calcRIPreview()" style="width:100%;padding:10px;border:2px solid #ddd;border-radius:10px;font-size:15px;font-weight:600;font-family:inherit;box-sizing:border-box"></div>';
-  h += '<div><div style="font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#888;margin-bottom:4px">Unidad</div>';
-  h += '<input id="ri-unit" readonly placeholder="Kg" style="width:100%;padding:10px;border:2px solid #eee;border-radius:10px;font-size:15px;font-weight:600;font-family:inherit;box-sizing:border-box;background:#f5f5f5;color:#555"></div>';
+  h += '<div><div style="font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#888;margin-bottom:5px">Cantidad</div>';
+  h += '<input type="number" id="rt-qty" placeholder="0" min="0.001" step="0.001" oninput="rtPreview()"';
+  h += ' style="width:100%;padding:11px 10px;border:2px solid #ddd;border-radius:11px;font-size:16px;font-weight:700;font-family:inherit;box-sizing:border-box;outline:none"></div>';
+  h += '<div><div style="font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#888;margin-bottom:5px">Unidad</div>';
+  h += '<input id="rt-unidad" readonly style="width:100%;padding:11px 10px;border:2px solid #eee;border-radius:11px;font-size:16px;font-weight:700;font-family:inherit;box-sizing:border-box;background:#f5f5f5;color:#666"></div>';
   h += '</div>';
 
-  /* Motivo */
-  h += '<div style="margin-bottom:10px"><div style="font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#888;margin-bottom:4px">Motivo</div>';
-  h += '<input id="ri-obs" placeholder="Ej: Para paella del almuerzo" value="Uso restaurante" style="width:100%;padding:10px;border:2px solid #ddd;border-radius:10px;font-size:13px;font-family:inherit;box-sizing:border-box"></div>';
+  // Motivo
+  h += '<div style="margin-bottom:10px"><div style="font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#888;margin-bottom:5px">Motivo / Observación</div>';
+  h += '<input id="rt-motivo" value="Uso restaurante" placeholder="Ej: Para paella del almuerzo"';
+  h += ' style="width:100%;padding:10px 12px;border:2px solid #ddd;border-radius:11px;font-size:13px;font-family:inherit;box-sizing:border-box;outline:none"></div>';
 
-  /* Preview */
-  h += '<div id="ri-preview" style="display:none;background:#f8f9fa;border-radius:10px;padding:12px;margin-bottom:12px;border:1px solid #e0e0e0">';
-  h += '<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid #eee"><span style="color:#555">Costo total</span><span id="ri-costo-val" style="font-weight:700;color:#B71C1C">$0</span></div>';
-  h += '<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid #eee"><span style="color:#555">Precio venta equiv.</span><span id="ri-venta-val" style="font-weight:700;color:#1E5631">$0</span></div>';
-  h += '<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0"><span style="color:#555">Diferencia</span><span id="ri-diff-val" style="font-weight:700;color:#C9A84C">$0</span></div>';
+  // Preview
+  h += '<div id="rt-preview" style="display:none;background:#f8f9fa;border-radius:11px;padding:12px;margin-bottom:12px;border:1px solid #e0e0e0">';
+  h += '<div style="font-size:10px;font-weight:700;color:#888;margin-bottom:7px;letter-spacing:.5px">RESUMEN PREVIO</div>';
+  h += '<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #eee"><span style="color:#555">Costo total</span><span id="rt-prev-costo" style="font-weight:700;color:#B71C1C">$0</span></div>';
+  h += '<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #eee"><span style="color:#555">Precio venta equiv.</span><span id="rt-prev-venta" style="font-weight:700;color:#1E5631">$0</span></div>';
+  h += '<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0"><span style="color:#555">Diferencia</span><span id="rt-prev-diff" style="font-weight:700;color:#C9A84C">$0</span></div>';
   h += '</div>';
 
-  h += '<button onclick="ejecutarTransfRest()" style="width:100%;padding:13px;border-radius:12px;border:none;background:#1E5631;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">✅ Registrar Transferencia</button>';
+  // Botón confirmar
+  h += '<button onclick="rtConfirmar()" style="width:100%;padding:14px;border-radius:13px;border:none;background:linear-gradient(135deg,#1a3a2a,#1E5631);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.3px">✅ Confirmar Transferencia</button>';
   h += '</div>';
 
-  /* Historial del día */
-  if(transfersHoy.length){
-    h += '<div style="font-size:18px;font-weight:700;margin:14px 0 9px;font-family:inherit">📋 Transferencias de <span style="color:#C9A84C">Hoy</span></div>';
-    h += '<div style="background:#fff;border-radius:16px;padding:16px;border:1px solid #ece6db;margin-bottom:12px">';
-    transfersHoy.slice().reverse().forEach(function(t){
-      h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid #f0ece4">';
-      h += '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#222">'+t.nombre+'</div>';
-      h += '<div style="font-size:10px;color:#888;margin-top:2px">'+t.hora+' · '+t.obs+'</div></div>';
-      h += '<div style="text-align:right;margin-left:8px"><div style="font-size:13px;font-weight:700;color:#B71C1C">-'+t.cantidad+' '+t.unidad+'</div>';
-      h += '<div style="font-size:10px;color:#888">Costo: '+fmt$(t.costo)+'</div></div>';
+  // ── Historial del día ───────────────────────────────
+  if(transHoy.length){
+    h += '<div style="font-family:Playfair Display,serif;font-size:18px;font-weight:700;margin:4px 0 10px;color:#111">📋 Hoy — <span style="color:#D4A843">'+transHoy.length+' transferencia'+(transHoy.length!==1?'s':'')+'</span></div>';
+    h += '<div style="background:#fff;border-radius:16px;padding:4px 14px 14px;border:1px solid #ece6db;margin-bottom:14px">';
+    transHoy.slice().reverse().forEach(function(t){
+      h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid #f5f0ea">';
+      h += '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+t.nombre+'</div>';
+      h += '<div style="font-size:10px;color:#888;margin-top:2px">'+t.hora+' · '+(t.obs||t.motivo||'')+(t.usuario?' · '+t.usuario:'')+'</div></div>';
+      h += '<div style="text-align:right;margin-left:10px;flex-shrink:0"><div style="font-size:13px;font-weight:700;color:#B71C1C">−'+t.cantidad+' '+t.unidad+'</div>';
+      h += '<div style="font-size:10px;color:#888">'+fmt$(t.costo)+'</div></div>';
       h += '</div>';
     });
-    var difHoy = totalVentaHoy - totalCostoHoy;
-    h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px">';
-    h += '<div style="background:#ffebee;border-radius:8px;padding:8px;text-align:center"><div style="font-size:9px;color:#B71C1C">Costo</div><div style="font-size:13px;font-weight:700;color:#B71C1C">'+fmt$(totalCostoHoy)+'</div></div>';
-    h += '<div style="background:#e8f5e9;border-radius:8px;padding:8px;text-align:center"><div style="font-size:9px;color:#1E5631">Venta</div><div style="font-size:13px;font-weight:700;color:#1E5631">'+fmt$(totalVentaHoy)+'</div></div>';
-    h += '<div style="background:#fff8e1;border-radius:8px;padding:8px;text-align:center"><div style="font-size:9px;color:#C9A84C">Diferencia</div><div style="font-size:13px;font-weight:700;color:#C9A84C">'+fmt$(difHoy)+'</div></div>';
-    h += '</div>';
-    h += '</div>';
+    var difHoy = ventaHoy - costoHoy;
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:12px">';
+    h += '<div style="background:#ffebee;border-radius:9px;padding:9px;text-align:center"><div style="font-size:9px;color:#B71C1C;font-weight:600">COSTO</div><div style="font-size:13px;font-weight:700;color:#B71C1C">'+fmt$(costoHoy)+'</div></div>';
+    h += '<div style="background:#e8f5e9;border-radius:9px;padding:9px;text-align:center"><div style="font-size:9px;color:#1E5631;font-weight:600">VENTA</div><div style="font-size:13px;font-weight:700;color:#1E5631">'+fmt$(ventaHoy)+'</div></div>';
+    h += '<div style="background:#fff8e1;border-radius:9px;padding:9px;text-align:center"><div style="font-size:9px;color:#C9A84C;font-weight:600">DIF.</div><div style="font-size:13px;font-weight:700;color:#C9A84C">'+fmt$(difHoy)+'</div></div>';
+    h += '</div></div>';
   }
 
-  /* Resumen por período */
-  h += '<div style="font-size:18px;font-weight:700;margin:14px 0 9px">📊 Resumen por <span style="color:#C9A84C">Período</span></div>';
-  h += '<div style="background:#fff;border-radius:16px;padding:16px;border:1px solid #ece6db">';
-  h += '<div style="display:flex;gap:6px;margin-bottom:12px">';
-  h += '<button id="ri-btn-hoy" onclick="setRIPeriodo(\'hoy\',this)" style="flex:1;padding:8px;border-radius:8px;border:2px solid #1F4E79;background:#1F4E79;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Hoy</button>';
-  h += '<button id="ri-btn-sem" onclick="setRIPeriodo(\'semana\',this)" style="flex:1;padding:8px;border-radius:8px;border:2px solid #ddd;background:transparent;color:#888;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Esta semana</button>';
-  h += '<button id="ri-btn-mes" onclick="setRIPeriodo(\'mes\',this)" style="flex:1;padding:8px;border-radius:8px;border:2px solid #ddd;background:transparent;color:#888;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Este mes</button>';
+  // ── Resumen por período ─────────────────────────────
+  h += '<div style="font-family:Playfair Display,serif;font-size:18px;font-weight:700;margin:4px 0 10px;color:#111">📊 Resumen por <span style="color:#D4A843">Período</span></div>';
+  h += '<div style="background:#fff;border-radius:16px;padding:16px;border:1px solid #ece6db;margin-bottom:12px">';
+  h += '<div style="display:flex;gap:6px;margin-bottom:14px">';
+  h += '<button id="rtp-hoy" onclick="rtPeriodo(\'hoy\')" style="flex:1;padding:9px;border-radius:9px;border:2px solid #1F4E79;background:#1F4E79;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Hoy</button>';
+  h += '<button id="rtp-sem" onclick="rtPeriodo(\'semana\')" style="flex:1;padding:9px;border-radius:9px;border:2px solid #ddd;background:transparent;color:#888;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Esta semana</button>';
+  h += '<button id="rtp-mes" onclick="rtPeriodo(\'mes\')" style="flex:1;padding:9px;border-radius:9px;border:2px solid #ddd;background:transparent;color:#888;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Este mes</button>';
   h += '</div>';
-  h += '<div id="ri-resumen"><div style="text-align:center;color:#888;padding:16px;font-size:13px">Sin transferencias en este período</div></div>';
-  h += '<button onclick="exportarTransfsCSV()" style="width:100%;padding:10px;border-radius:10px;border:2px solid #C9A84C;background:#fffde7;color:#C9A84C;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:10px">📥 Exportar CSV</button>';
+  h += '<div id="rt-periodo-content"><div style="text-align:center;color:#888;padding:16px;font-size:13px">Cargando...</div></div>';
+  h += '<button onclick="rtExportarCSV()" style="width:100%;padding:11px;border-radius:10px;border:2px solid #C9A84C;background:#fffde7;color:#b8860b;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:12px">📥 Exportar CSV completo</button>';
   h += '</div>';
 
   h += '</div>';
   el.innerHTML = h;
-  calcRIPeriodo('hoy');
+  rtPeriodo('hoy');
 }
 
-window.filtrarRIProds = function(){
-  var q = (document.getElementById('ri-search')||{}).value||'';
-  var lista = document.getElementById('ri-prod-lista');
+/* ── Buscador ─────────────────────────────────────────────── */
+window.rtFiltrar = function(){
+  var q = ((document.getElementById('rt-search')||{}).value||'').toLowerCase().trim();
+  var lista = document.getElementById('rt-lista');
   if(!lista) return;
-  if(!q.trim()){ lista.style.display='none'; return; }
-  var term = q.toLowerCase();
-  var prods = (S.productos||[]).filter(function(p){ return p.nombre.toLowerCase().indexOf(term)!==-1; });
+  var prods = (S.productos||[]).filter(function(p){ return !q || p.nombre.toLowerCase().indexOf(q)!==-1; });
   if(!prods.length){
-    lista.innerHTML = '<div style="padding:10px 14px;font-size:12px;color:#888">Sin resultados</div>';
-    lista.style.display = 'block'; return;
+    lista.innerHTML='<div style="padding:12px 14px;font-size:12px;color:#888">Sin resultados</div>';
+    lista.style.display='block'; return;
   }
   lista.innerHTML = prods.map(function(p){
     var stk = p.stock||p.cant||0;
-    return '<div onclick="selRIProd(\''+p.id+'\',\''+p.nombre.replace(/'/g,"\\'")+'\','+stk+',\''+(p.unidad||'Kg')+'\','+(p.costo||0)+','+(p.precio||0)+')" style="padding:10px 14px;border-bottom:1px solid #f0ece4;cursor:pointer;display:flex;justify-content:space-between"><div style="font-size:13px;font-weight:600">'+p.nombre+'</div><span style="font-size:11px;color:#888">'+stk+' '+(p.unidad||'Kg')+'</span></div>';
+    var sc  = stk>0?'#1E5631':'#B71C1C';
+    var id  = p.id, nom = p.nombre.replace(/'/g,"\\'"), un = p.unidad||'Kg', co = p.costo||0, pr = p.precio||0;
+    return '<div onclick="rtSelProd(\''+id+'\',\''+nom+'\','+stk+',\''+un+'\','+co+','+pr+')"'
+      +' style="padding:11px 14px;border-bottom:1px solid #f0ece4;cursor:pointer;display:flex;justify-content:space-between;align-items:center">'
+      +'<div style="font-size:13px;font-weight:600">'+p.nombre+'</div>'
+      +'<span style="font-size:11px;font-weight:700;color:'+sc+'">'+stk+' '+un+'</span>'
+      +'</div>';
   }).join('');
-  lista.style.display = 'block';
+  lista.style.display='block';
 };
 
-window.selRIProd = function(id, nombre, stock, unidad, costo, precio){
-  document.getElementById('ri-prod-id').value = id;
-  var disp = document.getElementById('ri-prod-display');
-  if(disp){ disp.textContent = '✅ '+nombre+' — Stock: '+stock+' '+unidad; disp.style.display='block'; }
-  var lista = document.getElementById('ri-prod-lista');
+window.rtSelProd = function(id, nombre, stock, unidad, costo, precio){
+  window._rtProd = {id:id,nombre:nombre,stock:stock,unidad:unidad,costo:costo,precio:precio};
+  var sel = document.getElementById('rt-prod-sel');
+  var sc  = stock>0?'#1E5631':'#B71C1C';
+  var msg = stock>0 ? '✅ '+nombre+' — Stock: '+stock+' '+unidad : '⚠️ '+nombre+' — SIN STOCK';
+  if(sel){ sel.innerHTML='<span style="color:'+sc+'">'+msg+'</span>'; sel.style.display='block'; }
+  var lista = document.getElementById('rt-lista');
   if(lista) lista.style.display='none';
-  var search = document.getElementById('ri-search');
-  if(search) search.value = nombre;
-  var unitEl = document.getElementById('ri-unit');
-  if(unitEl) unitEl.value = unidad;
-  window._riProd = {id:id, nombre:nombre, stock:stock, unidad:unidad, costo:costo, precio:precio};
-  /* Listen qty changes */
-  var qtyEl = document.getElementById('ri-qty');
-  if(qtyEl){
-    qtyEl.oninput = function(){ calcRIPreview(); };
-    qtyEl.focus();
-  }
-  calcRIPreview();
+  var srch = document.getElementById('rt-search');
+  if(srch) srch.value = nombre;
+  var unEl = document.getElementById('rt-unidad');
+  if(unEl) unEl.value = unidad;
+  var qEl = document.getElementById('rt-qty');
+  if(qEl){ qEl.max=stock; qEl.focus(); }
+  rtPreview();
 };
 
-function calcRIPreview(){
-  var p = window._riProd;
-  if(!p) return;
-  var qty = parseFloat((document.getElementById('ri-qty')||{}).value)||0;
-  var costoTotal = qty * (p.costo||0);
-  var ventaTotal = qty * (p.precio||0);
-  var diff = ventaTotal - costoTotal;
-  var prev = document.getElementById('ri-preview');
-  if(prev){ prev.style.display = qty>0?'block':'none'; }
-  var cv = document.getElementById('ri-costo-val'); if(cv) cv.textContent = fmt$(costoTotal);
-  var vv = document.getElementById('ri-venta-val'); if(vv) vv.textContent = fmt$(ventaTotal);
-  var dv = document.getElementById('ri-diff-val'); if(dv) dv.textContent = fmt$(diff);
-}
+window.rtPreview = function(){
+  var p = window._rtProd; if(!p) return;
+  var qty = parseFloat((document.getElementById('rt-qty')||{}).value)||0;
+  var prev = document.getElementById('rt-preview');
+  if(prev) prev.style.display = qty>0 ? 'block' : 'none';
+  var costo = qty*(p.costo||0), venta = qty*(p.precio||0), diff = venta-costo;
+  var cv=document.getElementById('rt-prev-costo'); if(cv) cv.textContent=fmt$(costo);
+  var vv=document.getElementById('rt-prev-venta'); if(vv) vv.textContent=fmt$(venta);
+  var dv=document.getElementById('rt-prev-diff');  if(dv) dv.textContent=fmt$(diff);
+};
 
-window.ejecutarTransfRest = function(){
-  var p = window._riProd;
-  var qty = parseFloat((document.getElementById('ri-qty')||{}).value)||0;
-  var obs = (document.getElementById('ri-obs')||{}).value||'Uso restaurante';
-  if(!p){ showToast('Selecciona un producto'); return; }
-  if(!qty||qty<=0){ showToast('Ingresa una cantidad válida'); return; }
-  var stockActual = p.stock||0;
-  if(qty > stockActual){ showToast('⚠️ Stock insuficiente (hay '+stockActual+' '+p.unidad+')'); return; }
+window.rtConfirmar = function(){
+  var p   = window._rtProd;
+  var qty = parseFloat((document.getElementById('rt-qty')||{}).value)||0;
+  var obs = (document.getElementById('rt-motivo')||{}).value||'Uso restaurante';
+  if(!p)  { showToast('⚠️ Selecciona un producto'); return; }
+  if(!qty||qty<=0){ showToast('⚠️ Ingresa una cantidad válida'); return; }
+  if(qty > (p.stock||0)){ showToast('⚠️ Stock insuficiente (hay '+p.stock+' '+p.unidad+')'); return; }
 
-  /* Descontar del inventario */
-  var prod = S.productos.find(function(x){ return x.id===p.id; });
-  if(prod){ prod.stock=(prod.stock||0)-qty; prod.cant=prod.stock; }
-  if(db) firebase.database().ref('inventario/productos/'+p.id).update({stock:(prod&&prod.stock)||0, cant:(prod&&prod.stock)||0});
+  // Descontar del inventario
+  var prod = (S.productos||[]).find(function(x){ return x.id===p.id; });
+  if(prod){
+    prod.stock = Math.max(0,(prod.stock||0)-qty);
+    prod.cant  = prod.stock;
+    if(typeof db!=='undefined'&&db)
+      firebase.database().ref('inventario/productos/'+p.id).update({stock:prod.stock,cant:prod.stock});
+  }
 
-  var hora2 = new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
-  var hoyStr = hoy();
-  var transfEntry = {
+  var hora2   = new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
+  var hoyStr2 = hoy();
+  var entrada = {
     prodId:p.id, nombre:p.nombre, cantidad:qty, unidad:p.unidad,
-    costo: qty*(p.costo||0), precioVenta: qty*(p.precio||0),
-    obs:obs, hora:hora2, fecha:hoyStr, ts:Date.now(),
-    usuario: currentUser?currentUser.nombre:''
+    costo:qty*(p.costo||0), precioVenta:qty*(p.precio||0),
+    obs:obs, motivo:obs, hora:hora2, fecha:hoyStr2, ts:Date.now(),
+    usuario:currentUser?currentUser.nombre:''
   };
 
   if(!S.transfsRest) S.transfsRest={};
-  if(!S.transfsRest[hoyStr]) S.transfsRest[hoyStr]=[];
-  S.transfsRest[hoyStr].push(transfEntry);
-  if(db) firebase.database().ref('transfsRest/'+hoyStr).push(transfEntry);
-  fbLog('restaurante','Transf al restaurante: '+qty+' '+p.unidad+' '+p.nombre+' · Costo: '+fmt$(transfEntry.costo));
+  if(!S.transfsRest[hoyStr2]) S.transfsRest[hoyStr2]=[];
+  S.transfsRest[hoyStr2].push(entrada);
 
-  window._riProd = null;
-  showToast('✅ '+qty+' '+p.unidad+' de '+p.nombre+' transferido al restaurante');
+  if(typeof db!=='undefined'&&db)
+    firebase.database().ref('transfsRest/'+hoyStr2).push(entrada);
+  if(typeof fbLog==='function')
+    fbLog('restaurante','Transferencia: '+qty+' '+p.unidad+' de '+p.nombre+' — Costo: '+fmt$(entrada.costo));
+
+  window._rtProd = null;
+  showToast('✅ '+qty+' '+p.unidad+' de '+p.nombre+' transferido');
   renderRestauranteInt();
 };
 
-window.setRIPeriodo = function(per, btn){
-  document.querySelectorAll('#restaurante-content .chip').forEach(function(b){ b.classList.remove('active'); });
-  if(btn) btn.classList.add('active');
-  calcRIPeriodo(per);
-};
-
-function calcRIPeriodo(per){
+/* ── Resumen por período ──────────────────────────────────── */
+window.rtPeriodo = function(per){
+  ['hoy','sem','mes'].forEach(function(k){
+    var b=document.getElementById('rtp-'+k);
+    if(!b) return;
+    var act = (per==='hoy'&&k==='hoy')||(per==='semana'&&k==='sem')||(per==='mes'&&k==='mes');
+    b.style.background    = act?'#1F4E79':'transparent';
+    b.style.color         = act?'#fff':'#888';
+    b.style.borderColor   = act?'#1F4E79':'#ddd';
+  });
   var transfs = S.transfsRest||{};
-  var ahora = new Date();
-  var desde, hasta = hoy();
+  var ahora   = new Date(), desde, hasta = hoy();
   if(per==='hoy'){ desde=hoy(); }
-  else if(per==='semana'){ var d=new Date();d.setDate(d.getDate()-d.getDay());desde=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-  else{ desde=ahora.getFullYear()+'-'+String(ahora.getMonth()+1).padStart(2,'0')+'-01'; }
-
-  var totalCosto=0, totalVenta=0, byProd={};
+  else if(per==='semana'){
+    var d=new Date(); d.setDate(d.getDate()-d.getDay());
+    desde=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  } else {
+    desde=ahora.getFullYear()+'-'+String(ahora.getMonth()+1).padStart(2,'0')+'-01';
+  }
+  var totCosto=0, totVenta=0, byProd={};
   Object.keys(transfs).forEach(function(dia){
     if(dia<desde||dia>hasta) return;
     (transfs[dia]||[]).forEach(function(t){
-      totalCosto+=t.costo||0; totalVenta+=t.precioVenta||0;
+      totCosto+=t.costo||0; totVenta+=t.precioVenta||0;
       if(!byProd[t.nombre]) byProd[t.nombre]={nombre:t.nombre,unidad:t.unidad,qty:0,costo:0,venta:0};
-      byProd[t.nombre].qty+=t.cantidad; byProd[t.nombre].costo+=t.costo||0; byProd[t.nombre].venta+=t.precioVenta||0;
+      byProd[t.nombre].qty+=t.cantidad||0;
+      byProd[t.nombre].costo+=t.costo||0;
+      byProd[t.nombre].venta+=t.precioVenta||0;
     });
   });
-
-  var el = document.getElementById('ri-resumen'); if(!el) return;
-  if(!totalCosto&&!totalVenta){ el.innerHTML='<div style="text-align:center;padding:16px;color:#888;font-size:13px">Sin transferencias en este período</div>'; return; }
-
-  var h='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px">';
-  h+='<div style="background:rgba(0,0,0,.06);border-radius:8px;padding:8px;text-align:center"><div style="font-size:9px;color:#888">Costo total</div><div style="font-size:14px;font-weight:700;color:var(--rojo)">'+fmt$(totalCosto)+'</div></div>';
-  h+='<div style="background:rgba(0,0,0,.06);border-radius:8px;padding:8px;text-align:center"><div style="font-size:9px;color:#888">Precio venta</div><div style="font-size:14px;font-weight:700;color:var(--verde)">'+fmt$(totalVenta)+'</div></div>';
-  h+='<div style="background:rgba(0,0,0,.06);border-radius:8px;padding:8px;text-align:center"><div style="font-size:9px;color:#888">Diferencia</div><div style="font-size:14px;font-weight:700;color:var(--dorado)">'+fmt$(totalVenta-totalCosto)+'</div></div>';
+  var el=document.getElementById('rt-periodo-content'); if(!el) return;
+  if(!totCosto&&!totVenta){
+    el.innerHTML='<div style="text-align:center;padding:16px;color:#888;font-size:13px">Sin transferencias en este período</div>';
+    return;
+  }
+  var h='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">';
+  h+='<div style="background:#ffebee;border-radius:9px;padding:10px;text-align:center"><div style="font-size:9px;color:#B71C1C;font-weight:600">AL COSTO</div><div style="font-size:14px;font-weight:700;color:#B71C1C">'+fmt$(totCosto)+'</div></div>';
+  h+='<div style="background:#e8f5e9;border-radius:9px;padding:10px;text-align:center"><div style="font-size:9px;color:#1E5631;font-weight:600">A PRECIO</div><div style="font-size:14px;font-weight:700;color:#1E5631">'+fmt$(totVenta)+'</div></div>';
+  h+='<div style="background:#fff8e1;border-radius:9px;padding:10px;text-align:center"><div style="font-size:9px;color:#b8860b;font-weight:600">DIFERENCIA</div><div style="font-size:14px;font-weight:700;color:#b8860b">'+fmt$(totVenta-totCosto)+'</div></div>';
   h+='</div>';
   Object.values(byProd).sort(function(a,b){return b.costo-a.costo;}).forEach(function(p){
-    h+='<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid #f0ece4">';
-    h+='<span style="font-weight:600">'+p.nombre+'</span>';
-    h+='<span style="color:#888">'+p.qty.toFixed(2)+' '+p.unidad+'</span>';
-    h+='<span style="font-weight:700;color:var(--rojo)">'+fmt$(p.costo)+'</span>';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f5f0ea;font-size:12px">';
+    h+='<span style="font-weight:600;flex:1">'+p.nombre+'</span>';
+    h+='<span style="color:#888;margin-right:8px">'+Number(p.qty).toFixed(2)+' '+p.unidad+'</span>';
+    h+='<span style="font-weight:700;color:#B71C1C">'+fmt$(p.costo)+'</span>';
     h+='</div>';
   });
   el.innerHTML=h;
-}
-
-window.exportarTransfsCSV = function(){
-  var transfs = S.transfsRest||{};
-  function cell(v){var s=String(v===null||v===undefined?'':v);if(s.indexOf(',')>-1){s='"'+s.split('"').join('""')+'"';}return s;}
-  var lines=[['Fecha','Hora','Producto','Cantidad','Unidad','Costo','Precio Venta','Diferencia','Usuario','Obs'].map(cell).join(',')];
-  Object.keys(transfs).sort().forEach(function(dia){
-    (transfs[dia]||[]).forEach(function(t){
-      lines.push([t.fecha,t.hora,t.nombre,t.cantidad,t.unidad,t.costo||0,t.precioVenta||0,(t.precioVenta||0)-(t.costo||0),t.usuario||'',t.obs||''].map(cell).join(','));
-    });
-  });
-  var blob=new Blob(['\uFEFF'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
-  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Transfs_Restaurante_'+hoy()+'.csv';a.click();
-  showToast('Descargando...');
 };
 
-/* Cargar transferencias desde Firebase al iniciar */
+/* ── Exportar CSV ─────────────────────────────────────────── */
+window.rtExportarCSV = function(){
+  var transfs=S.transfsRest||{};
+  function cell(v){var s=String(v===null||v===undefined?'':v);return s.indexOf(',')>-1?'"'+s.replace(/"/g,'""')+'"':s;}
+  var rows=[['Fecha','Hora','Producto','Cantidad','Unidad','Costo','Precio Venta','Diferencia','Usuario','Motivo'].map(cell).join(',')];
+  Object.keys(transfs).sort().forEach(function(dia){
+    (transfs[dia]||[]).forEach(function(t){
+      rows.push([t.fecha,t.hora,t.nombre,t.cantidad,t.unidad,t.costo||0,t.precioVenta||0,(t.precioVenta||0)-(t.costo||0),t.usuario||'',t.obs||''].map(cell).join(','));
+    });
+  });
+  var blob=new Blob(['\uFEFF'+rows.join('\n')],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='Restaurante_'+hoy()+'.csv';a.click();
+  showToast('📥 Descargando CSV...');
+};
+
+/* ── Cargar datos desde Firebase ─────────────────────────── */
 (function initTransfsRest(){
   var chk=setInterval(function(){
     if(typeof db!=='undefined'&&db){
@@ -3733,8 +3794,7 @@ window.exportarTransfsCSV = function(){
         if(snap.exists()){
           var data={};
           snap.forEach(function(dia){
-            var arr=[];
-            dia.forEach(function(t){ arr.push(t.val()); });
+            var arr=[]; dia.forEach(function(t){ arr.push(t.val()); });
             data[dia.key]=arr;
           });
           S.transfsRest=data;
