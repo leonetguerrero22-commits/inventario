@@ -1028,6 +1028,7 @@ function goTab(tab){
   if(tab==='reportes'  && typeof renderReportes    === 'function') renderReportes();
   if(tab==='ventas'    && typeof renderVentas      === 'function') renderVentas();
   if(tab==='usuarios'  && typeof renderUsuariosMgmt=== 'function') renderUsuariosMgmt();
+  if(tab==='restaurante') setTimeout(function(){renderRestauranteInt();},50);
 }
 
 /* ══ EXPORT ═══════════════════════════════════════════════════════════════ */
