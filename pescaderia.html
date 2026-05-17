@@ -1028,7 +1028,6 @@ function goTab(tab){
   if(tab==='reportes'  && typeof renderReportes    === 'function') renderReportes();
   if(tab==='ventas'    && typeof renderVentas      === 'function') renderVentas();
   if(tab==='usuarios'  && typeof renderUsuariosMgmt=== 'function') renderUsuariosMgmt();
-  if(tab==='restaurante' && typeof renderRestauranteInt==='function') setTimeout(renderRestauranteInt,80);
 }
 
 /* ══ EXPORT ═══════════════════════════════════════════════════════════════ */
@@ -3502,8 +3501,10 @@ window.exportarTransferencias = function(){
    ══════════════════════════════════════════════════════════════════ */
 
 function renderRestauranteInt(){
+  try {
   var el = document.getElementById('restaurante-content');
-  if(!el){ console.log('ERROR: restaurante-content not found'); return; }
+  if(!el){ return; }
+  var f$ = function(n){ return '$'+Number(n||0).toLocaleString('es-CO',{minimumFractionDigits:0,maximumFractionDigits:0}); };
   var hoyStr = hoy();
   var transfersHoy = (S.transfsRest && S.transfsRest[hoyStr]) ? S.transfsRest[hoyStr] : [];
   var totalCostoHoy  = transfersHoy.reduce(function(s,t){ return s+(t.costo||0); },0);
@@ -3513,8 +3514,8 @@ function renderRestauranteInt(){
 
   /* KPIs */
   h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">';
-  h += '<div style="background:#fff;border-radius:14px;padding:14px;border:1px solid #ece6db;text-align:center"><div style="font-size:10px;color:#888;margin-bottom:4px">💰 Costo hoy</div><div style="font-size:18px;font-weight:700;color:#B71C1C">'+fmt$(totalCostoHoy)+'</div></div>';
-  h += '<div style="background:#fff;border-radius:14px;padding:14px;border:1px solid #ece6db;text-align:center"><div style="font-size:10px;color:#888;margin-bottom:4px">📈 Valor venta hoy</div><div style="font-size:18px;font-weight:700;color:#1E5631">'+fmt$(totalVentaHoy)+'</div></div>';
+  h += '<div style="background:#fff;border-radius:14px;padding:14px;border:1px solid #ece6db;text-align:center"><div style="font-size:10px;color:#888;margin-bottom:4px">💰 Costo hoy</div><div style="font-size:18px;font-weight:700;color:#B71C1C">'+f$(totalCostoHoy)+'</div></div>';
+  h += '<div style="background:#fff;border-radius:14px;padding:14px;border:1px solid #ece6db;text-align:center"><div style="font-size:10px;color:#888;margin-bottom:4px">📈 Valor venta hoy</div><div style="font-size:18px;font-weight:700;color:#1E5631">'+f$(totalVentaHoy)+'</div></div>';
   h += '</div>';
 
   /* Formulario */
@@ -3589,6 +3590,10 @@ function renderRestauranteInt(){
   h += '</div>';
   el.innerHTML = h;
   calcRIPeriodo('hoy');
+  } catch(e) {
+    var el2=document.getElementById('restaurante-content');
+    if(el2) el2.innerHTML='<div style="padding:20px;background:#fff;border-radius:12px;border:2px solid red;font-size:13px;color:red"><b>Error en Restaurante:</b><br>'+e.message+'</div>';
+  }
 }
 
 window.filtrarRIProds = function(){
@@ -3753,6 +3758,5 @@ window.exportarTransfsCSV = function(){
   },600);
 })();
 </script>
-<script src="fix.js"></script>
 </body>
 </html>
