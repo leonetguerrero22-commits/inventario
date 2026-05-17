@@ -1000,7 +1000,7 @@ function showToast(msg){
 /* ══ NAV / TABS ══════════════════════════════════════════════════════════ */
 function goTab(tab){
   if(tab === 'insumos') tab = 'terminados';
-  if(typeof getRoleTabs === 'function' && currentUser){
+  if(typeof getRoleTabs === 'function' && currentUser && tab !== 'restaurante'){
     if(getRoleTabs().indexOf(tab) === -1){ showToast('Sin acceso'); return; }
   }
   currentTab = tab;
@@ -1222,7 +1222,7 @@ function loadPerms(){
     if(snap.exists()){
       var saved = snap.val();
       ['admin','supervisor','empleado'].forEach(function(rol){
-        if(saved[rol]) S_PERMS[rol] = Object.assign({}, DEFAULT_PERMS[rol], saved[rol]);
+        if(saved[rol]) { S_PERMS[rol] = Object.assign({}, DEFAULT_PERMS[rol], saved[rol]); S_PERMS[rol].restaurante=1; }
       });
     }
     if(typeof applyRoleUI==='function') applyRoleUI();
@@ -1287,7 +1287,7 @@ function maskDashForEmpleado(){
 var _origGoTab=window.goTab;
 window.goTab=function(tab){
   if(tab==='insumos'){tab='terminados';}
-  if(typeof getRoleTabs==='function'&&typeof currentUser!=='undefined'&&currentUser){
+  if(typeof getRoleTabs==='function'&&typeof currentUser!=='undefined'&&currentUser&&tab!=='restaurante'){
     if(getRoleTabs().indexOf(tab)===-1){showToast('Sin acceso');return;}
   }
   _origGoTab(tab);
