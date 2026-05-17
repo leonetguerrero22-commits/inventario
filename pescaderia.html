@@ -413,9 +413,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--negro);color:var(--negro)
       <div id="lista-prod"></div>
     </div>
     <div id="tab-viveres" class="tab-panel"><div class="search-wrap"><span class="s-ico">🔍</span><input type="text" id="srch-viv" placeholder="Buscar viveres, salsas..." oninput="renderViveres()"></div><div class="chips" id="chips-viv"></div><div id="lista-viv"></div></div>
+    <div id="tab-cierre" class="tab-panel"><div id="cierre-content"></div></div>
+    <div id="tab-historial" class="tab-panel"><div id="historial-content"></div></div>
+    <div id="tab-reportes" class="tab-panel"><div id="reportes-content"></div></div>
     <!-- BITÁCORA -->
     <!-- USUARIOS -->
-    <div id="tab-restaurante" class="tab-panel"><div id="restaurante-content" style="padding:12px 0 100px"><div style="background:#1F4E79;color:#fff;padding:20px;border-radius:16px;text-align:center"><div style="font-size:32px;margin-bottom:8px">🍽️</div><div style="font-size:16px;font-weight:700">Restaurante</div><div style="font-size:12px;opacity:.8;margin-top:4px">Cargando...</div></div></div></div>
+    <div id="tab-restaurante" class="tab-panel"><div id="restaurante-content" style="padding:0 0 100px"></div></div>
     <div id="tab-usuarios" class="tab-panel"><div style="padding:12px"><div class="sec-hdr" style="margin-bottom:12px">👥 Gestión de <span style="color:var(--dorado)">Usuarios</span></div><div id="user-grid-mgmt"></div><button class="btn-primary" style="margin-top:14px;width:100%" onclick="abrirCrearUsuario()">＋ Crear nuevo usuario</button></div></div>
 
     <div id="tab-bitacora" class="tab-panel">
@@ -3499,100 +3502,87 @@ window.exportarTransferencias = function(){
    ══════════════════════════════════════════════════════════════════ */
 
 function renderRestauranteInt(){
-  try {
   var el = document.getElementById('restaurante-content');
-  if(!el){ return; }
-  var f$ = function(n){ return '$'+Number(n||0).toLocaleString('es-CO',{minimumFractionDigits:0,maximumFractionDigits:0}); };
-  var hoyStr = hoy();
-  var transfersHoy = (S.transfsRest && S.transfsRest[hoyStr]) ? S.transfsRest[hoyStr] : [];
-  var totalCostoHoy  = transfersHoy.reduce(function(s,t){ return s+(t.costo||0); },0);
-  var totalVentaHoy  = transfersHoy.reduce(function(s,t){ return s+(t.precioVenta||0); },0);
+  if(!el) return;
+  try {
+    var hoyStr = typeof hoy==='function' ? hoy() : new Date().toISOString().slice(0,10);
+    var transfers = (S && S.transfsRest && S.transfsRest[hoyStr]) ? S.transfsRest[hoyStr] : [];
+    var costoHoy = transfers.reduce(function(s,t){ return s+(t.costo||0); },0);
+    var ventaHoy = transfers.reduce(function(s,t){ return s+(t.precioVenta||0); },0);
+    var f = function(n){ return '$'+Number(n||0).toLocaleString('es-CO'); };
+    var prods = (S && S.productos) ? S.productos : [];
 
-  var h = '<div style="padding:12px 0 100px">';
+    var h = '<div style="padding:4px 0 100px">';
 
-  /* KPIs */
-  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">';
-  h += '<div style="background:#fff;border-radius:14px;padding:14px;border:1px solid #ece6db;text-align:center"><div style="font-size:10px;color:#888;margin-bottom:4px">💰 Costo hoy</div><div style="font-size:18px;font-weight:700;color:#B71C1C">'+f$(totalCostoHoy)+'</div></div>';
-  h += '<div style="background:#fff;border-radius:14px;padding:14px;border:1px solid #ece6db;text-align:center"><div style="font-size:10px;color:#888;margin-bottom:4px">📈 Valor venta hoy</div><div style="font-size:18px;font-weight:700;color:#1E5631">'+f$(totalVentaHoy)+'</div></div>';
-  h += '</div>';
+    // Header
+    h += '<div style="background:linear-gradient(135deg,#1a3a2a,#0d2318);color:#fff;padding:16px;border-radius:16px;margin-bottom:14px;display:flex;align-items:center;gap:12px">';
+    h += '<div style="font-size:32px">🍽️</div>';
+    h += '<div><div style="font-size:15px;font-weight:700">Transferencias al Restaurante</div>';
+    h += '<div style="font-size:11px;opacity:.7">Los productos salen del inventario</div></div>';
+    h += '</div>';
 
-  /* Formulario */
-  h += '<div style="background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;border:1px solid #ece6db">';
-  h += '<div style="font-size:13px;font-weight:700;color:#1F4E79;margin-bottom:10px">🍽️ Transferir al Restaurante</div>';
-  h += '<div style="font-size:11px;color:#888;margin-bottom:12px">Estos productos salen del inventario de la Pescadería hacia el Restaurante sin pago inmediato.</div>';
+    // KPIs
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">';
+    h += '<div style="background:#fff;border-radius:12px;padding:12px;text-align:center;border:1px solid #ece6db"><div style="font-size:9px;color:#888;margin-bottom:2px">HOY</div><div style="font-size:20px;font-weight:700;color:#1F4E79">'+transfers.length+'</div></div>';
+    h += '<div style="background:#fff;border-radius:12px;padding:12px;text-align:center;border:1px solid #ece6db"><div style="font-size:9px;color:#888;margin-bottom:2px">COSTO</div><div style="font-size:13px;font-weight:700;color:#B71C1C">'+f(costoHoy)+'</div></div>';
+    h += '<div style="background:#fff;border-radius:12px;padding:12px;text-align:center;border:1px solid #ece6db"><div style="font-size:9px;color:#888;margin-bottom:2px">VENTA</div><div style="font-size:13px;font-weight:700;color:#1E5631">'+f(ventaHoy)+'</div></div>';
+    h += '</div>';
 
-  /* Buscador producto */
-  h += '<div style="font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#888;margin-bottom:4px">Producto</div>';
-  h += '<div style="position:relative;margin-bottom:8px">';
-  h += '<input type="text" id="ri-search" placeholder="🔍 Buscar producto..." oninput="filtrarRIProds()" autocomplete="off" style="width:100%;padding:10px 12px;border:2px solid #ddd;border-radius:10px;font-size:14px;font-family:inherit;box-sizing:border-box">';
-  h += '</div>';
-  h += '<div id="ri-prod-lista" style="max-height:200px;overflow-y:auto;border:1px solid #ddd;border-radius:10px;margin-bottom:10px;display:none;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.1)"></div>';
-  h += '<input type="hidden" id="ri-prod-id">';
-  h += '<div id="ri-prod-display" style="display:none;padding:8px 12px;background:#f0f7f0;border-radius:10px;font-size:13px;font-weight:600;color:#1E5631;margin-bottom:10px;border:1px solid #c8e6c9"></div>';
+    // Formulario
+    h += '<div style="background:#fff;border-radius:16px;padding:16px;margin-bottom:14px;border:1px solid #ece6db">';
+    h += '<div style="font-size:13px;font-weight:700;color:#1F4E79;margin-bottom:12px">📦 Nueva Transferencia</div>';
 
-  /* Cantidad y unidad */
-  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">';
-  h += '<div><div style="font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#888;margin-bottom:4px">Cantidad</div>';
-  h += '<input type="number" id="ri-qty" placeholder="0" min="0.001" step="0.001" oninput="calcRIPreview()" style="width:100%;padding:10px;border:2px solid #ddd;border-radius:10px;font-size:15px;font-weight:600;font-family:inherit;box-sizing:border-box"></div>';
-  h += '<div><div style="font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#888;margin-bottom:4px">Unidad</div>';
-  h += '<input id="ri-unit" readonly placeholder="Kg" style="width:100%;padding:10px;border:2px solid #eee;border-radius:10px;font-size:15px;font-weight:600;font-family:inherit;box-sizing:border-box;background:#f5f5f5;color:#555"></div>';
-  h += '</div>';
+    // Buscador
+    h += '<div style="font-size:9px;font-weight:700;color:#888;margin-bottom:5px;letter-spacing:.8px;text-transform:uppercase">Producto</div>';
+    h += '<div style="position:relative;margin-bottom:8px"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%)">🔍</span>';
+    h += '<input type="text" id="ri-search" placeholder="Buscar producto..." oninput="filtrarRIProds()" onfocus="filtrarRIProds()" autocomplete="off" style="width:100%;padding:10px 12px 10px 32px;border:2px solid #ddd;border-radius:11px;font-size:14px;font-family:inherit;box-sizing:border-box"></div>';
+    h += '<div id="ri-prod-lista" style="display:none;max-height:180px;overflow-y:auto;border:1px solid #ddd;border-radius:10px;margin-bottom:10px;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.1)"></div>';
+    h += '<div id="ri-prod-sel" style="display:none;padding:9px 12px;background:#e8f5ed;border-radius:10px;font-size:13px;font-weight:600;color:#1E5631;margin-bottom:10px;border:1px solid #c8e6c9"></div>';
 
-  /* Motivo */
-  h += '<div style="margin-bottom:10px"><div style="font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#888;margin-bottom:4px">Motivo</div>';
-  h += '<input id="ri-obs" placeholder="Ej: Para paella del almuerzo" value="Uso restaurante" style="width:100%;padding:10px;border:2px solid #ddd;border-radius:10px;font-size:13px;font-family:inherit;box-sizing:border-box"></div>';
+    // Cantidad
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">';
+    h += '<div><div style="font-size:9px;font-weight:700;color:#888;margin-bottom:5px;letter-spacing:.8px;text-transform:uppercase">Cantidad</div>';
+    h += '<input type="number" id="ri-qty" placeholder="0" min="0.001" step="0.001" oninput="calcRIPreview()" style="width:100%;padding:11px;border:2px solid #ddd;border-radius:11px;font-size:16px;font-weight:700;font-family:inherit;box-sizing:border-box"></div>';
+    h += '<div><div style="font-size:9px;font-weight:700;color:#888;margin-bottom:5px;letter-spacing:.8px;text-transform:uppercase">Unidad</div>';
+    h += '<input id="ri-unit" readonly style="width:100%;padding:11px;border:2px solid #eee;border-radius:11px;font-size:16px;font-weight:700;font-family:inherit;box-sizing:border-box;background:#f5f5f5;color:#666"></div>';
+    h += '</div>';
 
-  /* Preview */
-  h += '<div id="ri-preview" style="display:none;background:#f8f9fa;border-radius:10px;padding:12px;margin-bottom:12px;border:1px solid #e0e0e0">';
-  h += '<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid #eee"><span style="color:#555">Costo total</span><span id="ri-costo-val" style="font-weight:700;color:#B71C1C">$0</span></div>';
-  h += '<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0;border-bottom:1px solid #eee"><span style="color:#555">Precio venta equiv.</span><span id="ri-venta-val" style="font-weight:700;color:#1E5631">$0</span></div>';
-  h += '<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0"><span style="color:#555">Diferencia</span><span id="ri-diff-val" style="font-weight:700;color:#C9A84C">$0</span></div>';
-  h += '</div>';
+    // Motivo
+    h += '<div style="margin-bottom:10px"><div style="font-size:9px;font-weight:700;color:#888;margin-bottom:5px;letter-spacing:.8px;text-transform:uppercase">Motivo</div>';
+    h += '<input id="ri-obs" value="Uso restaurante" style="width:100%;padding:10px;border:2px solid #ddd;border-radius:11px;font-size:13px;font-family:inherit;box-sizing:border-box"></div>';
 
-  h += '<button onclick="ejecutarTransfRest()" style="width:100%;padding:13px;border-radius:12px;border:none;background:#1E5631;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">✅ Registrar Transferencia</button>';
-  h += '</div>';
+    // Preview
+    h += '<div id="ri-preview" style="display:none;background:#f8f9fa;border-radius:10px;padding:12px;margin-bottom:12px;border:1px solid #e0e0e0">';
+    h += '<div style="font-size:10px;font-weight:700;color:#888;margin-bottom:6px">RESUMEN</div>';
+    h += '<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0"><span>Costo</span><span id="ri-prev-costo" style="font-weight:700;color:#B71C1C">$0</span></div>';
+    h += '<div style="display:flex;justify-content:space-between;font-size:12px;padding:3px 0"><span>Precio venta equiv.</span><span id="ri-prev-venta" style="font-weight:700;color:#1E5631">$0</span></div>';
+    h += '</div>';
 
-  /* Historial del día */
-  if(transfersHoy.length){
-    h += '<div style="font-size:18px;font-weight:700;margin:14px 0 9px;font-family:inherit">📋 Transferencias de <span style="color:#C9A84C">Hoy</span></div>';
-    h += '<div style="background:#fff;border-radius:16px;padding:16px;border:1px solid #ece6db;margin-bottom:12px">';
-    transfersHoy.slice().reverse().forEach(function(t){
-      h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid #f0ece4">';
-      h += '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#222">'+t.nombre+'</div>';
-      h += '<div style="font-size:10px;color:#888;margin-top:2px">'+t.hora+' · '+t.obs+'</div></div>';
-      h += '<div style="text-align:right;margin-left:8px"><div style="font-size:13px;font-weight:700;color:#B71C1C">-'+t.cantidad+' '+t.unidad+'</div>';
-      h += '<div style="font-size:10px;color:#888">Costo: '+fmt$(t.costo)+'</div></div>';
+    // Botón
+    h += '<button onclick="confirmarRITransf()" style="width:100%;padding:14px;border-radius:12px;border:none;background:linear-gradient(135deg,#1a3a2a,#1E5631);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">✅ Confirmar Transferencia</button>';
+    h += '</div>';
+
+    // Historial del día
+    if(transfers.length > 0){
+      h += '<div style="font-size:16px;font-weight:700;margin:4px 0 10px;color:#111;font-family:Playfair Display,serif">📋 Hoy — <span style="color:#D4A843">'+transfers.length+' transferencia'+(transfers.length!==1?'s':'')+'</span></div>';
+      h += '<div style="background:#fff;border-radius:14px;padding:4px 14px 14px;border:1px solid #ece6db;margin-bottom:14px">';
+      transfers.slice().reverse().forEach(function(t){
+        h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f5f0ea">';
+        h += '<div><div style="font-size:13px;font-weight:600">'+t.nombre+'</div><div style="font-size:10px;color:#888">'+t.hora+' · '+(t.obs||t.motivo||'')+'</div></div>';
+        h += '<div style="text-align:right"><div style="font-size:13px;font-weight:700;color:#B71C1C">-'+t.cantidad+' '+(t.unidad||'')+'</div><div style="font-size:10px;color:#888">'+f(t.costo||0)+'</div></div>';
+        h += '</div>';
+      });
       h += '</div>';
-    });
-    var difHoy = totalVentaHoy - totalCostoHoy;
-    h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px">';
-    h += '<div style="background:#ffebee;border-radius:8px;padding:8px;text-align:center"><div style="font-size:9px;color:#B71C1C">Costo</div><div style="font-size:13px;font-weight:700;color:#B71C1C">'+fmt$(totalCostoHoy)+'</div></div>';
-    h += '<div style="background:#e8f5e9;border-radius:8px;padding:8px;text-align:center"><div style="font-size:9px;color:#1E5631">Venta</div><div style="font-size:13px;font-weight:700;color:#1E5631">'+fmt$(totalVentaHoy)+'</div></div>';
-    h += '<div style="background:#fff8e1;border-radius:8px;padding:8px;text-align:center"><div style="font-size:9px;color:#C9A84C">Diferencia</div><div style="font-size:13px;font-weight:700;color:#C9A84C">'+fmt$(difHoy)+'</div></div>';
-    h += '</div>';
-    h += '</div>';
-  }
+    }
 
-  /* Resumen por período */
-  h += '<div style="font-size:18px;font-weight:700;margin:14px 0 9px">📊 Resumen por <span style="color:#C9A84C">Período</span></div>';
-  h += '<div style="background:#fff;border-radius:16px;padding:16px;border:1px solid #ece6db">';
-  h += '<div style="display:flex;gap:6px;margin-bottom:12px">';
-  h += '<button id="ri-btn-hoy" onclick="setRIPeriodo(\'hoy\',this)" style="flex:1;padding:8px;border-radius:8px;border:2px solid #1F4E79;background:#1F4E79;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Hoy</button>';
-  h += '<button id="ri-btn-sem" onclick="setRIPeriodo(\'semana\',this)" style="flex:1;padding:8px;border-radius:8px;border:2px solid #ddd;background:transparent;color:#888;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Esta semana</button>';
-  h += '<button id="ri-btn-mes" onclick="setRIPeriodo(\'mes\',this)" style="flex:1;padding:8px;border-radius:8px;border:2px solid #ddd;background:transparent;color:#888;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Este mes</button>';
-  h += '</div>';
-  h += '<div id="ri-resumen"><div style="text-align:center;color:#888;padding:16px;font-size:13px">Sin transferencias en este período</div></div>';
-  h += '<button onclick="exportarTransfsCSV()" style="width:100%;padding:10px;border-radius:10px;border:2px solid #C9A84C;background:#fffde7;color:#C9A84C;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:10px">📥 Exportar CSV</button>';
-  h += '</div>';
+    h += '</div>';
+    el.innerHTML = h;
 
-  h += '</div>';
-  el.innerHTML = h;
-  calcRIPeriodo('hoy');
   } catch(e) {
-    var el2=document.getElementById('restaurante-content');
-    if(el2) el2.innerHTML='<div style="padding:20px;background:#fff;border-radius:12px;border:2px solid red;font-size:13px;color:red"><b>Error en Restaurante:</b><br>'+e.message+'</div>';
+    el.innerHTML = '<div style="padding:20px;background:#fff;border-radius:12px;border:2px solid red;color:red;font-size:12px"><b>Error:</b> '+e.message+'</div>';
   }
 }
+
 
 window.filtrarRIProds = function(){
   var q = (document.getElementById('ri-search')||{}).value||'';
