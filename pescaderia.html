@@ -3737,7 +3737,7 @@ window.exportarTransfsCSV = function(){
   var blob=new Blob(['\uFEFF'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
   var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Transfs_Restaurante_'+hoy()+'.csv';a.click();
   showToast('Descargando...');
-};
+};2
 
 /* Cargar transferencias desde Firebase al iniciar */
 (function initTransfsRest(){
