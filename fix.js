@@ -45,7 +45,15 @@
       h+='<div style="font-size:16px;font-weight:700;margin:4px 0 10px;color:#111">📋 Hoy — <span style="color:#D4A843">'+transfers.length+' transferencia'+(transfers.length!==1?'s':'')+'</span></div>';
       h+='<div style="background:#fff;border-radius:14px;padding:4px 14px 14px;border:1px solid #ece6db;margin-bottom:14px">';
       transfers.slice().reverse().forEach(function(t){
-        h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f5f0ea"><div><div style="font-size:13px;font-weight:600">'+t.nombre+'</div><div style="font-size:10px;color:#888">'+(t.hora||'')+' · '+(t.obs||t.motivo||'')+'</div></div><div style="text-align:right"><div style="font-size:13px;font-weight:700;color:#B71C1C">-'+t.cantidad+' '+(t.unidad||'')+'</div><div style="font-size:10px;color:#888">'+fmt(t.costo||0)+'</div></div></div>';
+        var usuarioColor=t.usuario?'#1F4E79':'#aaa';
+        h+='<div style="padding:10px 0;border-bottom:1px solid #f5f0ea">';
+        h+='<div style="display:flex;justify-content:space-between;align-items:flex-start">';
+        h+='<div style="flex:1"><div style="font-size:13px;font-weight:700;color:#111">'+t.nombre+'</div>';
+        h+='<div style="font-size:10px;color:#888;margin-top:2px">'+(t.hora||'')+' · '+(t.obs||t.motivo||'Uso restaurante')+'</div>';
+        if(t.usuario) h+='<div style="margin-top:4px;display:inline-flex;align-items:center;gap:4px;background:#e8f0fe;border-radius:20px;padding:2px 8px"><span style="font-size:9px;color:#1F4E79;font-weight:700">👤 '+t.usuario+'</span></div>';
+        h+='</div>';
+        h+='<div style="text-align:right;flex-shrink:0;padding-left:10px"><div style="font-size:14px;font-weight:700;color:#B71C1C">−'+t.cantidad+' '+(t.unidad||'')+'</div><div style="font-size:10px;color:#888">'+fmt(t.costo||0)+'</div></div>';
+        h+='</div></div>';
       });
       h+='</div>';
     }
@@ -130,11 +138,13 @@
 
       // Descontar del inventario
       var prod=(S.productos||[]).find(function(p){return p.id===selProd.id;});
+      var stockAntes=selProd.stock;
+      var stockDespues=Math.max(0,stockAntes-qty);
       if(prod){
-        prod.stock=Math.max(0,(prod.stock||0)-qty);
-        prod.cant=prod.stock;
+        prod.stock=stockDespues;
+        prod.cant=stockDespues;
         if(typeof firebase!=='undefined'&&firebase.database)
-          firebase.database().ref('inventario/productos/'+selProd.id).update({stock:prod.stock,cant:prod.stock});
+          firebase.database().ref('inventario/productos/'+selProd.id).update({stock:stockDespues,cant:stockDespues});
       }
 
       // Guardar transferencia
@@ -150,6 +160,16 @@
 
       if(typeof firebase!=='undefined'&&firebase.database){
         firebase.database().ref('transfsRest/'+hoyStr2).push(entrada);
+        // Guardar en historialInventario/{prodId} — esto es lo que muestra el Historial por Producto
+        firebase.database().ref('historialInventario/'+selProd.id).push({
+          prodId:selProd.id,nombre:selProd.nombre,
+          cantidad:-(qty),unidad:selProd.unidad,
+          stockAntes:stockAntes,stockDespues:stockDespues,
+          motivo:'🍽️ Transferencia al restaurante'+(obs&&obs!=='Uso restaurante'?' — '+obs:''),
+          origen:'restaurante',
+          usuario:window.currentUser?currentUser.nombre:'',
+          hora:hora,fecha:hoyStr2,ts:Date.now()
+        });
         // Guardar en restaurante/log para que el Historial por Día lo muestre
         var logKey=hoyStr2.replace(/-/g,'_');
         firebase.database().ref('restaurante/log/'+logKey).push({
