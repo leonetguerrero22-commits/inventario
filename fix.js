@@ -41,18 +41,33 @@
     h+='</div>';
 
     // Acumulado desde último pago
+    var esAdminSup=window.currentUser&&(currentUser.rol==='admin'||currentUser.rol==='supervisor');
     var diasDesde=Math.max(0,Math.round((new Date(hoyStr)-new Date(acum.desde||hoyStr))/(1000*60*60*24)));
     h+='<div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:16px;padding:16px;margin-bottom:14px;color:#fff">';
-    h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">';
-    h+='<div><div style="font-size:13px;font-weight:700;color:#f0cc7a">📊 Acumulado desde '+( acum.desde||hoyStr)+'</div>';
-    h+='<div style="font-size:10px;opacity:.6;margin-top:2px">'+diasDesde+' día'+(diasDesde!==1?'s':'')+' sin corte · '+(acum.pagos&&acum.pagos.length?acum.pagos.length+' pago'+(acum.pagos.length!==1?'s':'')+' previo'+(acum.pagos.length!==1?'s':''):'Sin pagos previos')+'</div></div>';
-    h+='</div>';
-    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">';
+    h+='<div style="font-size:13px;font-weight:700;color:#f0cc7a;margin-bottom:4px">📊 Acumulado período actual</div>';
+    h+='<div style="font-size:10px;opacity:.6;margin-bottom:12px">Desde '+( acum.desde||hoyStr)+' · '+diasDesde+' día'+(diasDesde!==1?'s':'')+' sin corte</div>';
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">';
     h+='<div style="background:rgba(255,255,255,.08);border-radius:10px;padding:12px;text-align:center"><div style="font-size:9px;opacity:.6;margin-bottom:4px;text-transform:uppercase">Costo acumulado</div><div style="font-size:18px;font-weight:700;color:#ef9a9a">'+fmt(acum.costoTotal||0)+'</div></div>';
     h+='<div style="background:rgba(255,255,255,.08);border-radius:10px;padding:12px;text-align:center"><div style="font-size:9px;opacity:.6;margin-bottom:4px;text-transform:uppercase">Venta acumulada</div><div style="font-size:18px;font-weight:700;color:#a5d6a7">'+fmt(acum.ventaTotal||0)+'</div></div>';
     h+='</div>';
-    h+='<button id="fx-btn-pago" style="width:100%;padding:13px;border-radius:11px;border:none;background:#D4A843;color:#111;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">💰 Registrar Pago / Resetear Conteo</button>';
+    // Filtro por período (sobre transfsRest de Firebase)
+    h+='<div style="margin-bottom:12px"><div style="font-size:10px;opacity:.6;text-transform:uppercase;margin-bottom:7px">Ver consumo por período</div>';
+    h+='<div style="display:flex;gap:6px">';
+    h+='<button class="fx-chip" data-per="semana" style="flex:1;padding:7px 4px;border-radius:9px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Esta semana</button>';
+    h+='<button class="fx-chip" data-per="mes" style="flex:1;padding:7px 4px;border-radius:9px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Este mes</button>';
+    h+='<button class="fx-chip" data-per="custom" style="flex:1;padding:7px 4px;border-radius:9px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Personalizado</button>';
     h+='</div>';
+    h+='<div id="fx-filtro-custom" style="display:none;margin-top:8px;display:none"><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px"><input type="date" id="fx-desde" style="padding:6px 8px;border-radius:8px;border:none;font-size:12px;font-family:inherit" value="'+acum.desde+'" max="'+hoyStr+'"><input type="date" id="fx-hasta" style="padding:6px 8px;border-radius:8px;border:none;font-size:12px;font-family:inherit" value="'+hoyStr+'" max="'+hoyStr+'"></div><button id="fx-btn-filtrar" style="width:100%;margin-top:6px;padding:8px;border-radius:8px;border:none;background:#D4A843;color:#111;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Ver período</button></div>';
+    h+='<div id="fx-periodo-result" style="margin-top:10px"></div>';
+    h+='</div>';
+    if(esAdminSup){
+      h+='<button id="fx-btn-pago" style="width:100%;padding:13px;border-radius:11px;border:none;background:#D4A843;color:#111;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">💰 Registrar Pago / Cerrar Período</button>';
+    } else {
+      h+='<div style="padding:10px;border-radius:10px;background:rgba(255,255,255,.07);text-align:center;font-size:11px;opacity:.5">🔒 Solo Admin o Supervisor puede registrar pagos</div>';
+    }
+    h+='</div>';
+    // Historial de períodos pagados
+    h+='<div id="fx-historial-pagos" style="margin-bottom:14px"></div>';
 
     h+='<div style="background:#fff;border-radius:16px;padding:16px;margin-bottom:14px;border:1px solid #ece6db">';
     h+='<div style="font-size:13px;font-weight:700;color:#1F4E79;margin-bottom:12px">📦 Nueva Transferencia</div>';
@@ -89,6 +104,52 @@
 
     h+='</div>';
     el.innerHTML=h;
+
+    // Chips de período
+    document.querySelectorAll('.fx-chip').forEach(function(chip){
+      chip.onclick=function(){
+        document.querySelectorAll('.fx-chip').forEach(function(c){c.style.background='rgba(255,255,255,.1)';c.style.borderColor='rgba(255,255,255,.2)';});
+        this.style.background='#D4A843';this.style.borderColor='#D4A843';this.style.color='#111';
+        var per=this.dataset.per;
+        var customDiv=document.getElementById('fx-filtro-custom');
+        if(per==='custom'){ if(customDiv) customDiv.style.display='block'; return; }
+        if(customDiv) customDiv.style.display='none';
+        calcFxPeriodo(per,null,null);
+      };
+    });
+
+    // Botón filtrar personalizado
+    var btnFiltrar=document.getElementById('fx-btn-filtrar');
+    if(btnFiltrar) btnFiltrar.onclick=function(){
+      var desde=(document.getElementById('fx-desde')||{}).value||hoyStr;
+      var hasta=(document.getElementById('fx-hasta')||{}).value||hoyStr;
+      calcFxPeriodo('custom',desde,hasta);
+    };
+
+    // Cargar historial de períodos pagados
+    var db0=window.firebase&&window.firebase.database?window.firebase.database():null;
+    if(db0){
+      db0.ref('restaurantePagos').orderByChild('ts').limitToLast(5).once('value').then(function(snap){
+        var pagos=[];
+        if(snap.exists()) snap.forEach(function(c){pagos.push(c.val());});
+        pagos.reverse();
+        var histEl=document.getElementById('fx-historial-pagos');
+        if(!histEl||!pagos.length) return;
+        var hh='<div style="font-size:13px;font-weight:700;color:#1F4E79;margin-bottom:10px">🗂️ Períodos Pagados</div>';
+        pagos.forEach(function(p){
+          hh+='<div style="background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:8px;border:1px solid #ece6db;border-left:4px solid #D4A843">';
+          hh+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">';
+          hh+='<div style="font-size:11px;font-weight:700;color:#555">'+p.desde+' → '+p.hasta+'</div>';
+          hh+='<div style="font-size:10px;color:#888">'+p.hora+' · '+(p.pagadoPor||'—')+'</div>';
+          hh+='</div>';
+          hh+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+          hh+='<div style="background:#fff5f5;border-radius:8px;padding:8px;text-align:center"><div style="font-size:9px;color:#888">Costo</div><div style="font-size:13px;font-weight:700;color:#B71C1C">'+fmt(p.costoTotal||0)+'</div></div>';
+          hh+='<div style="background:#f0fff4;border-radius:8px;padding:8px;text-align:center"><div style="font-size:9px;color:#888">Venta equiv.</div><div style="font-size:13px;font-weight:700;color:#1E5631">'+fmt(p.ventaTotal||0)+'</div></div>';
+          hh+='</div></div>';
+        });
+        histEl.innerHTML=hh;
+      });
+    }
 
     // Botón pago / reset acumulado
     var btnPago=document.getElementById('fx-btn-pago');
@@ -270,4 +331,66 @@
       setTimeout(renderRest, 300);
     };
   }
+  function calcFxPeriodo(per,desdeCustom,hastaCustom){
+    var resEl=document.getElementById('fx-periodo-result');
+    if(!resEl) return;
+    resEl.innerHTML='<div style="font-size:11px;color:rgba(255,255,255,.5);padding:6px 0">Calculando...</div>';
+    var hoyStr=typeof hoy==='function'?hoy():new Date().toISOString().slice(0,10);
+    var desde,hasta=hoyStr;
+    if(per==='semana'){
+      var d=new Date();d.setDate(d.getDate()-d.getDay());
+      desde=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    } else if(per==='mes'){
+      var d2=new Date();
+      desde=d2.getFullYear()+'-'+String(d2.getMonth()+1).padStart(2,'0')+'-01';
+    } else {
+      desde=desdeCustom||hoyStr; hasta=hastaCustom||hoyStr;
+    }
+    var db=window.firebase&&window.firebase.database?window.firebase.database():null;
+    if(!db){resEl.innerHTML='<div style="font-size:11px;color:rgba(255,255,255,.4)">Sin conexión</div>';return;}
+    // Generar lista de fechas en rango
+    var fechas=[],cur=new Date(desde+'T12:00:00'),fin=new Date(hasta+'T12:00:00');
+    while(cur<=fin&&fechas.length<60){
+      fechas.push(cur.getFullYear()+'-'+String(cur.getMonth()+1).padStart(2,'0')+'-'+String(cur.getDate()).padStart(2,'0'));
+      cur.setDate(cur.getDate()+1);
+    }
+    // Leer cada día de transfsRest
+    Promise.all(fechas.map(function(f){return db.ref('transfsRest/'+f).once('value');}))
+    .then(function(snaps){
+      var totalCosto=0,totalVenta=0,byProd={};
+      snaps.forEach(function(snap){
+        if(!snap.exists()) return;
+        snap.forEach(function(c){
+          var t=c.val();
+          totalCosto+=(t.costo||0);
+          totalVenta+=(t.precioVenta||0);
+          var k=t.nombre;
+          if(!byProd[k]) byProd[k]={nombre:k,unidad:t.unidad||'',qty:0,costo:0};
+          byProd[k].qty+=t.cantidad||0;
+          byProd[k].costo+=(t.costo||0);
+        });
+      });
+      if(!totalCosto&&!totalVenta){
+        resEl.innerHTML='<div style="font-size:11px;color:rgba(255,255,255,.4);padding:6px 0">Sin movimientos en este período</div>';
+        return;
+      }
+      var hh='<div style="background:rgba(255,255,255,.07);border-radius:10px;padding:10px;margin-top:4px">';
+      hh+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">';
+      hh+='<div style="text-align:center"><div style="font-size:9px;opacity:.6">Costo período</div><div style="font-size:16px;font-weight:700;color:#ef9a9a">'+fmt(totalCosto)+'</div></div>';
+      hh+='<div style="text-align:center"><div style="font-size:9px;opacity:.6">Venta equiv.</div><div style="font-size:16px;font-weight:700;color:#a5d6a7">'+fmt(totalVenta)+'</div></div>';
+      hh+='</div>';
+      Object.values(byProd).sort(function(a,b){return b.costo-a.costo;}).slice(0,8).forEach(function(p){
+        hh+='<div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-top:1px solid rgba(255,255,255,.07)">';
+        hh+='<span style="opacity:.8">'+p.nombre+'</span>';
+        hh+='<span style="opacity:.6">'+Number(p.qty).toFixed(2)+' '+p.unidad+'</span>';
+        hh+='<span style="color:#ef9a9a;font-weight:700">'+fmt(p.costo)+'</span>';
+        hh+='</div>';
+      });
+      hh+='</div>';
+      resEl.innerHTML=hh;
+    }).catch(function(){
+      resEl.innerHTML='<div style="font-size:11px;color:rgba(255,255,255,.4)">Error al cargar</div>';
+    });
+  }
+
 })();
