@@ -43,30 +43,41 @@
     // Acumulado desde último pago
     var esAdminSup=window.currentUser&&(currentUser.rol==='admin'||currentUser.rol==='supervisor');
     var diasDesde=Math.max(0,Math.round((new Date(hoyStr)-new Date(acum.desde||hoyStr))/(1000*60*60*24)));
+
+    // ── Panel acumulado (fondo oscuro) ──
     h+='<div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:16px;padding:16px;margin-bottom:14px;color:#fff">';
-    h+='<div style="font-size:13px;font-weight:700;color:#f0cc7a;margin-bottom:4px">📊 Acumulado período actual</div>';
-    h+='<div style="font-size:10px;opacity:.6;margin-bottom:12px">Desde '+( acum.desde||hoyStr)+' · '+diasDesde+' día'+(diasDesde!==1?'s':'')+' sin corte</div>';
-    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">';
-    h+='<div style="background:rgba(255,255,255,.08);border-radius:10px;padding:12px;text-align:center"><div style="font-size:9px;opacity:.6;margin-bottom:4px;text-transform:uppercase">Costo acumulado</div><div style="font-size:18px;font-weight:700;color:#ef9a9a">'+fmt(acum.costoTotal||0)+'</div></div>';
-    h+='<div style="background:rgba(255,255,255,.08);border-radius:10px;padding:12px;text-align:center"><div style="font-size:9px;opacity:.6;margin-bottom:4px;text-transform:uppercase">Venta acumulada</div><div style="font-size:18px;font-weight:700;color:#a5d6a7">'+fmt(acum.ventaTotal||0)+'</div></div>';
-    h+='</div>';
-    // Filtro por período (sobre transfsRest de Firebase)
-    h+='<div style="margin-bottom:12px"><div style="font-size:10px;opacity:.6;text-transform:uppercase;margin-bottom:7px">Ver consumo por período</div>';
-    h+='<div style="display:flex;gap:6px">';
-    h+='<button class="fx-chip" data-per="semana" style="flex:1;padding:7px 4px;border-radius:9px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Esta semana</button>';
-    h+='<button class="fx-chip" data-per="mes" style="flex:1;padding:7px 4px;border-radius:9px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Este mes</button>';
-    h+='<button class="fx-chip" data-per="custom" style="flex:1;padding:7px 4px;border-radius:9px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Personalizado</button>';
-    h+='</div>';
-    h+='<div id="fx-filtro-custom" style="display:none;margin-top:8px;display:none"><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px"><input type="date" id="fx-desde" style="padding:6px 8px;border-radius:8px;border:none;font-size:12px;font-family:inherit" value="'+acum.desde+'" max="'+hoyStr+'"><input type="date" id="fx-hasta" style="padding:6px 8px;border-radius:8px;border:none;font-size:12px;font-family:inherit" value="'+hoyStr+'" max="'+hoyStr+'"></div><button id="fx-btn-filtrar" style="width:100%;margin-top:6px;padding:8px;border-radius:8px;border:none;background:#D4A843;color:#111;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Ver período</button></div>';
-    h+='<div id="fx-periodo-result" style="margin-top:10px"></div>';
+    h+='<div style="font-size:13px;font-weight:700;color:#f0cc7a;margin-bottom:2px">📊 Acumulado período actual</div>';
+    h+='<div style="font-size:10px;opacity:.6;margin-bottom:12px">Desde '+(acum.desde||hoyStr)+' · '+diasDesde+' día'+(diasDesde!==1?'s':'')+' sin corte</div>';
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">';
+    h+='<div style="background:rgba(255,255,255,.08);border-radius:10px;padding:12px;text-align:center"><div style="font-size:9px;opacity:.6;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">Costo acumulado</div><div style="font-size:20px;font-weight:700;color:#ef9a9a">'+fmt(acum.costoTotal||0)+'</div></div>';
+    h+='<div style="background:rgba(255,255,255,.08);border-radius:10px;padding:12px;text-align:center"><div style="font-size:9px;opacity:.6;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px">Venta acumulada</div><div style="font-size:20px;font-weight:700;color:#a5d6a7">'+fmt(acum.ventaTotal||0)+'</div></div>';
     h+='</div>';
     if(esAdminSup){
-      h+='<button id="fx-btn-pago" style="width:100%;padding:13px;border-radius:11px;border:none;background:#D4A843;color:#111;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">💰 Registrar Pago / Cerrar Período</button>';
+      h+='<button id="fx-btn-pago" style="width:100%;padding:13px;border-radius:11px;border:none;background:#D4A843;color:#111;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:0">💰 Registrar Pago / Cerrar Período</button>';
     } else {
       h+='<div style="padding:10px;border-radius:10px;background:rgba(255,255,255,.07);text-align:center;font-size:11px;opacity:.5">🔒 Solo Admin o Supervisor puede registrar pagos</div>';
     }
     h+='</div>';
-    // Historial de períodos pagados
+
+    // ── Panel de consulta por período (fondo claro, separado) ──
+    h+='<div style="background:#fff;border-radius:16px;padding:16px;margin-bottom:14px;border:1px solid #ece6db">';
+    h+='<div style="font-size:13px;font-weight:700;color:#1F4E79;margin-bottom:12px">🔍 Consultar consumo por período</div>';
+    h+='<div style="display:flex;gap:6px;margin-bottom:10px">';
+    h+='<button class="fx-chip" data-per="semana" style="flex:1;padding:8px 4px;border-radius:9px;border:2px solid #ddd;background:#f5f5f5;color:#555;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">📅 Semana</button>';
+    h+='<button class="fx-chip" data-per="mes" style="flex:1;padding:8px 4px;border-radius:9px;border:2px solid #ddd;background:#f5f5f5;color:#555;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">🗓️ Mes</button>';
+    h+='<button class="fx-chip" data-per="custom" style="flex:1;padding:8px 4px;border-radius:9px;border:2px solid #ddd;background:#f5f5f5;color:#555;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">✏️ Fechas</button>';
+    h+='</div>';
+    h+='<div id="fx-filtro-custom" style="display:none;margin-bottom:10px">';
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">';
+    h+='<div><div style="font-size:9px;font-weight:700;color:#888;margin-bottom:4px">DESDE</div><input type="date" id="fx-desde" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;font-size:12px;font-family:inherit;box-sizing:border-box" value="'+(acum.desde||hoyStr)+'" max="'+hoyStr+'"></div>';
+    h+='<div><div style="font-size:9px;font-weight:700;color:#888;margin-bottom:4px">HASTA</div><input type="date" id="fx-hasta" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;font-size:12px;font-family:inherit;box-sizing:border-box" value="'+hoyStr+'" max="'+hoyStr+'"></div>';
+    h+='</div>';
+    h+='<button id="fx-btn-filtrar" style="width:100%;padding:10px;border-radius:9px;border:none;background:#1F4E79;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Ver período personalizado</button>';
+    h+='</div>';
+    h+='<div id="fx-periodo-result"></div>';
+    h+='</div>';
+
+    // ── Historial de períodos pagados (se rellena con Firebase) ──
     h+='<div id="fx-historial-pagos" style="margin-bottom:14px"></div>';
 
     h+='<div style="background:#fff;border-radius:16px;padding:16px;margin-bottom:14px;border:1px solid #ece6db">';
@@ -108,11 +119,17 @@
     // Chips de período
     document.querySelectorAll('.fx-chip').forEach(function(chip){
       chip.onclick=function(){
-        document.querySelectorAll('.fx-chip').forEach(function(c){c.style.background='rgba(255,255,255,.1)';c.style.borderColor='rgba(255,255,255,.2)';});
-        this.style.background='#D4A843';this.style.borderColor='#D4A843';this.style.color='#111';
+        document.querySelectorAll('.fx-chip').forEach(function(c){
+          c.style.background='#f5f5f5';c.style.borderColor='#ddd';c.style.color='#555';
+        });
+        this.style.background='#1F4E79';this.style.borderColor='#1F4E79';this.style.color='#fff';
         var per=this.dataset.per;
         var customDiv=document.getElementById('fx-filtro-custom');
-        if(per==='custom'){ if(customDiv) customDiv.style.display='block'; return; }
+        if(per==='custom'){
+          if(customDiv) customDiv.style.display='block';
+          document.getElementById('fx-periodo-result').innerHTML='';
+          return;
+        }
         if(customDiv) customDiv.style.display='none';
         calcFxPeriodo(per,null,null);
       };
