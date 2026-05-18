@@ -148,10 +148,28 @@
       if(!S.transfsRest[hoyStr2]) S.transfsRest[hoyStr2]=[];
       S.transfsRest[hoyStr2].push(entrada);
 
-      if(typeof firebase!=='undefined'&&firebase.database)
+      if(typeof firebase!=='undefined'&&firebase.database){
         firebase.database().ref('transfsRest/'+hoyStr2).push(entrada);
-      if(typeof fbLog==='function')
-        fbLog('restaurante','Transferencia: '+qty+' '+selProd.unidad+' de '+selProd.nombre);
+        // Guardar en restaurante/log para que el Historial por Día lo muestre
+        var logKey=hoyStr2.replace(/-/g,'_');
+        firebase.database().ref('restaurante/log/'+logKey).push({
+          tipo:'rapido',
+          prodId:selProd.id,nombre:selProd.nombre,cantidad:qty,unidad:selProd.unidad,
+          costo:qty*selProd.costo,precioVenta:qty*selProd.precio,
+          obs:obs,hora:hora,fecha:hoyStr2,ts:Date.now(),
+          usuario:window.currentUser?currentUser.nombre:''
+        });
+        // Registrar en Bitácora general con tipo restaurante
+        if(window.currentUser){
+          firebase.database().ref('inventario/bitacora').push({
+            tipo:'restaurante',
+            detalle:'🍽️ Restaurante: '+qty+' '+selProd.unidad+' de '+selProd.nombre+' · Costo: '+fmt(qty*selProd.costo),
+            userId:currentUser.id,userName:currentUser.nombre,
+            userEmoji:currentUser.emoji||'🍽️',userColor:currentUser.color||'#1B6B35',
+            ts:Date.now(),fecha:new Date().toLocaleString('es-CO')
+          });
+        }
+      }
 
       showToast&&showToast('✅ '+qty+' '+selProd.unidad+' de '+selProd.nombre+' transferido');
       selProd=null;
