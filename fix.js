@@ -17,12 +17,41 @@
     var costoHoy=transfers.reduce(function(s,t){return s+(t.costo||0);},0);
     var ventaHoy=transfers.reduce(function(s,t){return s+(t.precioVenta||0);},0);
 
+    // Cargar acumulado desde Firebase y luego renderizar
+    var db=window.firebase&&window.firebase.database?window.firebase.database():null;
+    if(db){
+      db.ref('restauranteAcumulado').once('value').then(function(snap){
+        var acum=snap.exists()?snap.val():{costoTotal:0,ventaTotal:0,desde:hoyStr,pagos:[]};
+        renderRestConAcum(el,S,hoyStr,transfers,costoHoy,ventaHoy,acum);
+      }).catch(function(){ renderRestConAcum(el,S,hoyStr,transfers,costoHoy,ventaHoy,{costoTotal:0,ventaTotal:0,desde:hoyStr,pagos:[]}); });
+    } else {
+      renderRestConAcum(el,S,hoyStr,transfers,costoHoy,ventaHoy,{costoTotal:0,ventaTotal:0,desde:hoyStr,pagos:[]});
+    }
+  }
+
+  function renderRestConAcum(el,S,hoyStr,transfers,costoHoy,ventaHoy,acum){
     var h='<div style="padding:4px 0 100px">';
     h+='<div style="background:linear-gradient(135deg,#1a3a2a,#0d2318);color:#fff;padding:16px;border-radius:16px;margin-bottom:14px;display:flex;align-items:center;gap:12px"><div style="font-size:32px">🍽️</div><div><div style="font-size:15px;font-weight:700">Transferencias al Restaurante</div><div style="font-size:11px;opacity:.7">Descuenta del inventario automáticamente</div></div></div>';
+
+    // KPIs de hoy
     h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">';
     h+='<div style="background:#fff;border-radius:12px;padding:12px;text-align:center;border:1px solid #ece6db"><div style="font-size:9px;color:#888">HOY</div><div style="font-size:22px;font-weight:700;color:#1F4E79">'+transfers.length+'</div></div>';
-    h+='<div style="background:#fff;border-radius:12px;padding:12px;text-align:center;border:1px solid #ece6db"><div style="font-size:9px;color:#888">COSTO</div><div style="font-size:13px;font-weight:700;color:#B71C1C">'+fmt(costoHoy)+'</div></div>';
-    h+='<div style="background:#fff;border-radius:12px;padding:12px;text-align:center;border:1px solid #ece6db"><div style="font-size:9px;color:#888">VENTA</div><div style="font-size:13px;font-weight:700;color:#1E5631">'+fmt(ventaHoy)+'</div></div>';
+    h+='<div style="background:#fff;border-radius:12px;padding:12px;text-align:center;border:1px solid #ece6db"><div style="font-size:9px;color:#888">COSTO HOY</div><div style="font-size:13px;font-weight:700;color:#B71C1C">'+fmt(costoHoy)+'</div></div>';
+    h+='<div style="background:#fff;border-radius:12px;padding:12px;text-align:center;border:1px solid #ece6db"><div style="font-size:9px;color:#888">VENTA HOY</div><div style="font-size:13px;font-weight:700;color:#1E5631">'+fmt(ventaHoy)+'</div></div>';
+    h+='</div>';
+
+    // Acumulado desde último pago
+    var diasDesde=Math.max(0,Math.round((new Date(hoyStr)-new Date(acum.desde||hoyStr))/(1000*60*60*24)));
+    h+='<div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:16px;padding:16px;margin-bottom:14px;color:#fff">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">';
+    h+='<div><div style="font-size:13px;font-weight:700;color:#f0cc7a">📊 Acumulado desde '+( acum.desde||hoyStr)+'</div>';
+    h+='<div style="font-size:10px;opacity:.6;margin-top:2px">'+diasDesde+' día'+(diasDesde!==1?'s':'')+' sin corte · '+(acum.pagos&&acum.pagos.length?acum.pagos.length+' pago'+(acum.pagos.length!==1?'s':'')+' previo'+(acum.pagos.length!==1?'s':''):'Sin pagos previos')+'</div></div>';
+    h+='</div>';
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">';
+    h+='<div style="background:rgba(255,255,255,.08);border-radius:10px;padding:12px;text-align:center"><div style="font-size:9px;opacity:.6;margin-bottom:4px;text-transform:uppercase">Costo acumulado</div><div style="font-size:18px;font-weight:700;color:#ef9a9a">'+fmt(acum.costoTotal||0)+'</div></div>';
+    h+='<div style="background:rgba(255,255,255,.08);border-radius:10px;padding:12px;text-align:center"><div style="font-size:9px;opacity:.6;margin-bottom:4px;text-transform:uppercase">Venta acumulada</div><div style="font-size:18px;font-weight:700;color:#a5d6a7">'+fmt(acum.ventaTotal||0)+'</div></div>';
+    h+='</div>';
+    h+='<button id="fx-btn-pago" style="width:100%;padding:13px;border-radius:11px;border:none;background:#D4A843;color:#111;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">💰 Registrar Pago / Resetear Conteo</button>';
     h+='</div>';
 
     h+='<div style="background:#fff;border-radius:16px;padding:16px;margin-bottom:14px;border:1px solid #ece6db">';
@@ -60,6 +89,43 @@
 
     h+='</div>';
     el.innerHTML=h;
+
+    // Botón pago / reset acumulado
+    var btnPago=document.getElementById('fx-btn-pago');
+    if(btnPago) btnPago.onclick=function(){
+      var db=window.firebase&&window.firebase.database?window.firebase.database():null;
+      if(!db){showToast&&showToast('Sin conexión');return;}
+      db.ref('restauranteAcumulado').once('value').then(function(snap){
+        var acum=snap.exists()?snap.val():{costoTotal:0,ventaTotal:0,desde:hoyStr,pagos:[]};
+        if(!acum.costoTotal&&!acum.ventaTotal){showToast&&showToast('No hay acumulado que registrar');return;}
+        var confirmar=window.confirm('¿Registrar pago de '+fmt(acum.costoTotal)+' en costo ('+fmt(acum.ventaTotal)+' en venta) y reiniciar el conteo?');
+        if(!confirmar) return;
+        var histPago={
+          fecha:hoyStr,hora:new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'}),
+          costoTotal:acum.costoTotal,ventaTotal:acum.ventaTotal,
+          desde:acum.desde||hoyStr,hasta:hoyStr,
+          pagadoPor:window.currentUser?currentUser.nombre:'—',
+          ts:Date.now()
+        };
+        // Guardar en historial de pagos
+        db.ref('restaurantePagos').push(histPago);
+        // Registrar en bitácora
+        if(window.currentUser){
+          db.ref('inventario/bitacora').push({
+            tipo:'restaurante',
+            detalle:'💰 Pago registrado al restaurante · Costo: '+fmt(acum.costoTotal)+' · Venta: '+fmt(acum.ventaTotal)+' · Período: '+acum.desde+' → '+hoyStr,
+            userId:currentUser.id,userName:currentUser.nombre,
+            userEmoji:currentUser.emoji||'💰',userColor:currentUser.color||'#D4A843',
+            ts:Date.now(),fecha:new Date().toLocaleString('es-CO')
+          });
+        }
+        // Resetear acumulado
+        db.ref('restauranteAcumulado').set({costoTotal:0,ventaTotal:0,desde:hoyStr,pagos:[]}).then(function(){
+          showToast&&showToast('✅ Pago registrado y conteo reiniciado');
+          setTimeout(renderRest,300);
+        });
+      });
+    };
 
     // Buscador
     var search=document.getElementById('fx-search');
@@ -136,6 +202,8 @@
       var hoyStr2=typeof hoy==='function'?hoy():new Date().toISOString().slice(0,10);
       var S=window.S||{};
 
+      var db=typeof firebase!=='undefined'&&firebase.database?firebase.database():null;
+
       // Descontar del inventario
       var prod=(S.productos||[]).find(function(p){return p.id===selProd.id;});
       var stockAntes=selProd.stock;
@@ -143,8 +211,7 @@
       if(prod){
         prod.stock=stockDespues;
         prod.cant=stockDespues;
-        if(typeof firebase!=='undefined'&&firebase.database)
-          firebase.database().ref('inventario/productos/'+selProd.id).update({stock:stockDespues,cant:stockDespues});
+        if(db) db.ref('inventario/productos/'+selProd.id).update({stock:stockDespues,cant:stockDespues});
       }
 
       // Guardar transferencia
@@ -157,11 +224,10 @@
       if(!S.transfsRest) S.transfsRest={};
       if(!S.transfsRest[hoyStr2]) S.transfsRest[hoyStr2]=[];
       S.transfsRest[hoyStr2].push(entrada);
-
-      if(typeof firebase!=='undefined'&&firebase.database){
-        firebase.database().ref('transfsRest/'+hoyStr2).push(entrada);
+      if(db){
+        db.ref('transfsRest/'+hoyStr2).push(entrada);
         // Guardar en historialInventario/{prodId} — esto es lo que muestra el Historial por Producto
-        firebase.database().ref('historialInventario/'+selProd.id).push({
+        db.ref('historialInventario/'+selProd.id).push({
           prodId:selProd.id,nombre:selProd.nombre,
           cantidad:-(qty),unidad:selProd.unidad,
           stockAntes:stockAntes,stockDespues:stockDespues,
@@ -172,16 +238,24 @@
         });
         // Guardar en restaurante/log para que el Historial por Día lo muestre
         var logKey=hoyStr2.replace(/-/g,'_');
-        firebase.database().ref('restaurante/log/'+logKey).push({
+        db.ref('restaurante/log/'+logKey).push({
           tipo:'rapido',
           prodId:selProd.id,nombre:selProd.nombre,cantidad:qty,unidad:selProd.unidad,
           costo:qty*selProd.costo,precioVenta:qty*selProd.precio,
           obs:obs,hora:hora,fecha:hoyStr2,ts:Date.now(),
           usuario:window.currentUser?currentUser.nombre:''
         });
+        // Actualizar acumulado global
+        db.ref('restauranteAcumulado').once('value').then(function(snap){
+          var acum=snap.exists()?snap.val():{costoTotal:0,ventaTotal:0,desde:hoyStr2,pagos:[]};
+          acum.costoTotal=(acum.costoTotal||0)+(qty*selProd.costo);
+          acum.ventaTotal=(acum.ventaTotal||0)+(qty*selProd.precio);
+          if(!acum.desde) acum.desde=hoyStr2;
+          db.ref('restauranteAcumulado').set(acum);
+        });
         // Registrar en Bitácora general con tipo restaurante
         if(window.currentUser){
-          firebase.database().ref('inventario/bitacora').push({
+          db.ref('inventario/bitacora').push({
             tipo:'restaurante',
             detalle:'🍽️ Restaurante: '+qty+' '+selProd.unidad+' de '+selProd.nombre+' · Costo: '+fmt(qty*selProd.costo),
             userId:currentUser.id,userName:currentUser.nombre,
