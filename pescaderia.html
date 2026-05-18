@@ -223,6 +223,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--negro);color:var(--negro)
 .log-item.add{border-left-color:var(--verde-m);}
 .log-item.edit{border-left-color:var(--azul);}
 .log-item.reset{border-left-color:var(--ambar);}
+.log-item.restaurante{border-left-color:#1B6B35;}
 .log-top{display:flex;align-items:center;gap:7px;margin-bottom:3px;}
 .log-av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;}
 .log-who{font-weight:600;font-size:13px;}
@@ -576,7 +577,7 @@ const CAT_CLR = {
   'Congelados':'#00838F','Limpieza':'#00bcd4','Surimi':'#9c27b0','Bebidas':'#2196f3',
   'Harina':'#ff9800','Acompañantes':'#4caf50','Conservas':'#795548','Aceites':'#FFA000',
 };
-const ACT_ICO = {add:'➕',edit:'✏️',del:'🗑️',reset:'🔄',login:'🔐',logout:'👋'};
+const ACT_ICO = {add:'➕',edit:'✏️',del:'🗑️',reset:'🔄',login:'🔐',logout:'👋',restaurante:'🍽️'};
 
 // ── CIERRE DIARIO & HISTORIAL ─────────────────────────────────────────────────
 
@@ -3574,7 +3575,7 @@ function renderRestauranteInt(){
     h += '</div>';
 
     // Botón
-    h += '<button onclick="confirmarRITransf()" style="width:100%;padding:14px;border-radius:12px;border:none;background:linear-gradient(135deg,#1a3a2a,#1E5631);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">✅ Confirmar Transferencia</button>';
+    h += '<button onclick="ejecutarTransfRest()" style="width:100%;padding:14px;border-radius:12px;border:none;background:linear-gradient(135deg,#1a3a2a,#1E5631);color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">✅ Confirmar Transferencia</button>';
     h += '</div>';
 
     // Historial del día
@@ -3583,15 +3584,28 @@ function renderRestauranteInt(){
       h += '<div style="background:#fff;border-radius:14px;padding:4px 14px 14px;border:1px solid #ece6db;margin-bottom:14px">';
       transfers.slice().reverse().forEach(function(t){
         h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f5f0ea">';
-        h += '<div><div style="font-size:13px;font-weight:600">'+t.nombre+'</div><div style="font-size:10px;color:#888">'+t.hora+' · '+(t.obs||t.motivo||'')+'</div></div>';
-        h += '<div style="text-align:right"><div style="font-size:13px;font-weight:700;color:#B71C1C">-'+t.cantidad+' '+(t.unidad||'')+'</div><div style="font-size:10px;color:#888">'+f(t.costo||0)+'</div></div>';
+        h += '<div><div style="font-size:13px;font-weight:600">'+t.nombre+'</div><div style="font-size:10px;color:#888">'+t.hora+' · '+(t.obs||t.motivo||'')+(t.usuario?' · '+t.usuario:'')+'</div></div>';
+        h += '<div style="text-align:right"><div style="font-size:13px;font-weight:700;color:#B71C1C">-'+t.cantidad+' '+(t.unidad||'')+'</div><div style="font-size:10px;color:#888">Costo: '+f(t.costo||0)+'</div></div>';
         h += '</div>';
       });
       h += '</div>';
     }
 
+    // Historial por período
+    h += '<div style="background:#fff;border-radius:16px;padding:16px;margin-bottom:14px;border:1px solid #ece6db">';
+    h += '<div style="font-size:13px;font-weight:700;color:#1F4E79;margin-bottom:10px">📅 Historial por Período</div>';
+    h += '<div style="display:flex;gap:6px;margin-bottom:12px">';
+    h += '<button onclick="setRIPeriodo(\'hoy\',this)" class="chip active" id="ri-chip-hoy">Hoy</button>';
+    h += '<button onclick="setRIPeriodo(\'semana\',this)" class="chip" id="ri-chip-semana">Esta semana</button>';
+    h += '<button onclick="setRIPeriodo(\'mes\',this)" class="chip" id="ri-chip-mes">Este mes</button>';
+    h += '</div>';
+    h += '<div id="ri-resumen"></div>';
+    h += '</div>';
+
     h += '</div>';
     el.innerHTML = h;
+    /* Calcular período inicial */
+    setTimeout(function(){ calcRIPeriodo('hoy'); }, 50);
 
   } catch(e) {
     el.innerHTML = '<div style="padding:20px;background:#fff;border-radius:12px;border:2px solid red;color:red;font-size:12px"><b>Error:</b> '+e.message+'</div>';
@@ -3618,17 +3632,16 @@ window.filtrarRIProds = function(){
 };
 
 window.selRIProd = function(id, nombre, stock, unidad, costo, precio){
-  document.getElementById('ri-prod-id').value = id;
-  var disp = document.getElementById('ri-prod-display');
-  if(disp){ disp.textContent = '✅ '+nombre+' — Stock: '+stock+' '+unidad; disp.style.display='block'; }
   var lista = document.getElementById('ri-prod-lista');
   if(lista) lista.style.display='none';
   var search = document.getElementById('ri-search');
   if(search) search.value = nombre;
   var unitEl = document.getElementById('ri-unit');
   if(unitEl) unitEl.value = unidad;
+  /* Mostrar panel de selección */
+  var sel = document.getElementById('ri-prod-sel');
+  if(sel){ sel.textContent = '✅ '+nombre+' — Stock: '+stock+' '+unidad; sel.style.display='block'; }
   window._riProd = {id:id, nombre:nombre, stock:stock, unidad:unidad, costo:costo, precio:precio};
-  /* Listen qty changes */
   var qtyEl = document.getElementById('ri-qty');
   if(qtyEl){
     qtyEl.oninput = function(){ calcRIPreview(); };
@@ -3643,12 +3656,10 @@ function calcRIPreview(){
   var qty = parseFloat((document.getElementById('ri-qty')||{}).value)||0;
   var costoTotal = qty * (p.costo||0);
   var ventaTotal = qty * (p.precio||0);
-  var diff = ventaTotal - costoTotal;
   var prev = document.getElementById('ri-preview');
   if(prev){ prev.style.display = qty>0?'block':'none'; }
-  var cv = document.getElementById('ri-costo-val'); if(cv) cv.textContent = fmt$(costoTotal);
-  var vv = document.getElementById('ri-venta-val'); if(vv) vv.textContent = fmt$(ventaTotal);
-  var dv = document.getElementById('ri-diff-val'); if(dv) dv.textContent = fmt$(diff);
+  var cv = document.getElementById('ri-prev-costo'); if(cv) cv.textContent = fmt$(costoTotal);
+  var vv = document.getElementById('ri-prev-venta'); if(vv) vv.textContent = fmt$(ventaTotal);
 }
 
 window.ejecutarTransfRest = function(){
@@ -3678,7 +3689,31 @@ window.ejecutarTransfRest = function(){
   if(!S.transfsRest[hoyStr]) S.transfsRest[hoyStr]=[];
   S.transfsRest[hoyStr].push(transfEntry);
   if(db) firebase.database().ref('transfsRest/'+hoyStr).push(transfEntry);
-  fbLog('restaurante','Transf al restaurante: '+qty+' '+p.unidad+' '+p.nombre+' · Costo: '+fmt$(transfEntry.costo));
+
+  /* ── Guardar también en restaurante/log para que el Historial por Día lo encuentre ── */
+  var logEntry = {
+    tipo: 'rapido',
+    prodId: p.id, nombre: p.nombre, cantidad: qty, unidad: p.unidad,
+    costo: transfEntry.costo, precioVenta: transfEntry.precioVenta,
+    obs: obs, hora: hora2, fecha: hoyStr, ts: Date.now(),
+    usuario: currentUser ? currentUser.nombre : ''
+  };
+  var logKey = hoyStr.replace(/-/g,'_');
+  if(db) firebase.database().ref('restaurante/log/'+logKey).push(logEntry);
+
+  /* ── Registrar en Bitácora con tipo 'restaurante' para que aparezca en el log ── */
+  if(currentUser && db){
+    var bitEntry = {
+      tipo: 'restaurante',
+      detalle: '🍽️ Transferencia al restaurante: '+qty+' '+p.unidad+' de '+p.nombre+' · Costo: '+fmt$(transfEntry.costo),
+      prodId: p.id, nombre: p.nombre, cantidad: qty, unidad: p.unidad,
+      costo: transfEntry.costo, precioVenta: transfEntry.precioVenta,
+      userId: currentUser.id, userName: currentUser.nombre,
+      userEmoji: currentUser.emoji||'🍽️', userColor: currentUser.color||'#1B6B35',
+      ts: Date.now(), fecha: nowStr()
+    };
+    firebase.database().ref('inventario/bitacora').push(bitEntry);
+  }
 
   window._riProd = null;
   showToast('✅ '+qty+' '+p.unidad+' de '+p.nombre+' transferido al restaurante');
