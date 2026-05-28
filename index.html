@@ -1528,14 +1528,20 @@ function renderCierre(){
   h+='<input type="text" id="srch-man" placeholder="Buscar producto..." oninput="filtrarTurno(\'man\')" ';
   h+='style="width:100%;padding:9px 10px 9px 32px;border:1px solid #ddd;border-radius:10px;font-size:13px;font-family:inherit;box-sizing:border-box;background:var(--color-background-secondary,#f9f9f9)"></div>';
   h+='<div id="lista-man">'+_buildTurnoForm('man',prod)+'</div>';
-  h+='<button class="btn-cierre" data-turno="manana" onclick="guardarTurno(this.dataset.turno)" style="background:#E65100;margin-top:10px">Guardar Turno Mañana</button></div>';
+  h+='<div style="display:flex;gap:8px;margin-top:10px">';
+  h+='<button class="btn-cierre" data-turno="manana" onclick="guardarTurno(this.dataset.turno)" style="background:#E65100;margin-top:0;flex:1">Guardar Turno Mañana</button>';
+  if(ch.manana)h+='<button onclick="abrirEditarTurno(\''+fecha.replace(/-/g,'_')+\'',\'manana\')" style="padding:13px 14px;border-radius:12px;border:2px solid #E65100;background:transparent;color:#E65100;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit">✏️ Editar</button>';
+  h+='</div></div>';
   h+='<div class="cierre-card"><div class="cierre-title" style="color:#1F4E79">Cierre Turno Tarde</div>';
   h+='<div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:8px">Anota los productos del turno tarde. El sistema acumula ambos turnos.</div>';
   h+='<div style="position:relative;margin-bottom:10px"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none">🔍</span>';
   h+='<input type="text" id="srch-tar" placeholder="Buscar producto..." oninput="filtrarTurno(\'tar\')" ';
   h+='style="width:100%;padding:9px 10px 9px 32px;border:1px solid #ddd;border-radius:10px;font-size:13px;font-family:inherit;box-sizing:border-box;background:var(--color-background-secondary,#f9f9f9)"></div>';
   h+='<div id="lista-tar">'+_buildTurnoForm('tar',prod)+'</div>';
-  h+='<button class="btn-cierre verde" data-turno="tarde" onclick="guardarTurno(this.dataset.turno)" style="margin-top:10px">Guardar Turno Tarde</button></div>';
+  h+='<div style="display:flex;gap:8px;margin-top:10px">';
+  h+='<button class="btn-cierre verde" data-turno="tarde" onclick="guardarTurno(this.dataset.turno)" style="margin-top:0;flex:1">Guardar Turno Tarde</button>';
+  if(ch.tarde)h+='<button onclick="abrirEditarTurno(\''+fecha.replace(/-/g,'_')+\'',\'tarde\')" style="padding:13px 14px;border-radius:12px;border:2px solid #1E5631;background:transparent;color:#1E5631;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit">✏️ Editar</button>';
+  h+='</div></div>';
   h+='<div class="cierre-card"><div class="cierre-title" style="color:#6A1B9A">Conteo Semanal'+(esDomingo?' — DOMINGO (Recomendado)':'')+'</div>';
   h+='<div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:8px">Cuenta fisicamente y anota lo que hay. El sistema calcula diferencias y ajusta el inventario.</div>';
   h+='<div style="position:relative;margin-bottom:10px"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none">🔍</span>';
@@ -1605,6 +1611,93 @@ function filtrarConteo(){
   if(!noRes){noRes=document.createElement('div');noRes.className='cnt-no-results';noRes.style.cssText='text-align:center;padding:16px;color:#aaa;font-size:13px;display:none';noRes.textContent='🔍 Sin resultados';lista.appendChild(noRes);}
   noRes.style.display=term&&encontrados===0?'block':'none';
 }
+
+/* ══ EDITAR TURNO GUARDADO ══ */
+window.abrirEditarTurno = function(fechaKey, turno){
+  var cierreData = (S.cierres||{})[fechaKey];
+  if(!cierreData||!cierreData[turno]){showToast('No hay datos de ese turno');return;}
+  var t = cierreData[turno];
+  var turnoLabel = turno==='manana'?'Mañana':'Tarde';
+  var colorHeader = turno==='manana'?'#E65100':'#1F4E79';
+  var h='<div style="padding:4px 0">';
+  h+='<div style="font-size:13px;font-weight:700;color:'+colorHeader+';margin-bottom:12px">✏️ Editar Turno '+turnoLabel+' · '+fechaKey.replace(/_/g,'-')+'</div>';
+  h+='<div style="font-size:11px;color:#888;margin-bottom:12px">Registrado por: <b>'+(t.usuario||'—')+'</b> a las '+(t.hora||'—')+'<br>Modifica o añade productos. Al guardar, se sobrescribe este turno.</div>';
+  h+='<div style="position:relative;margin-bottom:10px"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none">🔍</span>';
+  h+='<input type="text" placeholder="Buscar producto..." oninput="filtrarEditTurno(this.value)" ';
+  h+='style="width:100%;padding:9px 10px 9px 32px;border:1px solid #ddd;border-radius:10px;font-size:13px;font-family:inherit;box-sizing:border-box"></div>';
+  h+='<div id="edit-turno-lista">';
+  S.productos.forEach(function(p){
+    var guardado = (t.productos||{})[p.id]||{};
+    var entVal = guardado.entrada||guardado.ent||'';
+    var salVal = guardado.salida||guardado.sal||'';
+    var tieneData = entVal||salVal;
+    h+='<div class="cierre-row" data-nombre="'+p.nombre.toLowerCase()+'" style="'+(tieneData?'background:#f0f8ff;':'')+'border-radius:8px;padding:7px 4px">';
+    h+='<span class="cierre-label">'+p.nombre+(tieneData?'<span style="color:#1F4E79;font-size:9px;font-weight:700;margin-left:6px">● GUARDADO</span>':'')+'<br>';
+    h+='<span style="font-size:10px;color:#aaa">'+p.unidad+' · Stock:'+Number(p.stock||0).toFixed(2)+'</span></span>';
+    h+='<div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end">';
+    h+='<input class="cierre-inp" id="edit-e-'+p.id+'" type="number" placeholder="Ent" min="0" step="0.01" value="'+entVal+'">';
+    h+='<input class="cierre-inp" id="edit-s-'+p.id+'" type="number" placeholder="Sal" min="0" step="0.01" value="'+salVal+'">';
+    h+='</div></div>';
+  });
+  h+='</div>';
+  h+='<div style="background:#fff3e0;border-radius:10px;padding:10px;margin-top:12px;font-size:11px;color:#E65100">⚠️ <b>Importante:</b> Al guardar, el turno se reemplaza por completo. El stock del inventario se recalculará con los nuevos valores.</div>';
+  h+='<button onclick="guardarEdicionTurno(''+fechaKey+'',''+turno+'')" style="width:100%;padding:14px;border-radius:12px;border:none;background:'+colorHeader+';color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:12px">💾 Guardar cambios en turno '+turnoLabel+'</button>';
+  h+='</div>';
+  showModal('✏️ Editar Cierre', h);
+};
+
+window.filtrarEditTurno = function(q){
+  var lista=document.getElementById('edit-turno-lista'); if(!lista) return;
+  var term=q.toLowerCase().trim();
+  lista.querySelectorAll('.cierre-row').forEach(function(row){
+    row.style.display=!term||(row.dataset.nombre||'').indexOf(term)!==-1?'':'none';
+  });
+};
+
+window.guardarEdicionTurno = function(fechaKey, turno){
+  var sp={}, hasData=false;
+  var cierreViejo = ((S.cierres||{})[fechaKey]||{})[turno]||{};
+  S.productos.forEach(function(p){
+    var ee=document.getElementById('edit-e-'+p.id);
+    var es=document.getElementById('edit-s-'+p.id);
+    var ent=ee&&ee.value!==''?parseFloat(ee.value):null;
+    var sal=es&&es.value!==''?parseFloat(es.value):null;
+    if(ent!==null||sal!==null){hasData=true;sp[p.id]={nombre:p.nombre,unidad:p.unidad,entrada:ent||0,salida:sal||0};}
+  });
+  if(!hasData){showToast('No hay datos que guardar');return;}
+
+  /* Revertir el efecto del turno viejo sobre el stock */
+  var viejosProds = (cierreViejo.productos)||{};
+  S.productos.forEach(function(p){
+    var viejo = viejosProds[p.id]||{};
+    var salVieja = viejo.salida||viejo.sal||0;
+    var entVieja = viejo.entrada||viejo.ent||0;
+    if(salVieja) p.stock = (p.stock||0)+salVieja; /* devolver salida vieja */
+    if(entVieja) p.entrada = Math.max(0,(p.entrada||0)-entVieja);
+    if(salVieja) p.salida = Math.max(0,(p.salida||0)-salVieja);
+  });
+
+  var hora=new Date().toLocaleTimeString('es-VE',{hour:'2-digit',minute:'2-digit'});
+  var data={fecha:fechaKey.replace(/_/g,'-'),turno:turno,usuario:currentUser?currentUser.nombre:'',hora:hora,productos:sp,ts:Date.now(),editadoPor:currentUser?currentUser.nombre:'',editadoTs:Date.now()};
+
+  if(db){
+    firebase.database().ref('cierres/'+fechaKey+'/'+turno).set(data);
+    for(var pid in sp){
+      var p2=S.productos.find(function(p){return p.id===pid;});
+      if(p2){
+        if(sp[pid].entrada) p2.entrada=(p2.entrada||0)+sp[pid].entrada;
+        if(sp[pid].salida){p2.salida=(p2.salida||0)+sp[pid].salida;p2.stock=Math.max(0,(p2.stock||0)-sp[pid].salida);}
+        firebase.database().ref('inventario/productos/'+pid).update({entrada:p2.entrada,salida:p2.salida,stock:p2.stock});
+      }
+    }
+  }
+  if(!S.cierres)S.cierres={};if(!S.cierres[fechaKey])S.cierres[fechaKey]={};S.cierres[fechaKey][turno]=data;
+  fbLog('cierre','✏️ Turno '+turno+' EDITADO — '+Object.keys(sp).length+' productos por '+(currentUser?currentUser.nombre:'?'));
+  closeModal('modal-add');
+  showToast('✅ Turno '+(turno==='manana'?'Mañana':'Tarde')+' actualizado correctamente');
+  renderCierre();
+};
+
 function guardarTurno(turno){
   var pref=turno==='manana'?'man':'tar';
   var fecha=window._fechaCierreOp||hoy(),key=fecha.replace(/-/g,'_'),sp={},hasData=false;
@@ -3015,7 +3108,8 @@ window.cargarResumenDia = function(){
     if(man&&man.productos&&Object.keys(man.productos).length){
       h+='<div style="background:#e3f2fd;border-radius:10px;padding:12px;margin-bottom:10px">';
       h+='<div style="font-size:11px;font-weight:700;color:#1565C0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">🌅 Turno Mañana — '+(man.usuario||'')+(man.hora?' '+man.hora:'')+'</div>';
-      if(currentUser&&(currentUser.rol==='admin'||currentUser.rol==='supervisor'))h+='<button onclick="abrirMoverCierre(\''+k+'\',\'manana\')\" style="font-size:10px;padding:3px 9px;margin:4px 0 6px;border-radius:6px;border:1px solid #E65100;background:transparent;color:#E65100;cursor:pointer">📅 Mover a otra fecha</button>';
+      if(currentUser&&(currentUser.rol==='admin'||currentUser.rol==='supervisor'))h+='<button onclick="abrirMoverCierre(\''+fechaKey+'\',\'manana\')" style="font-size:10px;padding:3px 9px;margin:4px 0 6px;border-radius:6px;border:1px solid #E65100;background:transparent;color:#E65100;cursor:pointer">📅 Mover a otra fecha</button>';
+      if(currentUser&&(currentUser.rol==='admin'||currentUser.rol==='supervisor'))h+='<button onclick="abrirEditarTurno(\''+fechaKey+'\',\'manana\')" style="font-size:10px;padding:3px 9px;margin:4px 0 6px 6px;border-radius:6px;border:1px solid #1565C0;background:transparent;color:#1565C0;cursor:pointer">✏️ Editar turno</button>';
       Object.values(man.productos).forEach(function(p){
         var ent=p.entrada||p.ent||0;
         var sal=p.salida||p.sal||0;
@@ -3029,7 +3123,8 @@ window.cargarResumenDia = function(){
     if(tar&&tar.productos&&Object.keys(tar.productos).length){
       h+='<div style="background:#e8f5e9;border-radius:10px;padding:12px;margin-bottom:10px">';
       h+='<div style="font-size:11px;font-weight:700;color:#1B5E20;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">🌙 Turno Tarde — '+(tar.usuario||'')+(tar.hora?' '+tar.hora:'')+'</div>';
-      if(currentUser&&(currentUser.rol==='admin'||currentUser.rol==='supervisor'))h+='<button onclick="abrirMoverCierre(\''+k+'\',\'tarde\')\" style="font-size:10px;padding:3px 9px;margin:4px 0 6px;border-radius:6px;border:1px solid #1B5E20;background:transparent;color:#1B5E20;cursor:pointer">📅 Mover a otra fecha</button>';
+      if(currentUser&&(currentUser.rol==='admin'||currentUser.rol==='supervisor'))h+='<button onclick="abrirMoverCierre(\''+fechaKey+'\',\'tarde\')" style="font-size:10px;padding:3px 9px;margin:4px 0 6px;border-radius:6px;border:1px solid #1B5E20;background:transparent;color:#1B5E20;cursor:pointer">📅 Mover a otra fecha</button>';
+      if(currentUser&&(currentUser.rol==='admin'||currentUser.rol==='supervisor'))h+='<button onclick="abrirEditarTurno(\''+fechaKey+'\',\'tarde\')" style="font-size:10px;padding:3px 9px;margin:4px 0 6px 6px;border-radius:6px;border:1px solid #1B5E20;background:transparent;color:#1B5E20;cursor:pointer">✏️ Editar turno</button>';
       Object.values(tar.productos).forEach(function(p){
         var ent=p.entrada||p.ent||0;
         var sal=p.salida||p.sal||0;
