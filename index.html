@@ -1530,7 +1530,7 @@ function renderCierre(){
   h+='<div id="lista-man">'+_buildTurnoForm('man',prod)+'</div>';
   h+='<div style="display:flex;gap:8px;margin-top:10px">';
   h+='<button class="btn-cierre" data-turno="manana" onclick="guardarTurno(this.dataset.turno)" style="background:#E65100;margin-top:0;flex:1">Guardar Turno Mañana</button>';
-  if(ch.manana)h+='<button onclick="abrirEditarTurno(\''+fecha.replace(/-/g,'_')+\'',\'manana\')" style="padding:13px 14px;border-radius:12px;border:2px solid #E65100;background:transparent;color:#E65100;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit">✏️ Editar</button>';
+  if(ch.manana){var _fkm=fecha.replace(/-/g,'_');h+='<button onclick="abrirEditarTurno(\''+_fkm+'\',\'manana\')" style="padding:13px 14px;border-radius:12px;border:2px solid #E65100;background:transparent;color:#E65100;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit">✏️ Editar</button>';}
   h+='</div></div>';
   h+='<div class="cierre-card"><div class="cierre-title" style="color:#1F4E79">Cierre Turno Tarde</div>';
   h+='<div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:8px">Anota los productos del turno tarde. El sistema acumula ambos turnos.</div>';
@@ -1540,7 +1540,7 @@ function renderCierre(){
   h+='<div id="lista-tar">'+_buildTurnoForm('tar',prod)+'</div>';
   h+='<div style="display:flex;gap:8px;margin-top:10px">';
   h+='<button class="btn-cierre verde" data-turno="tarde" onclick="guardarTurno(this.dataset.turno)" style="margin-top:0;flex:1">Guardar Turno Tarde</button>';
-  if(ch.tarde)h+='<button onclick="abrirEditarTurno(\''+fecha.replace(/-/g,'_')+\'',\'tarde\')" style="padding:13px 14px;border-radius:12px;border:2px solid #1E5631;background:transparent;color:#1E5631;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit">✏️ Editar</button>';
+  if(ch.tarde){var _fkt=fecha.replace(/-/g,'_');h+='<button onclick="abrirEditarTurno(\''+_fkt+'\',\'tarde\')" style="padding:13px 14px;border-radius:12px;border:2px solid #1E5631;background:transparent;color:#1E5631;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit">✏️ Editar</button>';}
   h+='</div></div>';
   h+='<div class="cierre-card"><div class="cierre-title" style="color:#6A1B9A">Conteo Semanal'+(esDomingo?' — DOMINGO (Recomendado)':'')+'</div>';
   h+='<div style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:8px">Cuenta fisicamente y anota lo que hay. El sistema calcula diferencias y ajusta el inventario.</div>';
@@ -1641,9 +1641,14 @@ window.abrirEditarTurno = function(fechaKey, turno){
   });
   h+='</div>';
   h+='<div style="background:#fff3e0;border-radius:10px;padding:10px;margin-top:12px;font-size:11px;color:#E65100">⚠️ <b>Importante:</b> Al guardar, el turno se reemplaza por completo. El stock del inventario se recalculará con los nuevos valores.</div>';
-  h+='<button onclick="guardarEdicionTurno(''+fechaKey+'',''+turno+'')" style="width:100%;padding:14px;border-radius:12px;border:none;background:'+colorHeader+';color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:12px">💾 Guardar cambios en turno '+turnoLabel+'</button>';
+  h+='<button id="btn-guardar-edicion" style="width:100%;padding:14px;border-radius:12px;border:none;background:'+colorHeader+';color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:12px">💾 Guardar cambios en turno '+turnoLabel+'</button>';
   h+='</div>';
   showModal('✏️ Editar Cierre', h);
+  /* attach click after modal renders */
+  setTimeout(function(){
+    var btn=document.getElementById('btn-guardar-edicion');
+    if(btn) btn.onclick=function(){ guardarEdicionTurno(fechaKey, turno); };
+  }, 80);
 };
 
 window.filtrarEditTurno = function(q){
