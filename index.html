@@ -1614,41 +1614,67 @@ function filtrarConteo(){
 
 /* ══ EDITAR TURNO GUARDADO ══ */
 window.abrirEditarTurno = function(fechaKey, turno){
+  var modal=document.getElementById('modal-add');
+  var titleEl=document.getElementById('modal-add-title');
+  var body=document.getElementById('modal-add-body');
+  if(!modal||!titleEl||!body){showToast('Error al abrir modal');return;}
   var cierreData = (S.cierres||{})[fechaKey];
-  if(!cierreData||!cierreData[turno]){showToast('No hay datos de ese turno');return;}
+  if(!cierreData||!cierreData[turno]){
+    /* Intentar cargar desde Firebase por si no está en memoria */
+    if(db){
+      firebase.database().ref('cierres/'+fechaKey+'/'+turno).once('value').then(function(snap){
+        if(snap.exists()){
+          if(!S.cierres) S.cierres={};
+          if(!S.cierres[fechaKey]) S.cierres[fechaKey]={};
+          S.cierres[fechaKey][turno]=snap.val();
+          window.abrirEditarTurno(fechaKey, turno);
+        } else { showToast('No hay datos guardados para ese turno'); }
+      });
+    } else { showToast('No hay datos de ese turno'); }
+    return;
+  }
   var t = cierreData[turno];
   var turnoLabel = turno==='manana'?'Mañana':'Tarde';
   var colorHeader = turno==='manana'?'#E65100':'#1F4E79';
-  var h='<div style="padding:4px 0">';
-  h+='<div style="font-size:13px;font-weight:700;color:'+colorHeader+';margin-bottom:12px">✏️ Editar Turno '+turnoLabel+' · '+fechaKey.replace(/_/g,'-')+'</div>';
-  h+='<div style="font-size:11px;color:#888;margin-bottom:12px">Registrado por: <b>'+(t.usuario||'—')+'</b> a las '+(t.hora||'—')+'<br>Modifica o añade productos. Al guardar, se sobrescribe este turno.</div>';
+  titleEl.textContent = '✏️ Editar Turno '+turnoLabel;
+  var h='';
+  h+='<div style="font-size:11px;color:#888;margin-bottom:10px;background:#f8f4ee;border-radius:8px;padding:8px 10px">';
+  h+='📅 <b>'+fechaKey.replace(/_/g,'-')+'</b> · Registrado por: <b>'+(t.usuario||'—')+'</b> a las '+(t.hora||'—');
+  h+='<br><span style="color:#E65100">Modifica o añade productos y presiona Guardar.</span></div>';
   h+='<div style="position:relative;margin-bottom:10px"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none">🔍</span>';
   h+='<input type="text" placeholder="Buscar producto..." oninput="filtrarEditTurno(this.value)" ';
   h+='style="width:100%;padding:9px 10px 9px 32px;border:1px solid #ddd;border-radius:10px;font-size:13px;font-family:inherit;box-sizing:border-box"></div>';
   h+='<div id="edit-turno-lista">';
   S.productos.forEach(function(p){
     var guardado = (t.productos||{})[p.id]||{};
-    var entVal = guardado.entrada||guardado.ent||'';
-    var salVal = guardado.salida||guardado.sal||'';
-    var tieneData = entVal||salVal;
-    h+='<div class="cierre-row" data-nombre="'+p.nombre.toLowerCase()+'" style="'+(tieneData?'background:#f0f8ff;':'')+'border-radius:8px;padding:7px 4px">';
-    h+='<span class="cierre-label">'+p.nombre+(tieneData?'<span style="color:#1F4E79;font-size:9px;font-weight:700;margin-left:6px">● GUARDADO</span>':'')+'<br>';
-    h+='<span style="font-size:10px;color:#aaa">'+p.unidad+' · Stock:'+Number(p.stock||0).toFixed(2)+'</span></span>';
+    var entVal = guardado.entrada!==undefined ? guardado.entrada : (guardado.ent||'');
+    var salVal = guardado.salida!==undefined ? guardado.salida : (guardado.sal||'');
+    var tieneData = (entVal!==''&&entVal!==0) || (salVal!==''&&salVal!==0);
+    h+='<div class="cierre-row" data-nombre="'+p.nombre.toLowerCase()+'" style="background:'+(tieneData?'#f0f8ff':'transparent')+';border-radius:8px;padding:7px 4px;margin-bottom:2px">';
+    h+='<span class="cierre-label" style="font-size:12px">'+p.nombre;
+    if(tieneData) h+=' <span style="color:#1F4E79;font-size:9px;font-weight:700">● YA GUARDADO</span>';
+    h+='<br><span style="font-size:10px;color:#aaa">'+p.unidad+' · Stock: '+(p.stock||0)+'</span></span>';
     h+='<div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end">';
-    h+='<input class="cierre-inp" id="edit-e-'+p.id+'" type="number" placeholder="Ent" min="0" step="0.01" value="'+entVal+'">';
-    h+='<input class="cierre-inp" id="edit-s-'+p.id+'" type="number" placeholder="Sal" min="0" step="0.01" value="'+salVal+'">';
+    h+='<input class="cierre-inp" id="edit-e-'+p.id+'" type="number" placeholder="Ent" min="0" step="0.01" value="'+(entVal||'')+'">';
+    h+='<input class="cierre-inp" id="edit-s-'+p.id+'" type="number" placeholder="Sal" min="0" step="0.01" value="'+(salVal||'')+'">';
     h+='</div></div>';
   });
   h+='</div>';
-  h+='<div style="background:#fff3e0;border-radius:10px;padding:10px;margin-top:12px;font-size:11px;color:#E65100">⚠️ <b>Importante:</b> Al guardar, el turno se reemplaza por completo. El stock del inventario se recalculará con los nuevos valores.</div>';
-  h+='<button id="btn-guardar-edicion" style="width:100%;padding:14px;border-radius:12px;border:none;background:'+colorHeader+';color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:12px">💾 Guardar cambios en turno '+turnoLabel+'</button>';
-  h+='</div>';
-  showModal('✏️ Editar Cierre', h);
-  /* attach click after modal renders */
-  setTimeout(function(){
-    var btn=document.getElementById('btn-guardar-edicion');
-    if(btn) btn.onclick=function(){ guardarEdicionTurno(fechaKey, turno); };
-  }, 80);
+  h+='<div style="background:#fff3e0;border-radius:8px;padding:8px 10px;margin-top:10px;font-size:11px;color:#E65100">';
+  h+='⚠️ Al guardar se reemplaza el turno completo y se recalcula el stock.</div>';
+  /* Guardar button */
+  h+='<button id="btn-guardar-edicion" style="width:100%;padding:14px;border-radius:12px;border:none;background:'+colorHeader+';color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:12px">💾 Guardar cambios · Turno '+turnoLabel+'</button>';
+  body.innerHTML = h;
+  /* Guardar fechaKey y turno en el botón via data attrs para que onclick funcione */
+  var btnG = document.getElementById('btn-guardar-edicion');
+  if(btnG){
+    btnG.dataset.fechaKey = fechaKey;
+    btnG.dataset.turno = turno;
+    btnG.addEventListener('click', function(){
+      guardarEdicionTurno(this.dataset.fechaKey, this.dataset.turno);
+    });
+  }
+  openModal('modal-add');
 };
 
 window.filtrarEditTurno = function(q){
