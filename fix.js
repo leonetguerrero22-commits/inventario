@@ -97,9 +97,10 @@
 
     // Historial
     if(transfers.length>0){
+      var esAdminSupRevert=window.currentUser&&(currentUser.rol==='admin'||currentUser.rol==='supervisor');
       h+='<div style="font-size:16px;font-weight:700;margin:4px 0 10px;color:#111">📋 Hoy — <span style="color:#D4A843">'+transfers.length+' transferencia'+(transfers.length!==1?'s':'')+'</span></div>';
       h+='<div style="background:#fff;border-radius:14px;padding:4px 14px 14px;border:1px solid #ece6db;margin-bottom:14px">';
-      transfers.slice().reverse().forEach(function(t){
+      transfers.slice().reverse().forEach(function(t,idxRev){
         var usuarioColor=t.usuario?'#1F4E79':'#aaa';
         h+='<div style="padding:10px 0;border-bottom:1px solid #f5f0ea">';
         h+='<div style="display:flex;justify-content:space-between;align-items:flex-start">';
@@ -108,7 +109,11 @@
         if(t.usuario) h+='<div style="margin-top:4px;display:inline-flex;align-items:center;gap:4px;background:#e8f0fe;border-radius:20px;padding:2px 8px"><span style="font-size:9px;color:#1F4E79;font-weight:700">👤 '+t.usuario+'</span></div>';
         h+='</div>';
         h+='<div style="text-align:right;flex-shrink:0;padding-left:10px"><div style="font-size:14px;font-weight:700;color:#B71C1C">−'+t.cantidad+' '+(t.unidad||'')+'</div><div style="font-size:10px;color:#888">'+fmt(t.costo||0)+'</div></div>';
-        h+='</div></div>';
+        h+='</div>';
+        if(esAdminSupRevert&&t._key){
+          h+='<button class="fx-btn-revertir" data-key="'+t._key+'" data-fecha="'+hoyStr+'" style="margin-top:6px;padding:5px 10px;border-radius:7px;border:1px solid #B71C1C;background:transparent;color:#B71C1C;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit">↩️ Revertir esta transferencia</button>';
+        }
+        h+='</div>';
       });
       h+='</div>';
     }
@@ -132,6 +137,13 @@
         }
         if(customDiv) customDiv.style.display='none';
         calcFxPeriodo(per,null,null);
+      };
+    });
+
+    // Botones de revertir transferencia
+    document.querySelectorAll('.fx-btn-revertir').forEach(function(btn){
+      btn.onclick=function(){
+        revertirTransferencia(this.dataset.key, this.dataset.fecha);
       };
     });
 
@@ -301,9 +313,10 @@
       };
       if(!S.transfsRest) S.transfsRest={};
       if(!S.transfsRest[hoyStr2]) S.transfsRest[hoyStr2]=[];
-      S.transfsRest[hoyStr2].push(entrada);
       if(db){
-        db.ref('transfsRest/'+hoyStr2).push(entrada);
+        var transfRef=db.ref('transfsRest/'+hoyStr2).push(entrada);
+        entrada._key=transfRef.key;
+        S.transfsRest[hoyStr2].push(entrada);
         // Guardar en historialInventario/{prodId} — esto es lo que muestra el Historial por Producto
         db.ref('historialInventario/'+selProd.id).push({
           prodId:selProd.id,nombre:selProd.nombre,
@@ -341,6 +354,8 @@
             ts:Date.now(),fecha:new Date().toLocaleString('es-CO')
           });
         }
+      } else {
+        S.transfsRest[hoyStr2].push(entrada);
       }
 
       showToast&&showToast('✅ '+qty+' '+selProd.unidad+' de '+selProd.nombre+' transferido');
@@ -407,6 +422,77 @@
       resEl.innerHTML=hh;
     }).catch(function(){
       resEl.innerHTML='<div style="font-size:11px;color:rgba(255,255,255,.4)">Error al cargar</div>';
+    });
+  }
+
+  function revertirTransferencia(key, fecha){
+    if(!key||!fecha){ showToast&&showToast('No se puede revertir: falta información'); return; }
+    if(!window.currentUser||(currentUser.rol!=='admin'&&currentUser.rol!=='supervisor')){
+      showToast&&showToast('Solo admin o supervisor puede revertir'); return;
+    }
+    var db=window.firebase&&window.firebase.database?window.firebase.database():null;
+    if(!db){ showToast&&showToast('Sin conexión a Firebase'); return; }
+
+    db.ref('transfsRest/'+fecha+'/'+key).once('value').then(function(snap){
+      if(!snap.exists()){ showToast&&showToast('No se encontró la transferencia'); return; }
+      var t=snap.val();
+      var motivo=window.prompt('Motivo para revertir "'+t.nombre+'" ('+t.cantidad+' '+(t.unidad||'')+'):','Error al registrar');
+      if(motivo===null) return; // cancelado
+      if(!motivo.trim()){ showToast&&showToast('Debes ingresar un motivo'); return; }
+
+      var S=window.S||{};
+      var prod=(S.productos||[]).find(function(p){return p.id===t.prodId;});
+      var stockAntes=prod?(prod.stock||0):0;
+      var stockDespues=stockAntes+(t.cantidad||0);
+
+      var updates={};
+      // Devolver el stock al producto
+      if(prod){
+        prod.stock=stockDespues;
+        prod.cant=stockDespues;
+        updates['inventario/productos/'+t.prodId+'/stock']=stockDespues;
+        updates['inventario/productos/'+t.prodId+'/cant']=stockDespues;
+      }
+      // Eliminar la transferencia
+      updates['transfsRest/'+fecha+'/'+key]=null;
+
+      db.ref().update(updates).then(function(){
+        // Quitar del array local
+        if(S.transfsRest&&S.transfsRest[fecha]){
+          S.transfsRest[fecha]=S.transfsRest[fecha].filter(function(x){return x._key!==key;});
+        }
+        // Registrar la reversión en historialInventario
+        if(prod){
+          db.ref('historialInventario/'+t.prodId).push({
+            prodId:t.prodId,nombre:t.nombre,
+            cantidad:t.cantidad,unidad:t.unidad,
+            stockAntes:stockAntes,stockDespues:stockDespues,
+            motivo:'↩️ Reversión de transferencia al restaurante — '+motivo,
+            origen:'restaurante_reversion',
+            usuario:currentUser.nombre,
+            hora:new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'}),
+            fecha:fecha,ts:Date.now()
+          });
+        }
+        // Descontar del acumulado global
+        db.ref('restauranteAcumulado').once('value').then(function(snapAcum){
+          if(!snapAcum.exists()) return;
+          var acum=snapAcum.val();
+          acum.costoTotal=Math.max(0,(acum.costoTotal||0)-(t.costo||0));
+          acum.ventaTotal=Math.max(0,(acum.ventaTotal||0)-(t.precioVenta||0));
+          db.ref('restauranteAcumulado').set(acum);
+        });
+        // Bitácora
+        db.ref('inventario/bitacora').push({
+          tipo:'restaurante',
+          detalle:'↩️ Reversión transferencia: '+t.cantidad+' '+(t.unidad||'')+' de '+t.nombre+' · Motivo: '+motivo,
+          userId:currentUser.id,userName:currentUser.nombre,
+          userEmoji:currentUser.emoji||'↩️',userColor:currentUser.color||'#B71C1C',
+          ts:Date.now(),fecha:new Date().toLocaleString('es-CO')
+        });
+        showToast&&showToast('✅ Transferencia revertida — stock devuelto');
+        setTimeout(renderRest, 300);
+      }).catch(function(e){ showToast&&showToast('Error: '+e.message); });
     });
   }
 
