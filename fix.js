@@ -298,10 +298,13 @@
       var prod=(S.productos||[]).find(function(p){return p.id===selProd.id;});
       var stockAntes=selProd.stock;
       var stockDespues=Math.max(0,stockAntes-qty);
+      var salidaAntes=(prod?prod.salida:selProd.salida)||0;
+      var salidaDespues=salidaAntes+qty;
       if(prod){
         prod.stock=stockDespues;
         prod.cant=stockDespues;
-        if(db) db.ref('inventario/productos/'+selProd.id).update({stock:stockDespues,cant:stockDespues});
+        prod.salida=salidaDespues;
+        if(db) db.ref('inventario/productos/'+selProd.id).update({stock:stockDespues,cant:stockDespues,salida:salidaDespues});
       }
 
       // Guardar transferencia
@@ -444,14 +447,18 @@
       var prod=(S.productos||[]).find(function(p){return p.id===t.prodId;});
       var stockAntes=prod?(prod.stock||0):0;
       var stockDespues=stockAntes+(t.cantidad||0);
+      var salidaAntes=prod?(prod.salida||0):0;
+      var salidaDespues=Math.max(0,salidaAntes-(t.cantidad||0));
 
       var updates={};
-      // Devolver el stock al producto
+      // Devolver el stock al producto y restar de la salida acumulada
       if(prod){
         prod.stock=stockDespues;
         prod.cant=stockDespues;
+        prod.salida=salidaDespues;
         updates['inventario/productos/'+t.prodId+'/stock']=stockDespues;
         updates['inventario/productos/'+t.prodId+'/cant']=stockDespues;
+        updates['inventario/productos/'+t.prodId+'/salida']=salidaDespues;
       }
       // Eliminar la transferencia
       updates['transfsRest/'+fecha+'/'+key]=null;
