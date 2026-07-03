@@ -1737,39 +1737,43 @@ window.guardarEdicionTurno = function(fechaKey, turno){
   });
   if(!hasData){showToast('No hay datos que guardar');return;}
 
-  /* Revertir el efecto del turno viejo sobre el stock */
   var viejosProds = (cierreViejo.productos)||{};
-  S.productos.forEach(function(p){
-    var viejo = viejosProds[p.id]||{};
-    var salVieja = viejo.salida||viejo.sal||0;
-    var entVieja = viejo.entrada||viejo.ent||0;
-    if(salVieja) p.stock = (p.stock||0)+salVieja; /* devolver salida vieja */
-    if(entVieja) p.entrada = Math.max(0,(p.entrada||0)-entVieja);
-    if(salVieja) p.salida = Math.max(0,(p.salida||0)-salVieja);
-  });
-
   var hora=new Date().toLocaleTimeString('es-VE',{hour:'2-digit',minute:'2-digit'});
 
   if(db){
-    // Leer el estado ACTUAL en Firebase por si se agregaron productos despues de abrir la edicion
-    firebase.database().ref('cierres/'+fechaKey+'/'+turno).once('value').then(function(snapActual){
-      var actualVal = snapActual.val();
+    /* Leer estado real en Firebase (cierre actual + stock actual) para calcular delta neto */
+    Promise.all([
+      firebase.database().ref('cierres/'+fechaKey+'/'+turno).once('value'),
+      firebase.database().ref('inventario/productos').once('value')
+    ]).then(function(snaps){
+      var actualVal    = snaps[0].val();
+      var fbProds      = snaps[1].val() || {};
       var productosActuales = (actualVal && actualVal.productos) ? actualVal.productos : {};
       var productosFusionados = Object.assign({}, productosActuales);
-      // Aplicar las correcciones que el usuario hizo en el formulario de edicion
-      for(var pidEdit in sp){
-        productosFusionados[pidEdit] = sp[pidEdit];
-      }
-      var data={fecha:fechaKey.replace(/_/g,'-'),turno:turno,usuario:currentUser?currentUser.nombre:'',hora:hora,productos:productosFusionados,ts:Date.now(),editadoPor:currentUser?currentUser.nombre:'',editadoTs:Date.now()};
+      for(var pidEdit in sp){ productosFusionados[pidEdit] = sp[pidEdit]; }
 
+      var data={fecha:fechaKey.replace(/_/g,'-'),turno:turno,usuario:currentUser?currentUser.nombre:'',hora:hora,productos:productosFusionados,ts:Date.now(),editadoPor:currentUser?currentUser.nombre:'',editadoTs:Date.now()};
       firebase.database().ref('cierres/'+fechaKey+'/'+turno).set(data);
+
       for(var pid in sp){
         var p2=S.productos.find(function(p){return p.id===pid;});
-        if(p2){
-          if(sp[pid].entrada){p2.entrada=(p2.entrada||0)+sp[pid].entrada;p2.stock=(p2.stock||0)+sp[pid].entrada;}
-          if(sp[pid].salida){p2.salida=(p2.salida||0)+sp[pid].salida;p2.stock=Math.max(0,(p2.stock||0)-sp[pid].salida);}
-          firebase.database().ref('inventario/productos/'+pid).update({entrada:p2.entrada,salida:p2.salida,stock:p2.stock});
-        }
+        if(!p2) continue;
+        var fbP = fbProds[pid] || {};
+        /* Valores que ya estaban guardados de este turno ANTES de la edición */
+        var entPrev = (viejosProds[pid] && viejosProds[pid].entrada!=null) ? (viejosProds[pid].entrada||0) : 0;
+        var salPrev = (viejosProds[pid] && viejosProds[pid].salida!=null)  ? (viejosProds[pid].salida||0)  : 0;
+        /* Solo la diferencia neta */
+        var deltaEnt = (sp[pid].entrada||0) - entPrev;
+        var deltaSal = (sp[pid].salida||0)  - salPrev;
+        /* Base = valores reales en Firebase (no memoria local que puede estar desfasada) */
+        var stockBase   = typeof fbP.stock   === 'number' ? fbP.stock   : (p2.stock||0);
+        var entradaBase = typeof fbP.entrada  === 'number' ? fbP.entrada : (p2.entrada||0);
+        var salidaBase  = typeof fbP.salida   === 'number' ? fbP.salida  : (p2.salida||0);
+        var nuevoStock   = Math.max(0, stockBase   + deltaEnt - deltaSal);
+        var nuevaEntrada = Math.max(0, entradaBase + deltaEnt);
+        var nuevaSalida  = Math.max(0, salidaBase  + deltaSal);
+        p2.stock=nuevoStock; p2.entrada=nuevaEntrada; p2.salida=nuevaSalida;
+        firebase.database().ref('inventario/productos/'+pid).update({entrada:nuevaEntrada,salida:nuevaSalida,stock:nuevoStock});
       }
       if(!S.cierres)S.cierres={};if(!S.cierres[fechaKey])S.cierres[fechaKey]={};S.cierres[fechaKey][turno]=data;
       fbLog('cierre','✏️ Turno '+turno+' EDITADO — '+Object.keys(sp).length+' productos por '+(currentUser?currentUser.nombre:'?'));
@@ -1809,26 +1813,58 @@ function guardarTurno(turno){
       }
       var data={fecha:fecha,turno:turno,usuario:currentUser?currentUser.nombre:'',hora:hora,productos:productosFusionados,ts:Date.now()};
       firebase.database().ref('cierres/'+key+'/'+turno).set(data);
-      for(var pid in sp){var p2=S.productos.find(function(p){return p.id===pid;});
-        if(p2){
-          var entAntes2=p2.entrada||0;
-          if(sp[pid].entrada){p2.entrada=(p2.entrada||0)+sp[pid].entrada;p2.stock=(p2.stock||0)+sp[pid].entrada;}
-          if(sp[pid].salida){p2.salida=(p2.salida||0)+sp[pid].salida;p2.stock=Math.max(0,(p2.stock||0)-sp[pid].salida);}
-          firebase.database().ref('inventario/productos/'+pid).update({entrada:p2.entrada,salida:p2.salida,stock:p2.stock});
-          if(sp[pid].entrada>0){
+
+      /* Calcular la DIFERENCIA entre lo que había guardado antes y lo nuevo
+         para no aplicar el mismo descuento dos veces sobre el stock */
+      var prodsPrevios = (existente && existente.productos) ? existente.productos : {};
+      var pidsAfectados = Object.keys(sp);
+
+      /* Leer stock actual de Firebase antes de modificar */
+      var pidsBatch = pidsAfectados.filter(function(pid){return !!S.productos.find(function(p){return p.id===pid;});});
+      if(!pidsBatch.length){
+        if(!S.cierres)S.cierres={};if(!S.cierres[key])S.cierres[key]={};S.cierres[key][turno]=data;
+        fbLog('cierre','Turno '+turno+' — '+Object.keys(sp).length+' producto(s) guardado(s)');
+        showToast('Turno '+(turno==='manana'?'mañana':'tarde')+' guardado');renderCierre();
+        return;
+      }
+      firebase.database().ref('inventario/productos').once('value').then(function(snapProds){
+        var fbProds = snapProds.val() || {};
+        for(var pid in sp){
+          var p2 = S.productos.find(function(p){return p.id===pid;});
+          if(!p2) continue;
+          var fbP = fbProds[pid] || {};
+          /* Cuánto ya estaba aplicado de este turno anterior */
+          var entPrev = (prodsPrevios[pid] && prodsPrevios[pid].entrada) ? prodsPrevios[pid].entrada : 0;
+          var salPrev = (prodsPrevios[pid] && prodsPrevios[pid].salida)  ? prodsPrevios[pid].salida  : 0;
+          /* Diferencia NETA a aplicar = nuevo − lo que ya estaba */
+          var deltaEnt = (sp[pid].entrada||0) - entPrev;
+          var deltaSal = (sp[pid].salida||0)  - salPrev;
+          /* Usar los valores reales de Firebase como base */
+          var stockBase   = typeof fbP.stock   === 'number' ? fbP.stock   : (p2.stock||0);
+          var entradaBase = typeof fbP.entrada  === 'number' ? fbP.entrada : (p2.entrada||0);
+          var salidaBase  = typeof fbP.salida   === 'number' ? fbP.salida  : (p2.salida||0);
+          var nuevoStock   = Math.max(0, stockBase   + deltaEnt - deltaSal);
+          var nuevaEntrada = Math.max(0, entradaBase + deltaEnt);
+          var nuevaSalida  = Math.max(0, salidaBase  + deltaSal);
+          /* Actualizar memoria local también */
+          p2.stock   = nuevoStock;
+          p2.entrada = nuevaEntrada;
+          p2.salida  = nuevaSalida;
+          firebase.database().ref('inventario/productos/'+pid).update({entrada:nuevaEntrada,salida:nuevaSalida,stock:nuevoStock});
+          if(deltaEnt>0){
             firebase.database().ref('inventario/historial_ingresos').push({
               productoId:pid, productoNombre:p2.nombre, categoria:p2.cat||'',
-              entradaAntes:entAntes2, entradaNueva:p2.entrada, diferencia:sp[pid].entrada,
+              entradaAntes:entradaBase, entradaNueva:nuevaEntrada, diferencia:deltaEnt,
               unidad:p2.unidad||'', costo:p2.costo||0, precio:p2.precio||0,
               usuario:currentUser?currentUser.nombre:'', userEmoji:currentUser?currentUser.emoji||'':'',
               ts:Date.now(), fecha:fecha, origen:'Cierre de turno ('+(turno==='manana'?'Mañana':'Tarde')+')'
             });
           }
         }
-      }
-      if(!S.cierres)S.cierres={};if(!S.cierres[key])S.cierres[key]={};S.cierres[key][turno]=data;
-      fbLog('cierre','Turno '+turno+' — '+Object.keys(sp).length+' producto(s) agregado(s)/actualizado(s)');
-      showToast('Turno '+(turno==='manana'?'mañana':'tarde')+' guardado');renderCierre();
+        if(!S.cierres)S.cierres={};if(!S.cierres[key])S.cierres[key]={};S.cierres[key][turno]=data;
+        fbLog('cierre','Turno '+turno+' — '+Object.keys(sp).length+' producto(s) guardado(s)');
+        showToast('Turno '+(turno==='manana'?'mañana':'tarde')+' guardado');renderCierre();
+      });
     });
   } else {
     showToast('Sin conexión a Firebase');
@@ -2054,8 +2090,8 @@ function renderHistLista(cierres,mes){
   lista.innerHTML=keys.map(function(k){
     var d=cierres[k],fecha=k.replace(/_/g,'-');
     var h='<div class="hist-day"><div class="hist-day-hdr" data-k="'+k+'" onclick="togHD(this.dataset.k)"><span>'+fmtF(fecha)+'</span><span style="font-size:11px;opacity:.8">'+(d.tarde?'Cierre tarde':d.manana?'Solo manana':d.conteoSemanal?'Conteo semanal':'Sin datos')+'</span></div><div class="hist-day-body" id="hd-'+k+'">';
-    if(d.manana){h+='<b style="font-size:11px;color:#E65100">TURNO MANANA</b> por '+d.manana.usuario+' '+d.manana.hora+'<br>';Object.values(d.manana.productos||{}).slice(0,6).forEach(function(p){h+='<div class="hist-stat"><span>'+p.nombre+'</span><span>E:'+p.entrada+' S:'+p.salida+' '+p.unidad+'</span></div>';});}
-    if(d.tarde){h+='<b style="font-size:11px;color:#1F4E79">TURNO TARDE</b> por '+d.tarde.usuario+' '+d.tarde.hora+'<br>';Object.values(d.tarde.productos||{}).slice(0,6).forEach(function(p){h+='<div class="hist-stat"><span>'+p.nombre+'</span><span>E:'+p.entrada+' S:'+p.salida+' '+p.unidad+'</span></div>';});}
+    if(d.manana){h+='<b style="font-size:11px;color:#E65100">TURNO MANANA</b> por '+d.manana.usuario+' '+d.manana.hora+'<br>';Object.values(d.manana.productos||{}).forEach(function(p){if(!p.entrada&&!p.salida)return;h+='<div class="hist-stat"><span>'+p.nombre+'</span><span style="color:'+(p.salida>0?'#B71C1C':'#1E5631')+'">E:'+p.entrada+' S:'+p.salida+' '+p.unidad+'</span></div>';});}
+    if(d.tarde){h+='<b style="font-size:11px;color:#1F4E79">TURNO TARDE</b> por '+d.tarde.usuario+' '+d.tarde.hora+'<br>';Object.values(d.tarde.productos||{}).forEach(function(p){if(!p.entrada&&!p.salida)return;h+='<div class="hist-stat"><span>'+p.nombre+'</span><span style="color:'+(p.salida>0?'#B71C1C':'#1E5631')+'">E:'+p.entrada+' S:'+p.salida+' '+p.unidad+'</span></div>';});}
     if(d.conteoSemanal){h+='<b style="font-size:11px;color:#6A1B9A">CONTEO SEMANAL</b> por '+d.conteoSemanal.usuario+'<br>';}
     h+='</div></div>'; return h;
   }).join('');
@@ -3277,10 +3313,17 @@ window.cargarHistorialProducto = function(){
         if(prods[pid]){
           var pr=prods[pid];
           var sal=pr.salida||pr.sal||0;
+          var ent=pr.entrada||pr.ent||0;
           if(sal>0) registros.push({
             fecha:fechaCierre,hora:t.hora||'',
             cantidad:-sal,unidad:prod.unidad,
-            motivo:'Cierre turno '+(turno==='manana'?'mañana':'tarde'),
+            motivo:'Cierre turno '+(turno==='manana'?'mañana':'tarde')+' — Salida',
+            usuario:t.usuario||'',ts:(t.ts||0)+1
+          });
+          if(ent>0) registros.push({
+            fecha:fechaCierre,hora:t.hora||'',
+            cantidad:ent,unidad:prod.unidad,
+            motivo:'Cierre turno '+(turno==='manana'?'mañana':'tarde')+' — Entrada',
             usuario:t.usuario||'',ts:t.ts||0
           });
         }
