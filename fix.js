@@ -286,44 +286,72 @@
       if(!selProd){showToast&&showToast('⚠️ Selecciona un producto');return;}
       var qty=parseFloat(qtyEl.value)||0;
       if(!qty||qty<=0){showToast&&showToast('⚠️ Ingresa una cantidad válida');return;}
-      if(qty>selProd.stock){showToast&&showToast('⚠️ Stock insuficiente (hay '+selProd.stock+' '+selProd.unidad+')');return;}
+      /* Guard contra doble clic */
+      if(window._fxGuardando){ return; }
+      window._fxGuardando=true;
+      confirmBtn.disabled=true;
+      confirmBtn.style.opacity='0.5';
       var obs=(document.getElementById('fx-obs')||{}).value||'Uso restaurante';
       var hora=new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
       var hoyStr2=typeof hoy==='function'?hoy():new Date().toISOString().slice(0,10);
       var S=window.S||{};
 
       var db=typeof firebase!=='undefined'&&firebase.database?firebase.database():null;
+      var prodIdSel=selProd.id;
+      var prodSel=selProd;
 
-      // Descontar del inventario
-      var prod=(S.productos||[]).find(function(p){return p.id===selProd.id;});
-      var stockAntes=selProd.stock;
-      var stockDespues=Math.max(0,stockAntes-qty);
-      var salidaAntes=(prod?prod.salida:selProd.salida)||0;
-      var salidaDespues=salidaAntes+qty;
-      if(prod){
-        prod.stock=stockDespues;
-        prod.cant=stockDespues;
-        prod.salida=salidaDespues;
-        if(db) db.ref('inventario/productos/'+selProd.id).update({stock:stockDespues,cant:stockDespues,salida:salidaDespues});
+      function liberarGuard(){
+        window._fxGuardando=false;
+        confirmBtn.disabled=false;
+        confirmBtn.style.opacity='1';
       }
 
-      // Guardar transferencia
-      var entrada={
-        prodId:selProd.id,nombre:selProd.nombre,cantidad:qty,unidad:selProd.unidad,
-        costo:qty*selProd.costo,precioVenta:qty*selProd.precio,
-        obs:obs,motivo:obs,hora:hora,fecha:hoyStr2,ts:Date.now(),
-        usuario:window.currentUser?currentUser.nombre:''
-      };
-      if(!S.transfsRest) S.transfsRest={};
-      if(!S.transfsRest[hoyStr2]) S.transfsRest[hoyStr2]=[];
-      if(db){
+      if(!db){
+        liberarGuard();
+        showToast&&showToast('Sin conexión a Firebase');
+        return;
+      }
+
+      /* Leer el stock REAL de Firebase antes de descontar (no usar memoria local) */
+      db.ref('inventario/productos/'+prodIdSel).once('value').then(function(snapP){
+        var fbP=snapP.exists()?snapP.val():{};
+        var stockAntes=typeof fbP.stock==='number'?fbP.stock:(prodSel.stock||0);
+        var salidaAntes=typeof fbP.salida==='number'?fbP.salida:(prodSel.salida||0);
+
+        if(qty>stockAntes){
+          liberarGuard();
+          showToast&&showToast('⚠️ Stock insuficiente (hay '+stockAntes+' '+prodSel.unidad+')');
+          return;
+        }
+
+        var stockDespues=Math.max(0,stockAntes-qty);
+        var salidaDespues=salidaAntes+qty;
+
+        /* Actualizar Firebase y memoria local con los valores calculados desde Firebase */
+        var prod=(S.productos||[]).find(function(p){return p.id===prodIdSel;});
+        if(prod){
+          prod.stock=stockDespues;
+          prod.cant=stockDespues;
+          prod.salida=salidaDespues;
+        }
+        db.ref('inventario/productos/'+prodIdSel).update({stock:stockDespues,cant:stockDespues,salida:salidaDespues});
+
+        // Guardar transferencia
+        var entrada={
+          prodId:prodIdSel,nombre:prodSel.nombre,cantidad:qty,unidad:prodSel.unidad,
+          costo:qty*prodSel.costo,precioVenta:qty*prodSel.precio,
+          obs:obs,motivo:obs,hora:hora,fecha:hoyStr2,ts:Date.now(),
+          usuario:window.currentUser?currentUser.nombre:''
+        };
+        if(!S.transfsRest) S.transfsRest={};
+        if(!S.transfsRest[hoyStr2]) S.transfsRest[hoyStr2]=[];
         var transfRef=db.ref('transfsRest/'+hoyStr2).push(entrada);
         entrada._key=transfRef.key;
         S.transfsRest[hoyStr2].push(entrada);
         // Guardar en historialInventario/{prodId} — esto es lo que muestra el Historial por Producto
-        db.ref('historialInventario/'+selProd.id).push({
-          prodId:selProd.id,nombre:selProd.nombre,
-          cantidad:-(qty),unidad:selProd.unidad,
+        db.ref('historialInventario/'+prodIdSel).push({
+          prodId:prodIdSel,nombre:prodSel.nombre,
+          cantidad:-(qty),unidad:prodSel.unidad,
           stockAntes:stockAntes,stockDespues:stockDespues,
           motivo:'🍽️ Transferencia al restaurante'+(obs&&obs!=='Uso restaurante'?' — '+obs:''),
           origen:'restaurante',
@@ -334,16 +362,16 @@
         var logKey=hoyStr2.replace(/-/g,'_');
         db.ref('restaurante/log/'+logKey).push({
           tipo:'rapido',
-          prodId:selProd.id,nombre:selProd.nombre,cantidad:qty,unidad:selProd.unidad,
-          costo:qty*selProd.costo,precioVenta:qty*selProd.precio,
+          prodId:prodIdSel,nombre:prodSel.nombre,cantidad:qty,unidad:prodSel.unidad,
+          costo:qty*prodSel.costo,precioVenta:qty*prodSel.precio,
           obs:obs,hora:hora,fecha:hoyStr2,ts:Date.now(),
           usuario:window.currentUser?currentUser.nombre:''
         });
         // Actualizar acumulado global
         db.ref('restauranteAcumulado').once('value').then(function(snap){
           var acum=snap.exists()?snap.val():{costoTotal:0,ventaTotal:0,desde:hoyStr2,pagos:[]};
-          acum.costoTotal=(acum.costoTotal||0)+(qty*selProd.costo);
-          acum.ventaTotal=(acum.ventaTotal||0)+(qty*selProd.precio);
+          acum.costoTotal=(acum.costoTotal||0)+(qty*prodSel.costo);
+          acum.ventaTotal=(acum.ventaTotal||0)+(qty*prodSel.precio);
           if(!acum.desde) acum.desde=hoyStr2;
           db.ref('restauranteAcumulado').set(acum);
         });
@@ -351,19 +379,21 @@
         if(window.currentUser){
           db.ref('inventario/bitacora').push({
             tipo:'restaurante',
-            detalle:'🍽️ Restaurante: '+qty+' '+selProd.unidad+' de '+selProd.nombre+' · Costo: '+fmt(qty*selProd.costo),
+            detalle:'🍽️ Restaurante: '+qty+' '+prodSel.unidad+' de '+prodSel.nombre+' · Costo: '+fmt(qty*prodSel.costo),
             userId:currentUser.id,userName:currentUser.nombre,
             userEmoji:currentUser.emoji||'🍽️',userColor:currentUser.color||'#1B6B35',
             ts:Date.now(),fecha:new Date().toLocaleString('es-CO')
           });
         }
-      } else {
-        S.transfsRest[hoyStr2].push(entrada);
-      }
 
-      showToast&&showToast('✅ '+qty+' '+selProd.unidad+' de '+selProd.nombre+' transferido');
-      selProd=null;
-      setTimeout(renderRest, 300);
+        showToast&&showToast('✅ '+qty+' '+prodSel.unidad+' de '+prodSel.nombre+' transferido');
+        selProd=null;
+        liberarGuard();
+        setTimeout(renderRest, 300);
+      }).catch(function(e){
+        liberarGuard();
+        showToast&&showToast('Error: '+e.message);
+      });
     };
   }
   function calcFxPeriodo(per,desdeCustom,hastaCustom){
@@ -443,33 +473,42 @@
       if(motivo===null) return; // cancelado
       if(!motivo.trim()){ showToast&&showToast('Debes ingresar un motivo'); return; }
 
+      /* Guard contra doble ejecución */
+      if(window._fxRevirtiendo){ return; }
+      window._fxRevirtiendo=true;
+
       var S=window.S||{};
-      var prod=(S.productos||[]).find(function(p){return p.id===t.prodId;});
-      var stockAntes=prod?(prod.stock||0):0;
-      var stockDespues=stockAntes+(t.cantidad||0);
-      var salidaAntes=prod?(prod.salida||0):0;
-      var salidaDespues=Math.max(0,salidaAntes-(t.cantidad||0));
 
-      var updates={};
-      // Devolver el stock al producto y restar de la salida acumulada
-      if(prod){
-        prod.stock=stockDespues;
-        prod.cant=stockDespues;
-        prod.salida=salidaDespues;
-        updates['inventario/productos/'+t.prodId+'/stock']=stockDespues;
-        updates['inventario/productos/'+t.prodId+'/cant']=stockDespues;
-        updates['inventario/productos/'+t.prodId+'/salida']=salidaDespues;
-      }
-      // Eliminar la transferencia
-      updates['transfsRest/'+fecha+'/'+key]=null;
+      /* Leer el stock REAL de Firebase antes de devolver (no usar memoria local) */
+      db.ref('inventario/productos/'+t.prodId).once('value').then(function(snapP){
+        var fbP=snapP.exists()?snapP.val():null;
+        var prod=(S.productos||[]).find(function(p){return p.id===t.prodId;});
+        var stockAntes=fbP&&typeof fbP.stock==='number'?fbP.stock:(prod?(prod.stock||0):0);
+        var salidaAntes=fbP&&typeof fbP.salida==='number'?fbP.salida:(prod?(prod.salida||0):0);
+        var stockDespues=stockAntes+(t.cantidad||0);
+        var salidaDespues=Math.max(0,salidaAntes-(t.cantidad||0));
 
-      db.ref().update(updates).then(function(){
-        // Quitar del array local
-        if(S.transfsRest&&S.transfsRest[fecha]){
-          S.transfsRest[fecha]=S.transfsRest[fecha].filter(function(x){return x._key!==key;});
+        var updates={};
+        // Devolver el stock al producto y restar de la salida acumulada
+        if(fbP||prod){
+          if(prod){
+            prod.stock=stockDespues;
+            prod.cant=stockDespues;
+            prod.salida=salidaDespues;
+          }
+          updates['inventario/productos/'+t.prodId+'/stock']=stockDespues;
+          updates['inventario/productos/'+t.prodId+'/cant']=stockDespues;
+          updates['inventario/productos/'+t.prodId+'/salida']=salidaDespues;
         }
-        // Registrar la reversión en historialInventario
-        if(prod){
+        // Eliminar la transferencia
+        updates['transfsRest/'+fecha+'/'+key]=null;
+
+        db.ref().update(updates).then(function(){
+          // Quitar del array local
+          if(S.transfsRest&&S.transfsRest[fecha]){
+            S.transfsRest[fecha]=S.transfsRest[fecha].filter(function(x){return x._key!==key;});
+          }
+          // Registrar la reversión en historialInventario
           db.ref('historialInventario/'+t.prodId).push({
             prodId:t.prodId,nombre:t.nombre,
             cantidad:t.cantidad,unidad:t.unidad,
@@ -480,26 +519,27 @@
             hora:new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'}),
             fecha:fecha,ts:Date.now()
           });
-        }
-        // Descontar del acumulado global
-        db.ref('restauranteAcumulado').once('value').then(function(snapAcum){
-          if(!snapAcum.exists()) return;
-          var acum=snapAcum.val();
-          acum.costoTotal=Math.max(0,(acum.costoTotal||0)-(t.costo||0));
-          acum.ventaTotal=Math.max(0,(acum.ventaTotal||0)-(t.precioVenta||0));
-          db.ref('restauranteAcumulado').set(acum);
-        });
-        // Bitácora
-        db.ref('inventario/bitacora').push({
-          tipo:'restaurante',
-          detalle:'↩️ Reversión transferencia: '+t.cantidad+' '+(t.unidad||'')+' de '+t.nombre+' · Motivo: '+motivo,
-          userId:currentUser.id,userName:currentUser.nombre,
-          userEmoji:currentUser.emoji||'↩️',userColor:currentUser.color||'#B71C1C',
-          ts:Date.now(),fecha:new Date().toLocaleString('es-CO')
-        });
-        showToast&&showToast('✅ Transferencia revertida — stock devuelto');
-        setTimeout(renderRest, 300);
-      }).catch(function(e){ showToast&&showToast('Error: '+e.message); });
+          // Descontar del acumulado global
+          db.ref('restauranteAcumulado').once('value').then(function(snapAcum){
+            if(!snapAcum.exists()) return;
+            var acum=snapAcum.val();
+            acum.costoTotal=Math.max(0,(acum.costoTotal||0)-(t.costo||0));
+            acum.ventaTotal=Math.max(0,(acum.ventaTotal||0)-(t.precioVenta||0));
+            db.ref('restauranteAcumulado').set(acum);
+          });
+          // Bitácora
+          db.ref('inventario/bitacora').push({
+            tipo:'restaurante',
+            detalle:'↩️ Reversión transferencia: '+t.cantidad+' '+(t.unidad||'')+' de '+t.nombre+' · Motivo: '+motivo,
+            userId:currentUser.id,userName:currentUser.nombre,
+            userEmoji:currentUser.emoji||'↩️',userColor:currentUser.color||'#B71C1C',
+            ts:Date.now(),fecha:new Date().toLocaleString('es-CO')
+          });
+          window._fxRevirtiendo=false;
+          showToast&&showToast('✅ Transferencia revertida — stock devuelto');
+          setTimeout(renderRest, 300);
+        }).catch(function(e){ window._fxRevirtiendo=false; showToast&&showToast('Error: '+e.message); });
+      }).catch(function(e){ window._fxRevirtiendo=false; showToast&&showToast('Error: '+e.message); });
     });
   }
 
