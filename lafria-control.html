@@ -594,6 +594,11 @@ select.inp{appearance:none;-webkit-appearance:none}
     <div class="sub">Kilos, compras con precio y despachos</div>
   </div>
   <div class="wrap">
+    <div id="reparar-inv-box" style="display:none;background:#FEF6E7;border:1px solid #F5DCA6;border-radius:14px;padding:14px;margin-bottom:12px">
+      <div style="font-size:12.5px;font-weight:800;color:#8A6212;margin-bottom:6px">🔧 Productos importados por acomodar</div>
+      <div style="font-size:11.5px;color:#8A6212;line-height:1.5;margin-bottom:10px">Se detectaron productos importados en el lugar equivocado. Toca el botón para acomodarlos automáticamente en su sitio correcto.</div>
+      <button class="btn" style="margin:0;background:#D98218" onclick="APP.repararInventario()">🔧 Acomodar productos ahora</button>
+    </div>
     <div id="al-pendientes"></div>
     <div class="acciones" style="margin-top:0">
       <button class="acc in" onclick="APP.modalCompra()">＋ Compra</button>
@@ -3821,9 +3826,49 @@ APP.enviarReq = function(){
 };
 
 /* ── ALMACÉN ── */
+APP.repararInventario = function(){
+  if(!confirm('¿Acomodar los productos importados en su lugar correcto?\nEsto los mueve de inventario/ a inventario/productos/ sin perder nada.')) return;
+  db.ref('inventario').once('value').then(function(snap){
+    var inv = snap.val()||{};
+    var sueltos = {};
+    var nSueltos = 0;
+    /* un "producto suelto" es una clave que empieza por p_ y tiene nombre */
+    Object.keys(inv).forEach(function(k){
+      if(k.indexOf('p_') === 0 && inv[k] && typeof inv[k] === 'object' && inv[k].nombre){
+        sueltos[k] = inv[k];
+        nSueltos++;
+      }
+    });
+    if(nSueltos === 0){ toast('No hay productos sueltos por acomodar'); return; }
+    /* productos ya existentes en el lugar correcto (para no perderlos) */
+    var yaProductos = (inv.productos && typeof inv.productos === 'object') ? inv.productos : {};
+    var combinados = Object.assign({}, yaProductos, sueltos);
+    var upd = {};
+    upd['inventario/productos'] = combinados;
+    /* borrar los sueltos de inventario/ */
+    Object.keys(sueltos).forEach(function(k){ upd['inventario/'+k] = null; });
+    db.ref().update(upd).then(function(){
+      log('reparar', 'Acomodados '+nSueltos+' productos a inventario/productos');
+      toast('✅ '+nSueltos+' productos acomodados correctamente');
+      var box = document.getElementById('reparar-inv-box');
+      if(box) box.style.display = 'none';
+    }).catch(function(e){ toast('⚠️ No se pudo: '+String(e && e.message||e).slice(0,50)); });
+  });
+};
+function detectarProductosSueltos(){
+  db.ref('inventario').once('value').then(function(snap){
+    var inv = snap.val()||{};
+    var hay = Object.keys(inv).some(function(k){
+      return k.indexOf('p_') === 0 && inv[k] && typeof inv[k] === 'object' && inv[k].nombre;
+    });
+    var box = document.getElementById('reparar-inv-box');
+    if(box) box.style.display = hay ? 'block' : 'none';
+  });
+}
 APP.abrirAlmacen = function(){
   APP.goScreen('s-almacen');
   renderAlmacen();
+  detectarProductosSueltos();
 };
 APP.filtrarAl = function(c){ APP._catSelAl = c; renderAlmacen(); };
 function renderAlmacen(){
