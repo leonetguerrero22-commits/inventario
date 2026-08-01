@@ -3462,7 +3462,7 @@ APP.borrarUsuario = function(id){
 };
 
 /* ═══════════ MÓDULO 2 · DOBLE INVENTARIO ═══════════ */
-var CATS_BASE = ['🐟 Pescados','🦐 Mariscos','🧊 Congelados','🍳 Cocina express','🛒 Víveres','🥤 Bebidas','🧯 Hielo e insumos','🥡 Empaques','📦 Migrados'];
+var CATS_BASE = ['🐟 Pescado','🦐 Mariscos','❄️ Congelados','🥫 Salsas','🛒 Víveres','📦 Empaque','🧼 Limpieza'];
 var CATS_INV = CATS_BASE.slice();
 APP.catsCustom = [];
 APP.catsCocinar = {};
@@ -3574,9 +3574,7 @@ function ambitoDe(p){ return 'pesc'; }
 function prodsLinea(){ return prodsOrdenados().filter(function(id){ return ambitoDe(APP.prods[id]) !== 'pesc'; }); }
 function prodsCava(){ return prodsOrdenados().filter(function(id){ return ambitoDe(APP.prods[id]) !== 'linea'; }); }
 function ambitoPorCat(cat){
-  if(cat === '🍳 Cocina express' || cat === '🥡 Empaques' || cat === '🧯 Hielo e insumos') return 'linea';
-  if(cat === '🐟 Pescados' || cat === '🦐 Mariscos' || cat === '🧊 Congelados') return 'mixto';
-  return 'pesc';
+  return 'pesc'; /* La Fría: todo vive en la cava */
 }
 APP.prods = {};
 APP.reqs = {};
