@@ -311,6 +311,7 @@ select.inp{appearance:none;-webkit-appearance:none}
     <div class="ucarr" id="login-users"><div class="cargando" style="min-width:100%">Conectando con Firebase…</div></div>
     <div class="usel-tx" id="login-sel"></div>
     <button id="btn-huella-login" onclick="APP.entrarConHuella(APP.userSel)" style="display:none;width:100%;margin:6px 0 4px;border:none;background:linear-gradient(135deg,var(--coral),var(--coral-osc));border-radius:14px;padding:14px;font-size:14px;font-weight:800;color:#fff;cursor:pointer">👆 Entrar con huella</button>
+    <div id="link-usar-pin" onclick="APP.mostrarPin()" style="display:none;text-align:center;margin:10px 0 4px;font-size:12px;color:var(--gris);font-weight:600;cursor:pointer">🔢 Prefiero usar mi PIN</div>
     <div class="pin-dots" id="pin-dots"><span></span><span></span><span></span><span></span></div>
     <div class="pad" id="pin-pad"></div>
     <button id="btn-instalar" onclick="APP.instalarApp()" style="display:none;width:100%;margin-top:14px;border:1.5px solid var(--linea);background:var(--card);border-radius:14px;padding:13px;font-size:13px;font-weight:800;color:var(--mar);cursor:pointer">📲 Instalar app en este teléfono</button>
@@ -321,6 +322,7 @@ select.inp{appearance:none;-webkit-appearance:none}
 <div class="screen" id="s-apertura">
   <div class="hd">
     <button class="salir" onclick="APP.logout()">Salir</button>
+    <button class="salir" style="right:76px" onclick="APP.miPerfil()">👤</button>
     <div class="mini" id="ap-fecha"></div>
     <h1>Apertura de Caja</h1>
     <div class="sub" id="ap-hola"></div>
@@ -363,6 +365,7 @@ select.inp{appearance:none;-webkit-appearance:none}
   <div class="hd" style="padding-bottom:44px">
     <button class="salir" onclick="APP.logout()">Salir</button>
     <button class="salir" style="right:76px" onclick="APP.renderApertura()">Turnos</button>
+    <button class="salir" style="right:145px" onclick="APP.miPerfil()">👤</button>
     <div class="mini" id="cj-mini"></div>
     <h1 id="cj-titulo">Turno</h1>
     <span class="badge-turno man" id="cj-badge"></span>
@@ -499,12 +502,6 @@ select.inp{appearance:none;-webkit-appearance:none}
     <div class="sub">Equipo, PINes y accesos por rol</div>
   </div>
   <div class="wrap">
-    <div class="card" id="card-huella" style="display:none">
-      <div class="lbl">👆 Mi acceso rápido con huella</div>
-      <div style="font-size:12px;color:var(--gris);margin-bottom:10px;line-height:1.5">Activa tu huella en <b>este teléfono</b> para entrar sin escribir el PIN. Tu PIN seguirá funcionando como respaldo.</div>
-      <button class="btn" id="btn-activar-huella" style="margin:0" onclick="APP.activarHuella()">🔒 Activar entrada con huella</button>
-      <button class="btn sec" id="btn-quitar-huella" style="margin:8px 0 0;display:none" onclick="APP.quitarHuella()">Quitar huella de este teléfono</button>
-    </div>
     <div class="card">
       <div class="lbl">Equipo</div>
       <div id="lista-usuarios"></div>
@@ -1305,20 +1302,57 @@ var HUELLA = {
 };
 APP.activarHuella = function(){
   if(!APP.user){ toast('Primero entra con tu PIN'); return; }
+  /* confirmar identidad con el PIN antes de activar */
+  var h = '<div style="font-size:12px;color:var(--gris);margin-bottom:12px;line-height:1.5">Para activar tu huella, confirma que eres tú escribiendo tu PIN.</div>';
+  h += '<div class="flabel">🔒 Tu PIN</div><input class="inp" id="hue-pin" type="password" inputmode="numeric" maxlength="4" placeholder="····" style="text-align:center;font-size:20px;letter-spacing:8px">';
+  h += '<button class="btn" style="margin-top:14px" onclick="APP.confirmarHuellaPin()">👆 Confirmar y activar huella</button>';
+  h += '<button class="btn sec" onclick="APP.cerrarModal()">Cancelar</button>';
+  abrirModal('👆 Activar huella', h);
+  setTimeout(function(){ var i = document.getElementById('hue-pin'); if(i) i.focus(); }, 100);
+};
+APP.confirmarHuellaPin = function(){
+  var pin = (document.getElementById('hue-pin')||{}).value || '';
+  if(String(APP.user.pin) !== pin){ toast('❌ PIN incorrecto'); return; }
   var uid = APP.user.id, nom = APP.user.nombre;
+  APP.cerrarModal();
   HUELLA.activar(uid, nom).then(function(){
     toast('✅ Huella activada en este teléfono');
     log('huella', nom+' activó huella en este dispositivo');
     actualizarCardHuella();
   }).catch(function(e){
-    if(e) toast('No se pudo activar la huella');
+    if(e) toast('No se pudo activar la huella · intenta de nuevo');
   });
+};
+APP.miPerfil = function(){
+  if(!APP.user) return;
+  var u = APP.user;
+  var soporta = HUELLA.soportada();
+  var tiene = soporta && HUELLA.tiene(u.id);
+  var h = '';
+  h += '<div style="text-align:center;margin-bottom:16px">';
+  h += '<div style="font-size:38px">'+(u.emoji||'👤')+'</div>';
+  h += '<div style="font-size:17px;font-weight:800;margin-top:2px">'+escapa(u.nombre)+'</div>';
+  h += '<div style="font-size:12px;color:var(--gris)">'+rolTx(u.rol)+'</div>';
+  h += '</div>';
+  if(!soporta){
+    h += '<div style="background:var(--crema);border-radius:14px;padding:14px;font-size:12px;color:var(--gris);text-align:center;line-height:1.5">Este teléfono no soporta huella dactilar. Puedes seguir entrando con tu PIN.</div>';
+  } else if(tiene){
+    h += '<div style="background:#E7F5EE;border:1px solid #B8E0CC;border-radius:14px;padding:14px;display:flex;align-items:center;gap:10px;margin-bottom:10px">';
+    h += '<span style="font-size:20px">✅</span><div style="flex:1"><div style="font-size:13px;font-weight:800;color:var(--ok)">Huella activada en este teléfono</div><div style="font-size:11px;color:#5A9B77">Puedes entrar con tu huella</div></div></div>';
+    h += '<button class="btn sec" style="margin:0" onclick="APP.quitarHuella()">Quitar huella de este teléfono</button>';
+  } else {
+    h += '<div style="font-size:12px;color:var(--gris);margin-bottom:12px;line-height:1.5;text-align:center">👆 Activa tu huella en <b>este teléfono</b> para entrar sin escribir el PIN. Confirmarás tu identidad con tu PIN primero.</div>';
+    h += '<button class="btn" style="margin:0" onclick="APP.cerrarModal();APP.activarHuella()">🔒 Activar entrada con huella</button>';
+  }
+  h += '<button class="btn sec" onclick="APP.cerrarModal()">Cerrar</button>';
+  abrirModal('👤 Mi perfil', h);
 };
 APP.quitarHuella = function(){
   if(!APP.user) return;
   HUELLA.quitar(APP.user.id);
   toast('Huella quitada de este teléfono');
   actualizarCardHuella();
+  if(document.getElementById('modal-box')) APP.miPerfil();
 };
 function actualizarCardHuella(){
   var card = document.getElementById('card-huella');
@@ -1354,10 +1388,28 @@ APP.selUser = function(id){
 };
 function actualizarBotonHuella(){
   var btn = document.getElementById('btn-huella-login');
-  if(!btn) return;
-  var mostrar = APP.userSel && HUELLA.soportada() && HUELLA.tiene(APP.userSel);
-  btn.style.display = mostrar ? 'block' : 'none';
+  var pad = document.getElementById('pin-pad');
+  var dots = document.getElementById('pin-dots');
+  var link = document.getElementById('link-usar-pin');
+  var tiene = APP.userSel && HUELLA.soportada() && HUELLA.tiene(APP.userSel);
+  APP._mostrandoPin = false;
+  if(btn) btn.style.display = tiene ? 'block' : 'none';
+  if(link) link.style.display = tiene ? 'block' : 'none';
+  /* si tiene huella, escondemos el PIN hasta que toque "usar PIN" */
+  if(pad) pad.style.display = tiene ? 'none' : 'grid';
+  if(dots) dots.style.display = tiene ? 'none' : 'flex';
 }
+APP.mostrarPin = function(){
+  APP._mostrandoPin = true;
+  var pad = document.getElementById('pin-pad');
+  var dots = document.getElementById('pin-dots');
+  var btn = document.getElementById('btn-huella-login');
+  var link = document.getElementById('link-usar-pin');
+  if(pad) pad.style.display = 'grid';
+  if(dots) dots.style.display = 'flex';
+  if(btn) btn.style.display = 'none';
+  if(link) link.style.display = 'none';
+};
 function construirPad(){
   var pad = document.getElementById('pin-pad');
   var keys = ['1','2','3','4','5','6','7','8','9','⌫','0','✓'];
