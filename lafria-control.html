@@ -627,13 +627,15 @@ select.inp{appearance:none;-webkit-appearance:none}
     <div class="sub">Toca el producto, pon la cantidad y listo</div>
   </div>
   <div class="wrap">
-    <div class="nota" style="background:#E8F6F5;border-color:#BEE5E2;color:#0E5F59">Registra cada venta al momento <b>o</b> carga todo junto al final del día — como les quede más cómodo. Descuenta la cava y arma el estimado para el cuadre.</div>
+    <div class="nota" style="background:#E8F6F5;border-color:#BEE5E2;color:#0E5F59">Registra cada venta al momento <b>o</b> carga todo junto al final del día — como les quede más cómodo. Descuenta la cava y arma el estimado para el cuadre. <span style="opacity:.6;font-size:10px">· v2.1 sellado</span></div>
     <div class="card">
       <div class="lbl">Lo vendido hoy</div>
       <div id="vp-hoy"><div class="vacio">Aún sin ventas registradas hoy</div></div>
       <div class="tot-line big" style="margin-top:8px"><span>Total estimado del día</span><b id="vp-total" style="color:var(--ok)">$0</b></div>
       <button class="btn verde" id="vp-cerrar-btn" style="margin-top:12px;display:none" onclick="APP.confirmarVentaDia()">✅ Confirmar venta e ir al cierre de caja</button>
       <div style="font-size:10px;color:var(--gris);margin-top:5px;text-align:center">Cada venta ya quedó guardada arriba. Este botón te lleva al cierre para cuadrar la caja con esta venta.</div>
+      <button class="btn sec" id="vp-limpiar-btn" style="margin-top:14px;display:none;border-color:#E0A800;color:#8A6D00" onclick="APP.empezarDiaLimpio()">🧹 Empezar día limpio (ocultar estas ventas)</button>
+      <div id="vp-limpiar-hint" style="font-size:10px;color:var(--gris);margin-top:5px;text-align:center;display:none">Usa esto solo si estas ventas son de un día YA cerrado. Las oculta sin borrarlas ni tocar la cava.</div>
     </div>
     <div class="lbl" style="padding:0 2px">Toca lo que se vendió</div>
     <div class="busq-wrap"><span class="ic">🔍</span><input class="inp" id="vp-busq" type="text" placeholder="Buscar producto para vender…" oninput="APP.buscarVenta(this.value)"></div>
@@ -6368,6 +6370,11 @@ function cargarVentasHoy(){
     document.getElementById('vp-total').textContent = fmtCOP(total);
     var btnCerrar = document.getElementById('vp-cerrar-btn');
     if(btnCerrar) btnCerrar.style.display = nItems > 0 ? 'block' : 'none';
+    var btnLimp = document.getElementById('vp-limpiar-btn');
+    var hintLimp = document.getElementById('vp-limpiar-hint');
+    var verLimp = (nItems > 0) && (APP.user.rol === 'admin' || APP.user.rol === 'supervisor');
+    if(btnLimp) btnLimp.style.display = verLimp ? 'block' : 'none';
+    if(hintLimp) hintLimp.style.display = verLimp ? 'block' : 'none';
     /* barra fija tipo RePOS */
     var barra = document.getElementById('vp-barra');
     if(barra){
@@ -6382,6 +6389,27 @@ function cargarVentasHoy(){
   }).catch(function(){});
   });
 }
+APP.empezarDiaLimpio = function(){
+  if(!(APP.user.rol === 'admin' || APP.user.rol === 'supervisor')){ toast('Solo admin o supervisor'); return; }
+  if(!confirm('¿Ocultar todas las ventas de pescadería que ves ahora?\n\n• NO se borran (quedan en el histórico).\n• NO se toca la cava ni el inventario.\n• Sirve para arrancar el día limpio cuando estas ventas ya son de un día cerrado.\n\n¿Continuar?')) return;
+  db.ref('ventasPesc').orderByChild('fecha').equalTo(fechaOperativa()).once('value').then(function(snap){
+    var v = snap.val()||{};
+    var upd = {}, n = 0;
+    Object.keys(v).forEach(function(k){
+      if(!v[k].cerrada){
+        upd['ventasPesc/'+k+'/cerrada'] = true;
+        upd['ventasPesc/'+k+'/selladoManual'] = true;
+        n++;
+      }
+    });
+    if(!n){ toast('No hay ventas para ocultar'); return; }
+    db.ref().update(upd).then(function(){
+      log('sellado-manual', n+' ventas de pescadería ocultadas · por '+APP.user.nombre);
+      toast('🧹 '+n+' venta'+(n===1?'':'s')+' ocultada'+(n===1?'':'s')+' · día limpio');
+      cargarVentasHoy();
+    }).catch(function(e){ toast('⚠️ No se pudo: '+String(e && e.message || e).slice(0,50)); });
+  }).catch(function(){ toast('⚠️ No se pudo leer las ventas'); });
+};
 APP.confirmarVentaDia = function(){
   var t = document.getElementById('vp-total');
   var totalTx = t ? t.textContent : '';
