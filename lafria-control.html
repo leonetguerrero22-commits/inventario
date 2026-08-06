@@ -2367,7 +2367,10 @@ function cargarSalidasHoy(fecha, fechaAlt){
 APP.irCierre = function(){
   var d = APP.turnoData;
   if(!d){ toast('No hay turno activo'); return; }
-  cargarSalidasHoy(d.fecha||fechaOperativa(), fechaOperativa());
+  /* El cierre de un turno SOLO cuenta la pescadería de SU propia fecha operativa.
+     Antes se pasaba también fechaOperativa() (el día de hoy): al reabrir un turno
+     de otro día, se sumaban las ventas de ambos días juntos. Corregido. */
+  cargarSalidasHoy(d.fecha||fechaOperativa());
   APP.goScreen('s-cierre');
   var tN = d.turno === 'man' ? 'Mañana' : 'Noche';
   document.getElementById('ci-mini').textContent = 'Turno '+tN+' · '+d.apertura.cajera;
