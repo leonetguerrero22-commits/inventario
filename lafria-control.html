@@ -2312,6 +2312,8 @@ document.getElementById('foto-inp').addEventListener('change', function(e){
 /* ═══════════ CIERRE ═══════════ */
 APP._salidasHoy = {costo:0, venta:0, n:0};
 APP._ventasPescHoy = {total:0, costo:0, n:0};
+APP._ventasPescKeys = [];
+APP._salidasKeys = [];
 function cargarSalidasHoy(fecha, fechaAlt){
   var fechas = [fecha];
   if(fechaAlt && fechaAlt !== fecha) fechas.push(fechaAlt);
@@ -2319,17 +2321,20 @@ function cargarSalidasHoy(fecha, fechaAlt){
   Promise.all(fechas.map(function(f){
     return db.ref('inventario/salidasRest').orderByChild('fecha').equalTo(f).once('value');
   })).then(function(snaps){
-    var vistos = {}, costo = 0, venta = 0, n = 0, det = [];
+    var vistos = {}, costo = 0, venta = 0, n = 0, det = [], keys = [];
     snaps.forEach(function(snap){
       var v = snap.val()||{};
       Object.keys(v).forEach(function(k){
         if(vistos[k]) return; vistos[k] = 1;
+        if(v[k].cerrada) return; /* ya sellada en un cierre anterior */
         costo += (v[k].totalCosto||0);
         venta += (v[k].totalVenta||0);
         n++;
+        keys.push(k);
         det.push({nombre:v[k].nombre, cant:v[k].cant, unidad:v[k].unidad, costo:v[k].totalCosto||0, venta:v[k].totalVenta||0});
       });
     });
+    APP._salidasKeys = keys;
     APP._salidasHoy = {costo:costo, venta:venta, n:n, det:det};
     var w = document.getElementById('r-rest-wrap');
     var e = document.getElementById('r-rest');
@@ -2343,17 +2348,24 @@ function cargarSalidasHoy(fecha, fechaAlt){
   Promise.all(fechas.map(function(f){
     return db.ref('ventasPesc').orderByChild('fecha').equalTo(f).once('value');
   })).then(function(snaps){
-    var vistos = {}, total = 0, costo = 0, n = 0, det = [];
+    var vistos = {}, total = 0, costo = 0, n = 0, det = [], keys = [];
     snaps.forEach(function(snap){
       var v = snap.val()||{};
       Object.keys(v).forEach(function(k){
         if(vistos[k]) return; vistos[k] = 1;
+        /* Solo cuentan las ventas que aún NO están selladas en un cierre.
+           Las ventas de un turno ya cerrado llevan cerrada:true y no se
+           vuelven a sumar aunque compartan la misma fecha. */
+        if(v[k].cerrada) return;
         total += (v[k].total||0);
         costo += (v[k].totalCosto||0);
         n++;
+        keys.push(k);
         det.push({nombre:v[k].nombre, cant:v[k].cant, unidad:v[k].unidad, total:v[k].total||0});
       });
     });
+    /* Guardamos las keys para sellarlas (cerrada:true) al firmar el cierre */
+    APP._ventasPescKeys = keys;
     APP._ventasPescHoy = {total:total, costo:costo, n:n, det:det};
     var w = document.getElementById('r-vpesc-wrap');
     var e = document.getElementById('r-vpesc');
@@ -2537,6 +2549,18 @@ APP.guardarCierre = function(){
     upd['caja/turnos/'+APP.turnoActivo+'/cierre'] = cierre;
     upd['caja/turnos/'+APP.turnoActivo+'/estado'] = 'cerrada';
     upd['tasas'] = c.tasas;
+    /* SELLADO: cada venta/salida que entró en este cierre queda marcada como
+       cerrada (referida a este turno). NO se borra ni se toca el inventario;
+       solo deja de mostrarse en la pantalla de Pescadería y de sumarse en
+       cierres posteriores del mismo día operativo. */
+    (APP._ventasPescKeys||[]).forEach(function(k){
+      upd['ventasPesc/'+k+'/cerrada'] = true;
+      upd['ventasPesc/'+k+'/turnoCierre'] = APP.turnoActivo;
+    });
+    (APP._salidasKeys||[]).forEach(function(k){
+      upd['inventario/salidasRest/'+k+'/cerrada'] = true;
+      upd['inventario/salidasRest/'+k+'/turnoCierre'] = APP.turnoActivo;
+    });
     db.ref().update(upd).then(function(){
       log('cierre', APP.turnoActivo+' · Venta '+fmtCOP(c.venta)+' · Dif '+fmtCOP(c.dif));
       /* El sobrante del turno alimenta el Disponible:
@@ -6265,15 +6289,49 @@ function renderVentaProds(){
   if(q && !hay) h += '<div class="vacio">🔍 Sin productos que coincidan con "'+escapa(q)+'"</div>';
   document.getElementById('vp-prods').innerHTML = h || '<div class="vacio">Sin productos de pescadería aún</div>';
 }
+/* Devuelve el ts del cierre más reciente YA FIRMADO del día operativo actual.
+   Sirve para sellar automáticamente las ventas que quedaron colgadas de un
+   cierre hecho con la versión vieja (que no las marcaba). */
+function ultimoCierreTsDelDia(cb){
+  var fop = fechaOperativa();
+  db.ref('caja/turnos').orderByKey().startAt(fop+'_').endAt(fop+'_\uf8ff').once('value').then(function(snap){
+    var val = snap.val()||{}, maxTs = 0;
+    Object.keys(val).forEach(function(k){
+      var d = val[k];
+      if(d && d.estado === 'cerrada' && d.cierre && d.cierre.ts){
+        if(d.cierre.ts > maxTs) maxTs = d.cierre.ts;
+      }
+    });
+    cb(maxTs);
+  }).catch(function(){ cb(0); });
+}
 function cargarVentasHoy(){
+  ultimoCierreTsDelDia(function(corteTs){
   db.ref('ventasPesc').orderByChild('fecha').equalTo(fechaOperativa()).once('value').then(function(snap){
     var v = snap.val()||{};
     var keys = Object.keys(v).sort(function(a,b){ return (v[b].ts||0)-(v[a].ts||0); });
+    /* Auto-sellado retroactivo: cualquier venta de hoy registrada ANTES del
+       último cierre firmado del día pertenece a ese turno ya cerrado. La
+       marcamos cerrada:true (solo la marca, NO toca inventario) para que no
+       reaparezca. Cubre las ventas colgadas de cierres viejos. */
+    if(corteTs > 0){
+      var sella = {};
+      keys.forEach(function(k){
+        if(!v[k].cerrada && (v[k].ts||0) <= corteTs){
+          sella['ventasPesc/'+k+'/cerrada'] = true;
+          v[k].cerrada = true;
+        }
+      });
+      if(Object.keys(sella).length){ db.ref().update(sella).catch(function(){}); }
+    }
     var total = 0, nItems = 0;
     var h = '';
     var puedeEditar = (APP.user.rol === 'admin' || APP.user.rol === 'supervisor');
     keys.forEach(function(k){
       var x = v[k];
+      /* Las ventas ya selladas en un cierre no se muestran aquí: pertenecen
+         a un turno cerrado, quedan en la base como histórico. */
+      if(x.cerrada) return;
       total += (x.total||0);
       nItems++;
       h += '<div class="mov" style="align-items:center">';
@@ -6303,6 +6361,7 @@ function cargarVentasHoy(){
       }
     }
   }).catch(function(){});
+  });
 }
 APP.confirmarVentaDia = function(){
   var t = document.getElementById('vp-total');
