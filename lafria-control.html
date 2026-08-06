@@ -2349,14 +2349,17 @@ function cargarSalidasHoy(fecha, fechaAlt){
     return db.ref('ventasPesc').orderByChild('fecha').equalTo(f).once('value');
   })).then(function(snaps){
     var vistos = {}, total = 0, costo = 0, n = 0, det = [], keys = [];
+    var corteDia = enMadrugadaOperativa() ? 0 : inicioDiaHoyTs();
     snaps.forEach(function(snap){
       var v = snap.val()||{};
       Object.keys(v).forEach(function(k){
         if(vistos[k]) return; vistos[k] = 1;
         /* Solo cuentan las ventas que aún NO están selladas en un cierre.
            Las ventas de un turno ya cerrado llevan cerrada:true y no se
-           vuelven a sumar aunque compartan la misma fecha. */
+           vuelven a sumar aunque compartan la misma fecha. También se
+           ignoran las de un día calendario anterior (desfasadas). */
         if(v[k].cerrada) return;
+        if(corteDia > 0 && (v[k].ts||0) > 0 && (v[k].ts||0) < corteDia) return;
         total += (v[k].total||0);
         costo += (v[k].totalCosto||0);
         n++;
@@ -6305,25 +6308,41 @@ function ultimoCierreTsDelDia(cb){
     cb(maxTs);
   }).catch(function(){ cb(0); });
 }
+/* ts del inicio del día CALENDARIO real de hoy (medianoche local).
+   Cualquier venta con ts anterior a esto se registró un día distinto y no
+   puede pertenecer al turno de hoy, aunque su fecha operativa diga hoy.
+   OJO: no se usa durante la madrugada operativa (antes de las 5am), porque
+   ahí el turno noche legítimo abarca ventas de "ayer calendario". */
+function inicioDiaHoyTs(){
+  var d = new Date();
+  d.setHours(0,0,0,0);
+  return d.getTime();
+}
+function enMadrugadaOperativa(){
+  return (new Date()).getHours() < 5;
+}
 function cargarVentasHoy(){
   ultimoCierreTsDelDia(function(corteTs){
   db.ref('ventasPesc').orderByChild('fecha').equalTo(fechaOperativa()).once('value').then(function(snap){
     var v = snap.val()||{};
     var keys = Object.keys(v).sort(function(a,b){ return (v[b].ts||0)-(v[a].ts||0); });
-    /* Auto-sellado retroactivo: cualquier venta de hoy registrada ANTES del
-       último cierre firmado del día pertenece a ese turno ya cerrado. La
-       marcamos cerrada:true (solo la marca, NO toca inventario) para que no
-       reaparezca. Cubre las ventas colgadas de cierres viejos. */
-    if(corteTs > 0){
-      var sella = {};
-      keys.forEach(function(k){
-        if(!v[k].cerrada && (v[k].ts||0) <= corteTs){
-          sella['ventasPesc/'+k+'/cerrada'] = true;
-          v[k].cerrada = true;
-        }
-      });
-      if(Object.keys(sella).length){ db.ref().update(sella).catch(function(){}); }
-    }
+    /* Auto-sellado retroactivo (dos reglas, sin tocar inventario):
+       1) venta registrada ANTES del último cierre firmado del día operativo, o
+       2) venta cuyo ts real es de un día calendario anterior a hoy
+          (cubre las que quedaron desfasadas por la regla de madrugada).
+       La regla 2 se desactiva en la madrugada operativa para no sellar el
+       turno noche legítimo. Solo marca cerrada:true; NO devuelve a la cava. */
+    var corteDia = enMadrugadaOperativa() ? 0 : inicioDiaHoyTs();
+    var sella = {};
+    keys.forEach(function(k){
+      if(v[k].cerrada) return;
+      var t = v[k].ts||0;
+      if((corteTs > 0 && t <= corteTs) || (corteDia > 0 && t > 0 && t < corteDia)){
+        sella['ventasPesc/'+k+'/cerrada'] = true;
+        v[k].cerrada = true;
+      }
+    });
+    if(Object.keys(sella).length){ db.ref().update(sella).catch(function(){}); }
     var total = 0, nItems = 0;
     var h = '';
     var puedeEditar = (APP.user.rol === 'admin' || APP.user.rol === 'supervisor');
