@@ -591,7 +591,7 @@ select.inp{appearance:none;-webkit-appearance:none}
     <button class="salir" onclick="APP.logout()">Salir</button>
     <div class="mini">Cava y mostrador · inventario mayor</div>
     <h1>🐟 Pescadería</h1>
-    <div class="sub">Kilos, compras con precio y despachos</div>
+    <div class="sub">Kilos, compras con precio y despachos <span style="opacity:.55;font-size:10px">· v2.2 salidas editables</span></div>
   </div>
   <div class="wrap">
     <div id="reparar-inv-box" style="display:none;background:#FEF6E7;border:1px solid #F5DCA6;border-radius:14px;padding:14px;margin-bottom:12px">
@@ -606,6 +606,7 @@ select.inp{appearance:none;-webkit-appearance:none}
     </div>
     <button class="btn" style="margin:0 0 12px;background:var(--coral);box-shadow:0 4px 14px rgba(23,169,160,.32)" onclick="APP.abrirVentaPesc()">🛒 Venta del día (pescadería)</button>
     <button class="btn" style="margin:0 0 12px;background:var(--mar);box-shadow:none" onclick="APP.modalSalidaRest()">🍽️ Salida al restaurante</button>
+    <div id="sr-hoy-card" style="display:none"></div>
     <div class="acciones" style="margin-top:0">
       <button class="acc" style="background:var(--noche)" onclick="APP.abrirRevision()">📋 Revisión física</button>
       <button class="acc" style="background:var(--gris)" onclick="APP.descargarPlanilla()">⬇️ Planilla</button>
@@ -2333,11 +2334,12 @@ function cargarSalidasHoy(fecha, fechaAlt){
         venta += (v[k].totalVenta||0);
         n++;
         keys.push(k);
-        det.push({nombre:v[k].nombre, cant:v[k].cant, unidad:v[k].unidad, costo:v[k].totalCosto||0, venta:v[k].totalVenta||0});
+        det.push({key:k, prodId:v[k].prodId, nombre:v[k].nombre, cant:v[k].cant, unidad:v[k].unidad, costoUnit:v[k].costoUnit||0, ventaUnit:v[k].ventaUnit||0, costo:v[k].totalCosto||0, venta:v[k].totalVenta||0, nota:v[k].nota||''});
       });
     });
     APP._salidasKeys = keys;
     APP._salidasHoy = {costo:costo, venta:venta, n:n, det:det};
+    if(typeof renderSalidasHoyCard === 'function' && APP._pantalla === 's-almacen') renderSalidasHoyCard();
     var w = document.getElementById('r-rest-wrap');
     var e = document.getElementById('r-rest');
     if(w && e){
@@ -3899,6 +3901,7 @@ APP.abrirAlmacen = function(){
   APP.goScreen('s-almacen');
   renderAlmacen();
   detectarProductosSueltos();
+  if(typeof cargarSalidasHoy === 'function') cargarSalidasHoy(fechaOperativa());
 };
 APP.filtrarAl = function(c){ APP._catSelAl = c; renderAlmacen(); };
 function renderAlmacen(){
@@ -3932,6 +3935,7 @@ function renderAlmacen(){
     });
   }
   document.getElementById('al-pendientes').innerHTML = hp;
+  renderSalidasHoyCard();
   /* valores de inventario (costos) */
   var valAlm = 0, valLin = 0, sinCosto = 0;
   prodsOrdenados().forEach(function(id){
@@ -5643,10 +5647,120 @@ APP.guardarSalidaRest = function(){
     toast('🍽️ Salida registrada al costo');
     APP._guardandoSR = false;
     APP.cerrarModal();
+    if(typeof cargarSalidasHoy === 'function') cargarSalidasHoy(fechaOperativa());
+    if(APP._pantalla === 's-almacen') renderAlmacen();
   }).catch(function(e){
     APP._guardandoSR = false;
     if(btn){ btn.disabled = false; btn.textContent = '🍽️ Registrar salida'; }
     toast('⚠️ No se guardó: '+String(e && e.message || e).slice(0,50));
+  });
+};
+
+
+/* ── 🍽️ Salidas al restaurante de HOY: editar / eliminar antes del cierre ──
+   Mismo comportamiento que la venta de pescadería: mientras la salida NO esté
+   sellada en un cierre, se puede corregir la cantidad o eliminarla, y la cava
+   se ajusta sola. Nunca se borra sin devolver a la cava (integridad). */
+function renderSalidasHoyCard(){
+  var card = document.getElementById('sr-hoy-card');
+  if(!card) return;
+  var det = (APP._salidasHoy && APP._salidasHoy.det) || [];
+  if(!det.length){ card.style.display = 'none'; card.innerHTML = ''; return; }
+  var puedeEditar = (APP.user.rol === 'admin' || APP.user.rol === 'supervisor');
+  var h = '<div class="card" style="border-color:#E5502F;background:#FFF8F6">';
+  h += '<div class="lbl" style="color:#B8391E">🍽️ Salió al restaurante hoy <span style="color:var(--gris);font-weight:600">· '+det.length+'</span></div>';
+  det.forEach(function(x){
+    h += '<div class="mov" style="align-items:center">';
+    h += '<div class="ic out">🍽️</div>';
+    h += '<div class="tx" style="flex:1"><b>'+escapa(x.nombre)+'</b><span>'+fmtQty(x.cant)+' '+escapa(x.unidad)+' · costo '+fmtCOP(x.costo||0)+(x.venta?' · ref '+fmtCOP(x.venta):'')+(x.nota?' · '+escapa(x.nota):'')+'</span></div>';
+    h += '<div style="display:flex;align-items:center;gap:6px">';
+    if(puedeEditar && x.key){
+      h += '<button style="border:1px solid var(--linea);background:var(--card);border-radius:9px;width:30px;height:30px;font-size:13px;cursor:pointer;padding:0" title="Editar cantidad" onclick="APP.editarSalidaRest(\''+x.key+'\')">✏️</button>';
+      h += '<button style="border:1px solid var(--linea);background:var(--card);border-radius:9px;width:30px;height:30px;font-size:13px;cursor:pointer;padding:0" title="Quitar" onclick="APP.borrarSalidaRest(\''+x.key+'\')">🗑️</button>';
+    }
+    h += '</div></div>';
+  });
+  if(!puedeEditar){
+    h += '<div style="font-size:10px;color:var(--gris);margin-top:6px">Solo admin o supervisor pueden corregir o eliminar salidas.</div>';
+  }
+  h += '</div>';
+  card.innerHTML = h;
+  card.style.display = 'block';
+}
+APP.editarSalidaRest = function(k){
+  if(!(APP.user.rol === 'admin' || APP.user.rol === 'supervisor')){ toast('Solo admin o supervisor'); return; }
+  db.ref('inventario/salidasRest/'+k).once('value').then(function(snap){
+    var x = snap.val();
+    if(!x) return;
+    if(x.cerrada){ toast('Esta salida ya está sellada en un cierre'); return; }
+    var p = APP.prods[x.prodId];
+    var enCava = p ? (p.almacen||0) : 0;
+    var h = '';
+    h += '<div class="tot-line"><span>Cantidad actual</span><b>'+fmtQty(x.cant)+' '+escapa(x.unidad)+'</b></div>';
+    h += '<div class="tot-line"><span>📦 En cava ahora</span><b>'+fmtQty(enCava)+' '+escapa(x.unidad)+'</b></div>';
+    h += '<div class="flabel">Nueva cantidad ('+escapa(x.unidad)+')</div><input class="inp" id="es-cant" type="number" inputmode="decimal" min="0" step="0.05" value="'+x.cant+'" oninput="APP.calcEditSalida()">';
+    h += '<div class="tot-line big" style="margin-top:8px"><span>Nuevo costo</span><b id="es-total" style="color:var(--mar)">'+fmtCOP(x.totalCosto||0)+'</b></div>';
+    h += '<button class="btn verde" style="margin-top:14px" onclick="APP.guardarEditSalida(\''+k+'\')">💾 Guardar cambio</button>';
+    h += '<button class="btn sec" onclick="APP.cerrarModal()">Cancelar</button>';
+    APP._editSalidaData = x;
+    abrirModal('✏️ '+escapa(x.nombre), h);
+  });
+};
+APP.calcEditSalida = function(){
+  var x = APP._editSalidaData; if(!x) return;
+  var cant = parseFloat((document.getElementById('es-cant')||{}).value)||0;
+  var el = document.getElementById('es-total');
+  if(el) el.textContent = fmtCOP(Math.round((x.costoUnit||0)*cant));
+};
+APP.guardarEditSalida = function(k){
+  var x = APP._editSalidaData; if(!x) return;
+  var nueva = parseFloat((document.getElementById('es-cant')||{}).value)||0;
+  if(nueva <= 0){ toast('La cantidad debe ser mayor a 0 · si quieres quitarla usa 🗑️'); return; }
+  var dif = nueva - (x.cant||0); /* + = sale más (resta cava), − = sale menos (devuelve cava) */
+  var p = APP.prods[x.prodId];
+  var upd = {};
+  if(p){
+    var nuevoAlmacen = Math.max(0, Math.round(((p.almacen||0) - dif)*100)/100);
+    upd['inventario/productos/'+x.prodId+'/almacen'] = nuevoAlmacen;
+  }
+  upd['inventario/salidasRest/'+k+'/cant'] = nueva;
+  upd['inventario/salidasRest/'+k+'/totalCosto'] = Math.round((x.costoUnit||0)*nueva);
+  upd['inventario/salidasRest/'+k+'/totalVenta'] = Math.round((x.ventaUnit||0)*nueva);
+  db.ref().update(upd).then(function(){
+    db.ref('inventario/movimientos').push({
+      tipo:'restaurante-editada', prodId: x.prodId,
+      detalle: x.nombre+' · salida al restaurante corregida de '+fmtQty(x.cant)+' a '+fmtQty(nueva)+' '+x.unidad+(dif>0?' (salió '+fmtQty(dif)+' más)':(dif<0?' (devolvió '+fmtQty(-dif)+')':'')),
+      cant: Math.abs(dif), usuario: APP.user.nombre, ts: Date.now(), fecha: fechaOperativa()
+    });
+    log('salida-editada', x.nombre+' · '+fmtQty(x.cant)+'→'+fmtQty(nueva)+' · por '+APP.user.nombre);
+    toast('✅ Salida actualizada · cava ajustada');
+    APP.cerrarModal();
+    if(typeof cargarSalidasHoy === 'function') cargarSalidasHoy(fechaOperativa());
+    if(APP._pantalla === 's-almacen') renderAlmacen();
+  }).catch(function(e){ toast('⚠️ No se guardó: '+String(e && e.message||e).slice(0,50)); });
+};
+APP.borrarSalidaRest = function(k){
+  if(!(APP.user.rol === 'admin' || APP.user.rol === 'supervisor')){ toast('Solo admin o supervisor'); return; }
+  db.ref('inventario/salidasRest/'+k).once('value').then(function(snap){
+    var x = snap.val();
+    if(!x) return;
+    if(x.cerrada){ toast('Esta salida ya está sellada en un cierre'); return; }
+    if(!confirm('¿Eliminar la salida al restaurante de '+x.nombre+' ('+fmtQty(x.cant)+' '+x.unidad+')?\nLa cantidad vuelve a la cava.')) return;
+    var p = APP.prods[x.prodId];
+    var upd = {};
+    upd['inventario/salidasRest/'+k] = null;
+    if(p) upd['inventario/productos/'+x.prodId+'/almacen'] = Math.round(((p.almacen||0) + (x.cant||0))*100)/100;
+    db.ref().update(upd).then(function(){
+      db.ref('inventario/movimientos').push({
+        tipo:'restaurante-anulada', prodId: x.prodId,
+        detalle: x.nombre+' · salida al restaurante anulada · '+fmtQty(x.cant)+' '+x.unidad+' devuelto a la cava',
+        cant: x.cant||0, usuario: APP.user.nombre, ts: Date.now(), fecha: fechaOperativa()
+      });
+      log('salida-borrada', x.nombre+' '+fmtQty(x.cant)+' · por '+APP.user.nombre);
+      toast('🗑️ Salida eliminada · devuelta a la cava');
+      if(typeof cargarSalidasHoy === 'function') cargarSalidasHoy(fechaOperativa());
+      if(APP._pantalla === 's-almacen') renderAlmacen();
+    }).catch(function(e){ toast('⚠️ No se pudo: '+String(e && e.message||e).slice(0,50)); });
   });
 };
 
