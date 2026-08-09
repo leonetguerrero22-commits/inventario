@@ -628,7 +628,7 @@ select.inp{appearance:none;-webkit-appearance:none}
     <div class="sub">Toca el producto, pon la cantidad y listo</div>
   </div>
   <div class="wrap">
-    <div class="nota" style="background:#E8F6F5;border-color:#BEE5E2;color:#0E5F59">Registra cada venta al momento <b>o</b> carga todo junto al final del día — como les quede más cómodo. Descuenta la cava y arma el estimado para el cuadre. <span style="opacity:.6;font-size:10px">· v2.1 sellado</span></div>
+    <div class="nota" style="background:#E8F6F5;border-color:#BEE5E2;color:#0E5F59">Registra cada venta al momento <b>o</b> carga todo junto al final del día — como les quede más cómodo. Descuenta la cava y arma el estimado para el cuadre. <span style="opacity:.6;font-size:10px">· v2.3 venta tardía + diagnóstico</span></div>
     <div class="card">
       <div class="lbl">Lo vendido hoy</div>
       <div id="vp-hoy"><div class="vacio">Aún sin ventas registradas hoy</div></div>
@@ -641,6 +641,11 @@ select.inp{appearance:none;-webkit-appearance:none}
     <div class="lbl" style="padding:0 2px">Toca lo que se vendió</div>
     <div class="busq-wrap"><span class="ic">🔍</span><input class="inp" id="vp-busq" type="text" placeholder="Buscar producto para vender…" oninput="APP.buscarVenta(this.value)"></div>
     <div id="vp-prods"></div>
+    <div id="vp-admin-tools" style="display:none;margin-top:6px">
+      <div class="lbl" style="padding:0 2px;color:var(--gris)">Herramientas de admin</div>
+      <button class="btn sec" style="margin-bottom:8px" onclick="APP.modalDiagVentas()">🔎 Revisar ventas de una fecha</button>
+      <button class="btn sec" style="margin-bottom:8px;border-color:#C3D0E8;color:#22355C" onclick="APP.modalVentaPasada()">📅 Registrar venta de un día pasado</button>
+    </div>
     <button class="btn sec" style="margin-bottom:70px" onclick="APP.abrirAlmacen()">← Volver a la pescadería</button>
   </div>
   <div id="vp-barra" style="display:none;position:fixed;bottom:calc(58px + env(safe-area-inset-bottom));left:0;right:0;max-width:480px;margin:0 auto;background:linear-gradient(155deg,var(--coral),var(--coral-osc));color:#fff;padding:13px 18px;box-shadow:0 -4px 20px rgba(15,34,48,.15);cursor:pointer;z-index:40;display:flex;justify-content:space-between;align-items:center" onclick="APP.irAResumenVenta()">
@@ -5764,6 +5769,151 @@ APP.borrarSalidaRest = function(k){
   });
 };
 
+
+/* ═══════════ 🔎 DIAGNÓSTICO + 📅 VENTA DE DÍA PASADO (solo admin/supervisor) ═══════════
+   Un guardado de venta es ATÓMICO: baja la cava Y crea el registro en la misma
+   escritura. Por eso nunca puede haber "bajó inventario pero se perdió la venta".
+   Si una venta no está en el historial, o no se llegó a guardar, o quedó sellada
+   en un cierre (cerrada:true) y solo está oculta de la lista de hoy. Estas
+   herramientas permiten ver la realidad de la base y registrar lo que falte. */
+APP.modalDiagVentas = function(){
+  if(!(APP.user.rol === 'admin' || APP.user.rol === 'supervisor')){ toast('Solo admin o supervisor'); return; }
+  var h = '';
+  h += '<div class="nota" style="background:#EAF1FB;border-color:#C3D0E8;color:#22355C">Elige una fecha y te muestro <b>todas</b> las ventas de pescadería guardadas ese día — incluidas las que ya quedaron selladas en un cierre. Así sabes si una venta existe (y solo está oculta) o si de verdad no se guardó.</div>';
+  h += '<div class="flabel">Fecha a revisar</div><input class="inp" id="dg-fecha" type="date" value="'+fechaOperativa()+'">';
+  h += '<button class="btn verde" style="margin-top:12px" onclick="APP.correrDiagVentas()">🔎 Revisar esa fecha</button>';
+  h += '<button class="btn sec" onclick="APP.cerrarModal()">Cerrar</button>';
+  h += '<div id="dg-res" style="margin-top:12px"></div>';
+  abrirModal('🔎 Revisar ventas de una fecha', h);
+};
+APP.correrDiagVentas = function(){
+  var f = (document.getElementById('dg-fecha')||{}).value;
+  if(!f){ toast('Elige una fecha'); return; }
+  var cont = document.getElementById('dg-res');
+  if(cont) cont.innerHTML = '<div class="cargando">Buscando en la base…</div>';
+  db.ref('ventasPesc').orderByChild('fecha').equalTo(f).once('value').then(function(snap){
+    var v = snap.val()||{};
+    var keys = Object.keys(v).sort(function(a,b){ return (v[a].ts||0)-(v[b].ts||0); });
+    var h = '';
+    if(!keys.length){
+      h += '<div class="nota" style="background:#FDECEA;border-color:#F5C6C0;color:#8B2A20">❌ No hay <b>ninguna</b> venta de pescadería guardada el '+fechaLegible(f)+'.<br><br>Esto significa que esa venta <b>nunca llegó a guardarse</b> (no se tocó «Registrar venta», o falló la conexión). Como el guardado es atómico, tampoco bajó el inventario por esa venta. Puedes registrarla ahora con «📅 Registrar venta de un día pasado».</div>';
+    } else {
+      var total = 0, totalCosto = 0, nCerr = 0, nAbi = 0;
+      h += '<div class="card" style="border-color:#C3D0E8"><div class="lbl">Ventas encontradas el '+fechaLegible(f)+'</div>';
+      keys.forEach(function(k){
+        var x = v[k];
+        total += (x.total||0); totalCosto += (x.totalCosto||0);
+        if(x.cerrada) nCerr++; else nAbi++;
+        var badge = x.cerrada ? '<span style="background:#E4EAF6;color:#22355C;border-radius:6px;padding:1px 7px;font-size:10px;font-weight:700">sellada en cierre</span>' : '<span style="background:#E7F6EC;color:#1B6E3C;border-radius:6px;padding:1px 7px;font-size:10px;font-weight:700">visible hoy</span>';
+        h += '<div class="mov" style="align-items:center"><div class="ic in">🛒</div>';
+        h += '<div class="tx" style="flex:1"><b>'+escapa(x.nombre)+'</b><span>'+fmtQty(x.cant)+' '+escapa(x.unidad)+' · '+horaStr(x.ts)+' · '+escapa(x.usuario||'')+' '+badge+'</span></div>';
+        h += '<div class="mt in" style="font-weight:800">'+fmtCOP(x.total||0)+'</div></div>';
+      });
+      h += '<div class="tot-line big" style="margin-top:8px"><span>Total del día ('+keys.length+')</span><b style="color:var(--ok)">'+fmtCOP(total)+'</b></div>';
+      h += '<div style="font-size:11px;color:var(--gris);margin-top:6px">'+nAbi+' visible'+(nAbi===1?'':'s')+' en la lista de hoy · '+nCerr+' ya sellada'+(nCerr===1?'':'s')+' en un cierre.</div>';
+      h += '</div>';
+      if(nCerr && !nAbi){
+        h += '<div class="nota" style="background:#EAF1FB;border-color:#C3D0E8;color:#22355C">ℹ️ Estas ventas <b>sí se guardaron</b> — solo están selladas en un cierre de ese día, por eso no aparecían en «venta del día» de hoy. El inventario ya se descontó cuando se registraron.</div>';
+      }
+    }
+    if(cont) cont.innerHTML = h;
+  }).catch(function(e){
+    if(cont) cont.innerHTML = '<div class="nota" style="background:#FDECEA;border-color:#F5C6C0;color:#8B2A20">⚠️ No se pudo leer la base: '+String(e && e.message||e).slice(0,60)+'</div>';
+  });
+};
+
+/* ── 📅 Registrar una venta de un día pasado ──
+   Descuenta la cava AHORA (según lo confirmado) y guarda el registro con la
+   fecha elegida. Si esa fecha ya tuvo un cierre firmado, la venta se marca
+   cerrada:true para NO alterar un turno ya cuadrado (queda como histórico
+   con rastro). Si es una fecha sin cierre, entra normal y se podrá cuadrar. */
+APP.modalVentaPasada = function(){
+  if(!(APP.user.rol === 'admin' || APP.user.rol === 'supervisor')){ toast('Solo admin o supervisor'); return; }
+  var h = '';
+  h += '<div class="nota" style="background:#EAF1FB;border-color:#C3D0E8;color:#22355C">Registra una venta que no quedó guardada. <b>Descuenta la cava ahora</b> y la deja con la fecha que elijas. Revisa primero con 🔎 que de verdad no exista, para no duplicarla.</div>';
+  h += '<div class="flabel">Fecha de la venta</div><input class="inp" id="vpa-fecha" type="date" value="'+fechaOperativa()+'">';
+  h += '<div class="flabel">Producto</div>'+selectProductos('vpa-prod', null).replace('APP.actCostoCompra && APP.actCostoCompra()', 'APP.infoVentaPasada()');
+  h += '<div class="flabel">Cantidad vendida</div><input class="inp" id="vpa-cant" type="number" inputmode="decimal" min="0" step="0.05" placeholder="0" oninput="APP.infoVentaPasada()">';
+  h += '<div id="vpa-info" style="margin-top:10px"></div>';
+  h += '<div class="flabel">Nota (opcional)</div><input class="inp" id="vpa-nota" type="text" placeholder="Ej: venta del jueves no guardada">';
+  h += '<button class="btn verde" style="margin-top:14px" id="btn-vpa" onclick="APP.guardarVentaPasada()">📅 Registrar venta pasada</button>';
+  h += '<button class="btn sec" onclick="APP.cerrarModal()">Cancelar</button>';
+  abrirModal('📅 Venta de un día pasado', h);
+  APP.infoVentaPasada();
+};
+APP.infoVentaPasada = function(){
+  var cont = document.getElementById('vpa-info');
+  if(!cont) return;
+  var pid = (document.getElementById('vpa-prod')||{}).value;
+  var cant = parseFloat((document.getElementById('vpa-cant')||{}).value)||0;
+  var p = APP.prods[pid];
+  if(!p || cant <= 0){ cont.innerHTML = ''; return; }
+  var venta = (p.venta||0)*cant;
+  var h = '';
+  h += '<div class="tot-line"><span>📦 En cava ahora</span><b>'+fmtQty(p.almacen||0)+' '+escapa(p.unidad)+((p.almacen||0) < cant ? ' <span style="color:var(--rojo)">⚠️ no alcanza</span>' : '')+'</b></div>';
+  h += '<div class="tot-line big"><span>💵 Valor de la venta</span><b style="color:var(--ok)">'+fmtCOP(venta)+'</b></div>';
+  if(!(p.venta>0)){ h += '<div style="font-size:10px;color:var(--gris);margin-top:4px">Sin precio de venta el valor queda en $0 — asígnaselo tocando el producto en la cava.</div>'; }
+  cont.innerHTML = h;
+};
+APP._guardandoVPA = false;
+APP.guardarVentaPasada = function(){
+  if(APP._guardandoVPA) return;
+  var f = (document.getElementById('vpa-fecha')||{}).value;
+  var pid = (document.getElementById('vpa-prod')||{}).value;
+  var cant = parseFloat((document.getElementById('vpa-cant')||{}).value)||0;
+  var nota = ((document.getElementById('vpa-nota')||{}).value||'').trim();
+  var p = APP.prods[pid];
+  if(!f){ toast('Elige la fecha'); return; }
+  if(!p){ toast('Elige el producto'); return; }
+  if(cant <= 0){ toast('Ingresa la cantidad'); return; }
+  if((p.almacen||0) < cant){
+    if(!confirm('⚠️ En la cava hay '+fmtQty(p.almacen||0)+' '+p.unidad+' y vas a vender '+fmtQty(cant)+'.\n¿Registrar igual? (quedará en 0)')) return;
+  }
+  APP._guardandoVPA = true;
+  var btn = document.getElementById('btn-vpa');
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ Guardando…'; }
+  /* ¿esa fecha ya tuvo cierre firmado? → sellar la venta para no alterar el turno */
+  db.ref('caja/turnos').orderByKey().startAt(f+'_').endAt(f+'_\uf8ff').once('value').then(function(snap){
+    var val = snap.val()||{}, huboCierre = false, turnoRef = '';
+    Object.keys(val).forEach(function(tk){
+      if(val[tk] && val[tk].estado === 'cerrada'){ huboCierre = true; turnoRef = tk; }
+    });
+    var upd = {};
+    upd['inventario/productos/'+pid+'/almacen'] = Math.max(0, Math.round(((p.almacen||0) - cant)*100)/100);
+    var key = db.ref('ventasPesc').push().key;
+    var reg = {
+      fecha: f, ts: Date.now(),
+      prodId: pid, nombre: p.nombre, cant: cant, unidad: p.unidad,
+      ventaUnit: p.venta||0, costoUnit: p.costo||0,
+      total: Math.round((p.venta||0)*cant), totalCosto: Math.round((p.costo||0)*cant),
+      usuario: APP.user.nombre, registroTardio: true, nota: nota
+    };
+    if(huboCierre){ reg.cerrada = true; reg.turnoCierre = turnoRef; reg.selladaPorRegistroTardio = true; }
+    upd['ventasPesc/'+key] = reg;
+    return db.ref().update(upd).then(function(){
+      db.ref('inventario/movimientos').push({
+        tipo:'venta-tardia', prodId: pid,
+        detalle: p.nombre+' −'+fmtQty(cant)+' '+p.unidad+' · venta registrada tarde para el '+fechaLegible(f)+(p.venta?' · '+fmtCOP((p.venta||0)*cant):'')+(huboCierre?' · (fecha ya cerrada: no altera el cierre)':'')+(nota?' · '+nota:''),
+        usuario: APP.user.nombre, ts: Date.now(), fecha: fechaOperativa()
+      });
+      log('venta-tardia', p.nombre+' '+fmtQty(cant)+' · para '+f+(huboCierre?' (sellada)':'')+' · por '+APP.user.nombre);
+      APP._guardandoVPA = false;
+      APP.cerrarModal();
+      if(huboCierre){
+        alert('✅ Venta registrada para el '+fechaLegible(f)+'.\n\nEsa fecha YA tenía un cierre firmado, así que la venta se guardó como histórico y bajó de la cava, pero NO altera el cuadre de ese turno (para no dañar un cierre ya cerrado). Queda con su rastro en movimientos.');
+      } else {
+        toast('✅ Venta registrada para el '+fechaLegible(f)+' · cava descontada');
+      }
+      if(typeof cargarVentasHoy === 'function') cargarVentasHoy();
+      if(typeof renderVentaProds === 'function') renderVentaProds();
+    });
+  }).catch(function(e){
+    APP._guardandoVPA = false;
+    if(btn){ btn.disabled = false; btn.textContent = '📅 Registrar venta pasada'; }
+    toast('⚠️ No se guardó: '+String(e && e.message || e).slice(0,50));
+  });
+};
+
 /* ═══════════ REVISIÓN FÍSICA · PLANILLA · KARDEX ═══════════ */
 
 /* ── 📋 Revisión física de la cava (semanal o cuando quieras) ── */
@@ -6367,6 +6517,8 @@ APP.abrirVentaPesc = function(){
   APP._busqVenta = '';
   var bq = document.getElementById('vp-busq');
   if(bq) bq.value = '';
+  var tools = document.getElementById('vp-admin-tools');
+  if(tools) tools.style.display = (APP.user.rol === 'admin' || APP.user.rol === 'supervisor') ? 'block' : 'none';
   renderVentaProds();
   cargarVentasHoy();
 };
