@@ -5816,7 +5816,33 @@ APP.correrDiagVentas = function(){
         h += '<div class="nota" style="background:#EAF1FB;border-color:#C3D0E8;color:#22355C">ℹ️ Estas ventas <b>sí se guardaron</b> — solo están selladas en un cierre de ese día, por eso no aparecían en «venta del día» de hoy. El inventario ya se descontó cuando se registraron.</div>';
       }
     }
-    if(cont) cont.innerHTML = h;
+    if(cont) cont.innerHTML = h + '<div id="dg-turnos"><div class="cargando">Revisando turnos de caja…</div></div>';
+    /* además: mostrar los turnos de caja de esa fecha y su estado */
+    db.ref('caja/turnos').orderByKey().startAt(f+'_').endAt(f+'_\uf8ff').once('value').then(function(ts){
+      var tv = ts.val()||{};
+      var th = '';
+      var tkeys = Object.keys(tv);
+      if(!tkeys.length){
+        th += '<div class="nota" style="background:#FFF3DC;border-color:#F5E6A8;color:#8A6D1A">⚠️ No hay ningún <b>turno de caja</b> con fecha '+f+'. Las ventas de pescadería de ese día no tienen un cierre que las cuadre. Puede que el turno se haya abierto con OTRA fecha (revisa el día anterior si se abrió de madrugada).</div>';
+      } else {
+        th += '<div class="card" style="border-color:#C3D0E8"><div class="lbl">Turnos de caja del '+f+'</div>';
+        tkeys.forEach(function(tk){
+          var d = tv[tk];
+          var tN = d.turno === 'man' ? '☀️ Mañana' : '🌙 Noche';
+          var est = d.estado === 'cerrada' ? '<span style="background:#E4EAF6;color:#22355C;border-radius:6px;padding:1px 7px;font-size:10px;font-weight:700">CERRADA ✅</span>' : '<span style="background:#FFF3DC;color:#8A6D1A;border-radius:6px;padding:1px 7px;font-size:10px;font-weight:700">ABIERTA (sin firmar)</span>';
+          var posTx = (d.cierre && (d.cierre.totalPOS||d.cierre.posAcumulado)) ? ' · POS '+fmtCOP(d.cierre.totalPOS||d.cierre.posAcumulado) : '';
+          th += '<div class="mov" style="align-items:center"><div class="ic in">🧾</div>';
+          th += '<div class="tx" style="flex:1"><b>'+tN+'</b><span>'+escapa((d.apertura&&d.apertura.cajera)||'')+' '+est+posTx+'</span></div></div>';
+        });
+        th += '<div style="font-size:11px;color:var(--gris);margin-top:6px">Si un turno está <b>ABIERTA</b> y tiene tus ventas, retómalo desde Caja y ciérralo con el <b>Total POS vacío</b> (arqueo directo) para que la venta quede como pescadería, no como restaurante.</div>';
+        th += '</div>';
+      }
+      var box = document.getElementById('dg-turnos');
+      if(box) box.innerHTML = th;
+    }).catch(function(){
+      var box = document.getElementById('dg-turnos');
+      if(box) box.innerHTML = '';
+    });
   }).catch(function(e){
     if(cont) cont.innerHTML = '<div class="nota" style="background:#FDECEA;border-color:#F5C6C0;color:#8B2A20">⚠️ No se pudo leer la base: '+String(e && e.message||e).slice(0,60)+'</div>';
   });
