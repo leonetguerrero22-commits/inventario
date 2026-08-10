@@ -414,7 +414,7 @@ select.inp{appearance:none;-webkit-appearance:none}
   <div class="hd">
     <div class="mini" id="ci-mini"></div>
     <h1>Cierre de Turno</h1>
-    <div class="sub">Cuenta lo que hay en caja por cada método</div>
+    <div class="sub">Cuenta lo que hay en caja por cada método <span style="opacity:.55;font-size:10px">· v2.5 POS oculto</span></div>
   </div>
   <div class="wrap">
     <div class="card">
@@ -441,21 +441,29 @@ select.inp{appearance:none;-webkit-appearance:none}
       <input id="c-tusd" type="hidden" value="4200"><input id="c-tves" type="hidden" value="0">
     </div>
     <div class="card">
-      <div class="lbl">Venta según el POS</div>
-      <div class="print-box" id="ci-printbox" onclick="APP.pedirFoto('cierre')">
-        <div class="th" id="ci-print-th">📸</div>
-        <div style="flex:1">
-          <b style="font-size:13px" id="ci-print-tx">Adjuntar print del POS</b>
-          <div style="font-size:11px;color:var(--gris)" id="ci-print-sub">Toca para tomar foto o elegir de galería</div>
-        </div>
+      <div class="lbl">Venta según el POS del restaurante</div>
+      <div id="pos-toggle-box">
+        <div style="font-size:11px;color:var(--gris);margin:2px 0 10px">La mayoría de los días la venta es <b>solo pescadería</b> y esto se deja cerrado. Ábrelo <b>solo</b> si el restaurante vendió platos o bebidas por su propio POS.</div>
+        <button class="btn sec" id="btn-abrir-pos" onclick="APP.togglePOS(true)" style="border-color:#C3D0E8;color:#22355C">🍽️ El restaurante vendió por su POS</button>
       </div>
-      <div class="fila-inp" style="margin:12px 0 0"><div class="tag">Total POS (COP)</div><input class="inp" id="c-pos" type="text" inputmode="numeric" placeholder="0" style="text-align:right" oninput="APP.fmtMiles(this);APP.calcCierre()"></div>
-      <button class="btn sec" id="btn-ocr" style="margin-top:10px" onclick="APP.leerTotalPrint()">🔍 Leer total del print automáticamente</button>
-      <div style="font-size:10px;color:var(--gris);margin-top:5px">Copia el total directo del print del POS. Toca el lector para leerlo automáticamente, o escríbelo a mano.</div>
-      <div id="pos-prev-wrap" style="display:none">
-        <div class="fila-inp" style="margin:10px 0 0"><div class="tag">− Corte mañana</div><input class="inp" id="c-posprev" type="text" inputmode="numeric" placeholder="0" style="text-align:right" oninput="APP.fmtMiles(this);APP.calcCierre()"></div>
-        <div style="font-size:10px;color:var(--gris);margin-top:5px">El POS acumula todo el día: se descuenta lo ya cortado en la mañana.</div>
-        <div class="tot-line big" style="padding-top:8px"><span>= POS de este turno</span><b id="pos-neto">$0</b></div>
+      <div id="pos-detalle" style="display:none">
+        <div class="print-box" id="ci-printbox" onclick="APP.pedirFoto('cierre')">
+          <div class="th" id="ci-print-th">📸</div>
+          <div style="flex:1">
+            <b style="font-size:13px" id="ci-print-tx">Adjuntar print del POS</b>
+            <div style="font-size:11px;color:var(--gris)" id="ci-print-sub">Toca para tomar foto o elegir de galería</div>
+          </div>
+        </div>
+        <div class="fila-inp" style="margin:12px 0 0"><div class="tag">Total POS restaurante (COP)</div><input class="inp" id="c-pos" type="text" inputmode="numeric" placeholder="0" style="text-align:right" oninput="APP.fmtMiles(this);APP.calcCierre()"></div>
+        <button class="btn sec" id="btn-ocr" style="margin-top:10px" onclick="APP.leerTotalPrint()">🔍 Leer total del print automáticamente</button>
+        <div style="font-size:10px;color:var(--gris);margin-top:5px">Solo lo que el <b>restaurante</b> vendió por su propio POS (platos, bebidas). La pescadería <b>no</b> va aquí — se cuenta sola.</div>
+        <div id="c-pos-aviso"></div>
+        <div id="pos-prev-wrap" style="display:none">
+          <div class="fila-inp" style="margin:10px 0 0"><div class="tag">− Corte mañana</div><input class="inp" id="c-posprev" type="text" inputmode="numeric" placeholder="0" style="text-align:right" oninput="APP.fmtMiles(this);APP.calcCierre()"></div>
+          <div style="font-size:10px;color:var(--gris);margin-top:5px">El POS acumula todo el día: se descuenta lo ya cortado en la mañana.</div>
+          <div class="tot-line big" style="padding-top:8px"><span>= POS de este turno</span><b id="pos-neto">$0</b></div>
+        </div>
+        <button class="btn sec" onclick="APP.togglePOS(false)" style="margin-top:12px">✕ No hubo venta de restaurante · cerrar</button>
       </div>
     </div>
     <div class="card">
@@ -2388,6 +2396,24 @@ function cargarSalidasHoy(fecha, fechaAlt){
     APP.calcCierre();
   }).catch(function(){});
 }
+APP.togglePOS = function(mostrar){
+  var box = document.getElementById('pos-toggle-box');
+  var det = document.getElementById('pos-detalle');
+  if(!box || !det) return;
+  if(mostrar){
+    box.style.display = 'none';
+    det.style.display = 'block';
+    var inp = document.getElementById('c-pos');
+    if(inp){ try{ inp.focus(); }catch(e){} }
+  } else {
+    /* al cerrar: limpiar todo lo del POS para que no quede monto colgado */
+    det.style.display = 'none';
+    box.style.display = 'block';
+    ['c-pos','c-posprev'].forEach(function(id){ var e = document.getElementById(id); if(e) e.value = ''; });
+    var av = document.getElementById('c-pos-aviso'); if(av) av.innerHTML = '';
+    APP.calcCierre();
+  }
+};
 APP.irCierre = function(){
   var d = APP.turnoData;
   if(!d){ toast('No hay turno activo'); return; }
@@ -2396,6 +2422,11 @@ APP.irCierre = function(){
      de otro día, se sumaban las ventas de ambos días juntos. Corregido. */
   cargarSalidasHoy(d.fecha||fechaOperativa());
   APP.goScreen('s-cierre');
+  /* el panel del POS arranca CERRADO: la mayoría de días es solo pescadería */
+  var pbox = document.getElementById('pos-toggle-box'), pdet = document.getElementById('pos-detalle');
+  if(pbox && pdet){ pbox.style.display = 'block'; pdet.style.display = 'none'; }
+  var cpos0 = document.getElementById('c-pos'); if(cpos0) cpos0.value = '';
+  var cprev0 = document.getElementById('c-posprev'); if(cprev0) cprev0.value = '';
   var tN = d.turno === 'man' ? 'Mañana' : 'Noche';
   document.getElementById('ci-mini').textContent = 'Turno '+tN+' · '+d.apertura.cajera;
   document.getElementById('c-tusd').value = APP.tasas.usd||4200;
@@ -2417,6 +2448,8 @@ APP.irCierre = function(){
       if(!valMiles('c-posprev') && corte){
         document.getElementById('c-posprev').value = corte.toLocaleString('es-CO');
       }
+      /* si en la mañana SÍ hubo POS de restaurante, abrir el panel para que se vea */
+      if(corte > 0 && typeof APP.togglePOS === 'function'){ APP.togglePOS(true); }
       APP.calcCierre();
     });
   } else {
@@ -2435,6 +2468,8 @@ APP.irCierre = function(){
       th.outerHTML = '<img class="th" id="ci-print-th" src="'+ultimo.foto+'" style="object-fit:cover" alt="print">';
       document.getElementById('ci-print-tx').textContent = 'Print del turno ✅';
       document.getElementById('ci-print-sub').textContent = 'Tomado a las '+horaStr(ultimo.ts)+' · toca para cambiar';
+      /* hubo print del POS → hubo venta de restaurante: abrir el panel */
+      if(typeof APP.togglePOS === 'function'){ APP.togglePOS(true); }
     }
   }
   APP.calcCierre();
@@ -2484,6 +2519,19 @@ APP.calcCierre = function(){
   document.getElementById('r-venta').textContent = fmtCOP(c.venta);
   var el = document.getElementById('r-dif');
   var est = (APP._ventasPescHoy && APP._ventasPescHoy.total) || 0;
+  /* Aviso anti-error: el "Total POS" es SOLO del restaurante. Si el cajero
+     escribe ahí un monto igual o muy parecido a lo vendido en pescadería,
+     casi seguro copió el total equivocado. Le avisamos en el momento. */
+  var avisoPos = document.getElementById('c-pos-aviso');
+  if(avisoPos){
+    var posEscrito = c.posAcum || 0;
+    var parecido = est > 0 && posEscrito > 0 && Math.abs(posEscrito - est) <= Math.max(2000, est*0.02);
+    if(parecido){
+      avisoPos.innerHTML = '<div class="nota" style="background:#FDECEA;border-color:#F5C6C0;color:#8B2A20;margin-top:8px">⚠️ <b>Revisa este monto.</b> Lo que escribiste ('+fmtCOP(posEscrito)+') es casi igual a lo vendido en <b>pescadería</b> ('+fmtCOP(est)+'). El «Total POS restaurante» es <b>solo</b> para ventas del restaurante por su propio POS. Si el día fue solo pescadería, <b>borra este campo y déjalo vacío</b> — si no, la venta aparecerá como restaurante.</div>';
+    } else {
+      avisoPos.innerHTML = '';
+    }
+  }
   /* desglose en vivo: pescadería vs restaurante (usa el POS que la cajera va poniendo) */
   var cont = document.getElementById('cierre-desglose-vivo');
   if(cont){
@@ -2521,6 +2569,15 @@ APP.guardarCierre = function(){
   if(c.pos < 0){ toast('⚠️ El corte previo no puede ser mayor a la venta anotada'); return; }
   var d = APP.turnoData;
   if(!d || d.estado !== 'abierta'){ toast('⚠️ Este turno ya no está abierto'); return; }
+  /* Barrera anti-error: firmar con Total POS ~ pescadería casi siempre es un
+     total copiado al campo equivocado. Confirmar antes de sellar. */
+  var estP = (APP._ventasPescHoy && APP._ventasPescHoy.total) || 0;
+  if(estP > 0 && c.posAcum > 0 && Math.abs(c.posAcum - estP) <= Math.max(2000, estP*0.02)){
+    if(!confirm('⚠️ El «Total POS restaurante» ('+fmtCOP(c.posAcum)+') es casi igual a lo vendido en pescadería ('+fmtCOP(estP)+').\n\nSi el día fue SOLO pescadería, ese campo debería ir VACÍO — si lo dejas, la venta se contará como restaurante.\n\n¿Seguro que el restaurante vendió eso por su POS y quieres firmar así?')){
+      toast('Revisa el Total POS · bórralo si el día fue solo pescadería');
+      return;
+    }
+  }
   APP._guardandoCierre = true;
   var btn = document.getElementById('btn-cierre');
   if(btn){ btn.disabled = true; btn.textContent = '⏳ Guardando cierre…'; }
