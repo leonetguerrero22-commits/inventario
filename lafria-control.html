@@ -713,7 +713,7 @@ select.inp{appearance:none;-webkit-appearance:none}
     <button class="salir" onclick="APP.logout()">Salir</button>
     <div class="mini" id="is-rango">Semana</div>
     <h1>🐟 Semana pescadería</h1>
-    <div class="sub">Venta, restaurante y baja de inventario <span style="opacity:.55;font-size:10px">· v2.6</span></div>
+    <div class="sub">Venta, restaurante y baja de inventario <span style="opacity:.55;font-size:10px">· v2.7 desglose</span></div>
   </div>
   <div class="wrap" style="margin-top:4px">
     <div class="cats" id="is-selsem"></div>
@@ -6062,21 +6062,35 @@ function renderSelSemana(){
   opts.forEach(function(p){ h += '<button class="'+(APP._semOffset===p.o?'on':'')+'" onclick="APP.semNav('+p.o+')">'+p.tx+'</button>'; });
   el.innerHTML = h;
 }
+function esPeso(u){ u = (u||'').toLowerCase(); return u === 'kg' || u === 'gr'; }
+function aKg(cant, u){ u = (u||'').toLowerCase(); if(u === 'gr') return (cant||0)/1000; if(u === 'kg') return (cant||0); return 0; }
 function agruparPesc(ventas, salidas, movs, dias){
-  /* devuelve por-día y totales */
+  /* devuelve por-día, totales y detalle por producto.
+     Kilos: solo se suma lo que es PESO (kg/gr→kg). Unidades/paquetes no se
+     mezclan en la cifra de kilos (no tiene sentido sumar und + kg). */
   var porDia = {};
-  dias.forEach(function(f){ porDia[f] = {ventaD:0, gananciaD:0, ventaKg:0, restD:0, restKg:0, mermaD:0, mermaKg:0}; });
-  var tot = {ventaD:0, gananciaD:0, ventaKg:0, restD:0, restKg:0, mermaD:0, mermaKg:0, ventaCosto:0};
+  dias.forEach(function(f){ porDia[f] = {ventaD:0, gananciaD:0, ventaKg:0, restD:0, restKg:0, mermaD:0, mermaKg:0, ventaDet:{}, restDet:{}}; });
+  var tot = {ventaD:0, gananciaD:0, ventaKg:0, restD:0, restKg:0, mermaD:0, mermaKg:0, ventaCosto:0, ventaUnds:0, restUnds:0};
+  function acum(det, nom, cant, unidad, dinero){
+    if(!det[nom]) det[nom] = {cant:0, unidad:unidad||'', dinero:0};
+    det[nom].cant += (cant||0); det[nom].dinero += (dinero||0);
+  }
   Object.keys(ventas||{}).forEach(function(k){
     var v = ventas[k]; if(!v || !porDia[v.fecha]) return;
-    var val = v.total||0, cost = v.totalCosto||0, kg = v.cant||0;
-    porDia[v.fecha].ventaD += val; porDia[v.fecha].gananciaD += (val-cost); porDia[v.fecha].ventaKg += kg;
-    tot.ventaD += val; tot.gananciaD += (val-cost); tot.ventaKg += kg; tot.ventaCosto += cost;
+    var val = v.total||0, cost = v.totalCosto||0;
+    porDia[v.fecha].ventaD += val; porDia[v.fecha].gananciaD += (val-cost);
+    tot.ventaD += val; tot.gananciaD += (val-cost); tot.ventaCosto += cost;
+    if(esPeso(v.unidad)){ var kg = aKg(v.cant, v.unidad); porDia[v.fecha].ventaKg += kg; tot.ventaKg += kg; }
+    else { tot.ventaUnds += (v.cant||0); }
+    acum(porDia[v.fecha].ventaDet, v.nombre, v.cant, v.unidad, val);
   });
   Object.keys(salidas||{}).forEach(function(k){
     var s = salidas[k]; if(!s || !porDia[s.fecha]) return;
-    porDia[s.fecha].restD += (s.totalCosto||0); porDia[s.fecha].restKg += (s.cant||0);
-    tot.restD += (s.totalCosto||0); tot.restKg += (s.cant||0);
+    porDia[s.fecha].restD += (s.totalCosto||0);
+    tot.restD += (s.totalCosto||0);
+    if(esPeso(s.unidad)){ var kg = aKg(s.cant, s.unidad); porDia[s.fecha].restKg += kg; tot.restKg += kg; }
+    else { tot.restUnds += (s.cant||0); }
+    acum(porDia[s.fecha].restDet, s.nombre, s.cant, s.unidad, s.totalCosto||0);
   });
   Object.keys(movs||{}).forEach(function(k){
     var m = movs[k]; if(!m || m.tipo !== 'merma' || !porDia[m.fecha]) return;
@@ -6154,13 +6168,19 @@ function renderInfSemana(A, B, dias){
   h += tarjetaInf('Merma (pérdida)', ta.mermaD>0?fmtCOP(ta.mermaD):'$0', ta.mermaD>0?deltaTx(ta.mermaD,tb.mermaD):'<span style="color:var(--gris)">sin pérdidas 👍</span>', mermaColor);
   h += '</div>';
 
-  /* ── descuadre de cava (kilos) ── */
+  /* ── Vendido y Al restaurante: desglose día por día (acordeón) ── */
+  h += acordeonDia('Vendido', 'ventaDet', 'ventaD', ta.ventaD, dias, A.porDia, 'var(--ok)', '🛒');
+  h += acordeonDia('Al restaurante', 'restDet', 'restD', ta.restD, dias, A.porDia, 'var(--manana)', '🍽️');
+
+  /* ── baja de inventario en cantidad (peso separado de unidades) ── */
   var salioKg = ta.ventaKg + ta.restKg + ta.mermaKg;
-  h += '<div class="card" style="border-color:#C3D0E8;margin-bottom:14px"><div class="lbl">📦 Baja de inventario esta semana (kg)</div>';
+  var salioUnds = (ta.ventaUnds||0) + (ta.restUnds||0);
+  h += '<div class="card" style="border-color:#C3D0E8;margin-bottom:14px"><div class="lbl">⚖️ Salió de la cava esta semana</div>';
   h += '<div class="tot-line"><span>🛒 Vendido</span><b>'+fmtQty(ta.ventaKg)+' kg</b></div>';
   h += '<div class="tot-line"><span>🍽️ Al restaurante</span><b>'+fmtQty(ta.restKg)+' kg</b></div>';
   if(ta.mermaKg>0) h += '<div class="tot-line"><span>📉 Merma</span><b>'+fmtQty(ta.mermaKg)+' kg</b></div>';
-  h += '<div class="tot-line big" style="border-top:1px solid var(--linea);padding-top:8px"><span>Salió de la cava</span><b>'+fmtQty(salioKg)+' kg</b></div>';
+  h += '<div class="tot-line big" style="border-top:1px solid var(--linea);padding-top:8px"><span>Total en peso</span><b>'+fmtQty(salioKg)+' kg</b></div>';
+  if(salioUnds > 0) h += '<div style="font-size:10px;color:var(--gris);margin-top:6px">+ '+fmtQty(salioUnds)+' en productos por unidad/paquete (no se suman a los kilos porque son otra medida).</div>';
   h += '</div>';
 
   /* ── gráfico dinero ── */
@@ -6194,6 +6214,52 @@ function renderInfSemana(A, B, dias){
 
   cont.innerHTML = h;
 }
+
+/* cantidad legible por producto: gr→kg si es peso, con su unidad */
+function qtyProd(cant, unidad){
+  var u = (unidad||'').toLowerCase();
+  if(u === 'gr'){ return fmtQty((cant||0)/1000)+' kg'; }
+  return fmtQty(cant||0)+' '+(unidad||'');
+}
+var NOM_DIA = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+/* Acordeón principal (Vendido / Al restaurante) que al abrirse muestra
+   un renglón por día; cada día con su total y su lista de productos. */
+function acordeonDia(titulo, detKey, dKey, totalD, dias, porDia, color, icono){
+  var id = 'ad-'+detKey;
+  var h = '';
+  h += '<div style="background:var(--card);border:1px solid var(--linea);border-radius:14px;margin-bottom:10px;overflow:hidden;box-shadow:var(--sombra-sutil,0 1px 2px rgba(15,34,48,.03))">';
+  h += '<div onclick="APP.toggleAccDetalle(\''+id+'\')" style="padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none">';
+  h += '<span style="font-size:13px;font-weight:700;color:'+color+'">'+icono+' '+titulo+'</span>';
+  h += '<span style="display:flex;align-items:center;gap:8px"><b style="font-size:14px;color:'+color+'">'+fmtCOP(totalD)+'</b><span id="chev-'+id+'" style="font-size:12px;color:var(--gris);transition:transform .25s">▼</span></span>';
+  h += '</div>';
+  h += '<div id="body-'+id+'" style="display:none;padding:0 12px 10px">';
+  var hayAlgo = false;
+  dias.forEach(function(f, i){
+    var dd = porDia[f];
+    var totDia = dd[dKey]||0;
+    var det = dd[detKey]||{};
+    var prods = Object.keys(det);
+    if(totDia <= 0 && !prods.length) return; /* día sin movimiento: lo saltamos */
+    hayAlgo = true;
+    var sid = id+'-'+i;
+    h += '<div style="border-top:1px solid #F1F1F1">';
+    h += '<div onclick="APP.toggleAccDetalle(\''+sid+'\')" style="display:flex;justify-content:space-between;align-items:center;padding:10px 4px;cursor:pointer">';
+    h += '<span style="font-size:12.5px;font-weight:700;color:var(--tinta)">'+NOM_DIA[i]+' <span style="font-size:10px;color:var(--gris);font-weight:600">'+f.slice(8,10)+'/'+f.slice(5,7)+'</span></span>';
+    h += '<span style="display:flex;align-items:center;gap:6px"><b style="font-size:12.5px;color:'+color+'">'+fmtCOP(totDia)+'</b><span id="chev-'+sid+'" style="font-size:10px;color:var(--gris)">▸</span></span>';
+    h += '</div>';
+    h += '<div id="body-'+sid+'" style="display:none;padding:0 4px 8px">';
+    prods.sort(function(a,b){ return (det[b].dinero||0)-(det[a].dinero||0); });
+    prods.forEach(function(nom){
+      var p = det[nom];
+      h += '<div style="display:flex;justify-content:space-between;gap:10px;padding:5px 0 5px 10px;font-size:12px;color:var(--gris)"><span style="flex:1">'+escapa(nom)+' · '+qtyProd(p.cant, p.unidad)+'</span><b style="color:'+color+';white-space:nowrap;font-weight:700">'+fmtCOP(p.dinero)+'</b></div>';
+    });
+    h += '</div></div>';
+  });
+  if(!hayAlgo) h += '<div style="font-size:12px;color:var(--gris);padding:10px 4px;text-align:center">Sin movimiento esta semana</div>';
+  h += '</div></div>';
+  return h;
+}
+
 function tarjetaInf(lbl, val, delta, col){
   return '<div style="background:var(--crema);border-radius:12px;padding:12px">'
     + '<div style="font-size:11px;color:var(--gris)">'+lbl+'</div>'
