@@ -701,8 +701,25 @@ select.inp{appearance:none;-webkit-appearance:none}
     <button class="btn" style="background:var(--mar);box-shadow:none;margin-bottom:12px" onclick="APP.abrirSalud()">🩺 Salud del negocio · análisis completo</button>
     <button class="btn" style="background:var(--noche,#3B5BA5);box-shadow:none;margin-bottom:12px" onclick="APP.cierreMes()">📄 Cierre de Mes para socios</button>
     <button class="btn" style="background:var(--mar-2,#14507E);box-shadow:none;margin-bottom:12px" onclick="APP.informeInventario()">📦 Inventario · valor y ganancia</button>
+    <button class="btn" style="background:var(--manana);box-shadow:none;margin-bottom:12px" onclick="APP.abrirInfSemana()">🐟 Semana pescadería · comparativo</button>
     <div class="cats" id="inf-periodos"></div>
     <div id="inf-cont"><div class="cargando">Cargando datos…</div></div>
+  </div>
+</div>
+
+<!-- ══════════ SEMANA PESCADERÍA · COMPARATIVO ══════════ -->
+<div class="screen" id="s-infsemana">
+  <div class="hd">
+    <button class="salir" onclick="APP.logout()">Salir</button>
+    <div class="mini" id="is-rango">Semana</div>
+    <h1>🐟 Semana pescadería</h1>
+    <div class="sub">Venta, restaurante y baja de inventario <span style="opacity:.55;font-size:10px">· v2.6</span></div>
+  </div>
+  <div class="wrap" style="margin-top:4px">
+    <div class="cats" id="is-selsem"></div>
+    <div id="is-cont"><div class="cargando">Armando el comparativo…</div></div>
+    <button class="btn" style="background:#25D366;box-shadow:none;margin-top:8px" onclick="APP.compartirInfSemana()">📲 Compartir por WhatsApp</button>
+    <button class="btn sec" onclick="APP.abrirInformes()">← Volver a informes</button>
   </div>
 </div>
 
@@ -1054,6 +1071,7 @@ function atrasInterno(){
   if(p === 's-conteo' || p === 's-req'){ APP.abrirLinea(); return true; }
   if(p === 's-movinv' || p === 's-revision' || p === 's-ventapesc'){ APP.abrirAlmacen(); return true; }
   if(p === 's-salud'){ APP.abrirInformes(); return true; }
+  if(p === 's-infsemana'){ APP.abrirInformes(); return true; }
   if(p === 's-disponible'){ APP.abrirCuentas(); return true; }
   return false;
 }
@@ -1518,7 +1536,7 @@ function pintarNavBase(p){
   nav.style.display = 'flex';
 }
 APP.pintarNav = function(){
-  var mapa = {'s-apertura':'caja','s-caja':'caja','s-cierre':'caja','s-cerrado':'caja','s-historial':'historial','s-usuarios':'usuarios','s-linea':'linea','s-conteo':'linea','s-req':'linea','s-almacen':'almacen','s-movinv':'almacen','s-revision':'almacen','s-ventapesc':'almacen','s-informes':'informes','s-salud':'informes','s-cuentas':'cuentas','s-disponible':'cuentas'};
+  var mapa = {'s-apertura':'caja','s-caja':'caja','s-cierre':'caja','s-cerrado':'caja','s-historial':'historial','s-usuarios':'usuarios','s-linea':'linea','s-conteo':'linea','s-req':'linea','s-almacen':'almacen','s-movinv':'almacen','s-revision':'almacen','s-ventapesc':'almacen','s-informes':'informes','s-salud':'informes','s-infsemana':'informes','s-cuentas':'cuentas','s-disponible':'cuentas'};
   var act = mapa[APP._pantalla]||'';
   document.querySelectorAll('#nav button').forEach(function(b){
     b.classList.toggle('on', b.id === 'nav-'+act);
@@ -5995,6 +6013,216 @@ APP.guardarVentaPasada = function(){
     if(btn){ btn.disabled = false; btn.textContent = '📅 Registrar venta pasada'; }
     toast('⚠️ No se guardó: '+String(e && e.message || e).slice(0,50));
   });
+};
+
+
+/* ═══════════ 🐟 INFORME SEMANAL DE PESCADERÍA ═══════════
+   Panorama de la semana: lo vendido en pescadería (ingreso + ganancia),
+   lo que salió al restaurante (a costo, traspaso interno), la merma
+   (pérdida, casi siempre 0 en pescadería), y la baja de inventario en
+   kilos. Comparado día por día y contra la semana anterior. Detecta el
+   descuadre de cava: lo que salió debería explicarse por venta+rest+merma. */
+APP._semOffset = 0; /* 0 = esta semana, -1 = la pasada, etc. */
+function lunesDe(offsetSemanas){
+  var d = new Date();
+  if(d.getHours() < 5) d.setDate(d.getDate()-1); /* regla operativa <5am */
+  var dow = (d.getDay()+6)%7; /* 0=lunes ... 6=domingo */
+  d.setDate(d.getDate() - dow + (offsetSemanas*7));
+  return d;
+}
+function isoDe(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function diasSemana(offsetSemanas){
+  var l = lunesDe(offsetSemanas), arr = [];
+  for(var i=0;i<7;i++){ var d = new Date(l); d.setDate(l.getDate()+i); arr.push(isoDe(d)); }
+  return arr;
+}
+/* extrae la pérdida en $ del texto de una merma (ej: "· pérdida $12.000") */
+function perdidaDeMerma(detalle){
+  var m = /p[eé]rdida\s*\$?([\d.]+)/i.exec(detalle||'');
+  if(m){ return parseInt(m[1].replace(/\./g,''),10)||0; }
+  return 0;
+}
+function cantDeMerma(detalle){
+  var m = /[−-]\s*([\d.,]+)\s*(kg|gr|und|unidad)/i.exec(detalle||'');
+  if(m){ return parseFloat(m[1].replace(/\./g,'').replace(',','.'))||0; }
+  return 0;
+}
+APP.abrirInfSemana = function(){
+  APP.goScreen('s-infsemana');
+  APP._semOffset = 0;
+  renderSelSemana();
+  cargarInfSemana();
+};
+APP.semNav = function(off){ APP._semOffset = off; renderSelSemana(); cargarInfSemana(); };
+function renderSelSemana(){
+  var el = document.getElementById('is-selsem');
+  if(!el) return;
+  var opts = [{o:0,tx:'Esta semana'},{o:-1,tx:'Semana pasada'},{o:-2,tx:'Hace 2'},{o:-3,tx:'Hace 3'}];
+  var h = '';
+  opts.forEach(function(p){ h += '<button class="'+(APP._semOffset===p.o?'on':'')+'" onclick="APP.semNav('+p.o+')">'+p.tx+'</button>'; });
+  el.innerHTML = h;
+}
+function agruparPesc(ventas, salidas, movs, dias){
+  /* devuelve por-día y totales */
+  var porDia = {};
+  dias.forEach(function(f){ porDia[f] = {ventaD:0, gananciaD:0, ventaKg:0, restD:0, restKg:0, mermaD:0, mermaKg:0}; });
+  var tot = {ventaD:0, gananciaD:0, ventaKg:0, restD:0, restKg:0, mermaD:0, mermaKg:0, ventaCosto:0};
+  Object.keys(ventas||{}).forEach(function(k){
+    var v = ventas[k]; if(!v || !porDia[v.fecha]) return;
+    var val = v.total||0, cost = v.totalCosto||0, kg = v.cant||0;
+    porDia[v.fecha].ventaD += val; porDia[v.fecha].gananciaD += (val-cost); porDia[v.fecha].ventaKg += kg;
+    tot.ventaD += val; tot.gananciaD += (val-cost); tot.ventaKg += kg; tot.ventaCosto += cost;
+  });
+  Object.keys(salidas||{}).forEach(function(k){
+    var s = salidas[k]; if(!s || !porDia[s.fecha]) return;
+    porDia[s.fecha].restD += (s.totalCosto||0); porDia[s.fecha].restKg += (s.cant||0);
+    tot.restD += (s.totalCosto||0); tot.restKg += (s.cant||0);
+  });
+  Object.keys(movs||{}).forEach(function(k){
+    var m = movs[k]; if(!m || m.tipo !== 'merma' || !porDia[m.fecha]) return;
+    var per = perdidaDeMerma(m.detalle), kg = cantDeMerma(m.detalle);
+    porDia[m.fecha].mermaD += per; porDia[m.fecha].mermaKg += kg;
+    tot.mermaD += per; tot.mermaKg += kg;
+  });
+  return {porDia:porDia, tot:tot};
+}
+function cargarInfSemana(){
+  var cont = document.getElementById('is-cont');
+  cont.innerHTML = '<div class="cargando">Calculando…</div>';
+  var diasA = diasSemana(APP._semOffset);         /* semana elegida */
+  var diasB = diasSemana(APP._semOffset - 1);      /* semana anterior */
+  var desde = diasB[0], hasta = diasA[6];
+  document.getElementById('is-rango').textContent = fechaLegible(diasA[0]).replace(/,.*/,'') + ' – ' + fechaLegible(diasA[6]);
+  Promise.all([
+    db.ref('ventasPesc').orderByChild('fecha').startAt(desde).endAt(hasta).once('value'),
+    db.ref('inventario/salidasRest').orderByChild('fecha').startAt(desde).endAt(hasta).once('value'),
+    db.ref('inventario/movimientos').orderByChild('fecha').startAt(desde).endAt(hasta).once('value')
+  ]).then(function(res){
+    var ventas = res[0].val()||{}, salidas = res[1].val()||{}, movs = res[2].val()||{};
+    var A = agruparPesc(ventas, salidas, movs, diasA);
+    var B = agruparPesc(ventas, salidas, movs, diasB);
+    APP._infSemData = {A:A, B:B, diasA:diasA};
+    renderInfSemana(A, B, diasA);
+  }).catch(function(e){
+    cont.innerHTML = '<div class="vacio">⚠️ No se pudieron cargar los datos<br>'+escapa(String(e && e.message||e).slice(0,60))+'</div>';
+  });
+}
+function deltaTx(a, b){
+  if(b <= 0) return a > 0 ? '<span style="color:var(--ok)">nuevo</span>' : '<span style="color:var(--gris)">—</span>';
+  var p = Math.round((a-b)/b*100);
+  if(p === 0) return '<span style="color:var(--gris)">igual</span>';
+  var col = p > 0 ? 'var(--ok)' : 'var(--rojo)';
+  return '<span style="color:'+col+'">'+(p>0?'▲':'▼')+' '+Math.abs(p)+'%</span>';
+}
+function barrasApiladas(porDia, dias, campos, unidad){
+  /* campos: [{k, color, tx}] ; unidad: 'cop' o 'kg' */
+  var max = 0;
+  dias.forEach(function(f){ var s=0; campos.forEach(function(c){ s += porDia[f][c.k]||0; }); if(s>max) max=s; });
+  if(max <= 0) return '<div class="vacio" style="padding:16px">Sin movimiento esta semana</div>';
+  var nom = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  var h = '<div style="display:flex;align-items:flex-end;gap:6px;height:150px;padding:8px 0">';
+  dias.forEach(function(f, i){
+    var total = 0; campos.forEach(function(c){ total += porDia[f][c.k]||0; });
+    var htP = total>0 ? Math.round(total/max*130) : 0;
+    h += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">';
+    h += '<div style="width:100%;display:flex;flex-direction:column-reverse;height:130px;justify-content:flex-start">';
+    campos.forEach(function(c){
+      var v = porDia[f][c.k]||0;
+      if(v > 0){
+        var seg = Math.max(2, Math.round(v/max*130));
+        h += '<div style="width:100%;background:'+c.color+';height:'+seg+'px;border-radius:2px;margin-top:2px" title="'+c.tx+': '+(unidad==='kg'?fmtQty(v)+' kg':fmtCOP(v))+'"></div>';
+      }
+    });
+    h += '</div>';
+    h += '<div style="font-size:10px;color:var(--gris)">'+nom[i]+'</div>';
+    h += '</div>';
+  });
+  h += '</div>';
+  return h;
+}
+function renderInfSemana(A, B, dias){
+  var cont = document.getElementById('is-cont');
+  var ta = A.tot, tb = B.tot;
+  var h = '';
+
+  /* ── tarjetas resumen ── */
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">';
+  h += tarjetaInf('Vendido pescadería', fmtCOP(ta.ventaD), deltaTx(ta.ventaD, tb.ventaD), 'var(--ok)');
+  h += tarjetaInf('Ganancia pescadería', fmtCOP(ta.gananciaD), deltaTx(ta.gananciaD, tb.gananciaD), 'var(--ok)');
+  h += tarjetaInf('Salió al restaurante', fmtCOP(ta.restD), '<span style="color:var(--gris)">a costo · traspaso</span>', 'var(--manana)');
+  var mermaColor = ta.mermaD>0 ? 'var(--rojo)' : 'var(--gris)';
+  h += tarjetaInf('Merma (pérdida)', ta.mermaD>0?fmtCOP(ta.mermaD):'$0', ta.mermaD>0?deltaTx(ta.mermaD,tb.mermaD):'<span style="color:var(--gris)">sin pérdidas 👍</span>', mermaColor);
+  h += '</div>';
+
+  /* ── descuadre de cava (kilos) ── */
+  var salioKg = ta.ventaKg + ta.restKg + ta.mermaKg;
+  h += '<div class="card" style="border-color:#C3D0E8;margin-bottom:14px"><div class="lbl">📦 Baja de inventario esta semana (kg)</div>';
+  h += '<div class="tot-line"><span>🛒 Vendido</span><b>'+fmtQty(ta.ventaKg)+' kg</b></div>';
+  h += '<div class="tot-line"><span>🍽️ Al restaurante</span><b>'+fmtQty(ta.restKg)+' kg</b></div>';
+  if(ta.mermaKg>0) h += '<div class="tot-line"><span>📉 Merma</span><b>'+fmtQty(ta.mermaKg)+' kg</b></div>';
+  h += '<div class="tot-line big" style="border-top:1px solid var(--linea);padding-top:8px"><span>Salió de la cava</span><b>'+fmtQty(salioKg)+' kg</b></div>';
+  h += '</div>';
+
+  /* ── gráfico dinero ── */
+  h += '<div class="card" style="margin-bottom:14px"><div class="lbl">💵 Movimiento diario · en dinero</div>';
+  h += leyenda([{c:'var(--ok)',t:'Venta'},{c:'var(--manana)',t:'Restaurante'},{c:'var(--rojo)',t:'Merma'}]);
+  h += barrasApiladas(A.porDia, dias, [
+    {k:'ventaD',color:'var(--ok)',tx:'Venta'},
+    {k:'restD',color:'var(--manana)',tx:'Restaurante'},
+    {k:'mermaD',color:'var(--rojo)',tx:'Merma'}
+  ], 'cop');
+  h += '</div>';
+
+  /* ── gráfico kilos ── */
+  h += '<div class="card" style="margin-bottom:14px"><div class="lbl">⚖️ Baja de inventario · en kilos</div>';
+  h += leyenda([{c:'var(--ok)',t:'Venta'},{c:'var(--manana)',t:'Restaurante'},{c:'var(--rojo)',t:'Merma'}]);
+  h += barrasApiladas(A.porDia, dias, [
+    {k:'ventaKg',color:'var(--ok)',tx:'Venta'},
+    {k:'restKg',color:'var(--manana)',tx:'Restaurante'},
+    {k:'mermaKg',color:'var(--rojo)',tx:'Merma'}
+  ], 'kg');
+  h += '</div>';
+
+  /* ── comparativo semana vs semana ── */
+  h += '<div class="card"><div class="lbl">📊 Esta semana vs la anterior</div>';
+  h += filaComp('Venta', ta.ventaD, tb.ventaD);
+  h += filaComp('Ganancia', ta.gananciaD, tb.gananciaD);
+  h += filaComp('Al restaurante', ta.restD, tb.restD);
+  h += '</div>';
+
+  h += '<div style="font-size:10px;color:var(--gris);margin-top:8px;text-align:center">La merma se estima del registro; en pescadería casi siempre es $0. El «al restaurante» es traspaso interno a costo, no venta.</div>';
+
+  cont.innerHTML = h;
+}
+function tarjetaInf(lbl, val, delta, col){
+  return '<div style="background:var(--crema);border-radius:12px;padding:12px">'
+    + '<div style="font-size:11px;color:var(--gris)">'+lbl+'</div>'
+    + '<div style="font-size:19px;font-weight:800;color:'+(col||'var(--tinta)')+';margin:2px 0">'+val+'</div>'
+    + '<div style="font-size:11px">'+delta+'</div></div>';
+}
+function leyenda(items){
+  var h = '<div style="display:flex;flex-wrap:wrap;gap:12px;margin:4px 0 2px;font-size:11px;color:var(--gris)">';
+  items.forEach(function(i){ h += '<span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:'+i.c+'"></span>'+i.t+'</span>'; });
+  return h + '</div>';
+}
+function filaComp(lbl, a, b){
+  return '<div class="tot-line"><span>'+lbl+'</span><b>'+fmtCOP(a)+' <span style="font-weight:600;font-size:11px">'+deltaTx(a,b)+'</span></b></div>';
+}
+APP.compartirInfSemana = function(){
+  var d = APP._infSemData;
+  if(!d){ toast('Espera a que cargue'); return; }
+  var ta = d.A.tot, tb = d.B.tot;
+  var l1 = d.diasA[0], l7 = d.diasA[6];
+  function pd(a,b){ if(b<=0) return ''; var p=Math.round((a-b)/b*100); return ' ('+(p>=0?'+':'')+p+'%)'; }
+  var t = '🐟 *Semana pescadería* '+l1+' al '+l7+'\n\n';
+  t += '🛒 Vendido: '+fmtCOP(ta.ventaD)+pd(ta.ventaD,tb.ventaD)+'\n';
+  t += '💰 Ganancia: '+fmtCOP(ta.gananciaD)+pd(ta.gananciaD,tb.gananciaD)+'\n';
+  t += '🍽️ Al restaurante (costo): '+fmtCOP(ta.restD)+'\n';
+  t += (ta.mermaD>0 ? '📉 Merma: '+fmtCOP(ta.mermaD)+'\n' : '📉 Merma: sin pérdidas 👍\n');
+  t += '\n⚖️ Salió de la cava: '+fmtQty(ta.ventaKg+ta.restKg+ta.mermaKg)+' kg\n';
+  t += '   ('+fmtQty(ta.ventaKg)+' venta · '+fmtQty(ta.restKg)+' restaurante)';
+  var url = 'https://wa.me/?text=' + encodeURIComponent(t);
+  window.open(url, '_blank');
 };
 
 /* ═══════════ REVISIÓN FÍSICA · PLANILLA · KARDEX ═══════════ */
