@@ -414,7 +414,7 @@ select.inp{appearance:none;-webkit-appearance:none}
   <div class="hd">
     <div class="mini" id="ci-mini"></div>
     <h1>Cierre de Turno</h1>
-    <div class="sub">Cuenta lo que hay en caja por cada método <span style="opacity:.55;font-size:10px">· v2.5 POS oculto</span></div>
+    <div class="sub">Cuenta lo que hay en caja por cada método <span style="opacity:.55;font-size:10px">· v2.8 cierre relee pescadería</span></div>
   </div>
   <div class="wrap">
     <div class="card">
@@ -2439,6 +2439,15 @@ APP.irCierre = function(){
      Antes se pasaba también fechaOperativa() (el día de hoy): al reabrir un turno
      de otro día, se sumaban las ventas de ambos días juntos. Corregido. */
   cargarSalidasHoy(d.fecha||fechaOperativa());
+  /* además, releer la venta de pescadería del turno para que el desglose
+     del cierre muestre bien Pescadería vs Restaurante desde el inicio */
+  if(typeof leerVentasPescTurno === 'function'){
+    leerVentasPescTurno(d.fecha||fechaOperativa(), function(fresco){
+      APP._ventasPescHoy = {total:fresco.total, costo:fresco.costo, n:fresco.keys.length, det:fresco.det};
+      APP._ventasPescKeys = fresco.keys;
+      APP.calcCierre();
+    });
+  }
   APP.goScreen('s-cierre');
   /* el panel del POS arranca CERRADO: la mayoría de días es solo pescadería */
   var pbox = document.getElementById('pos-toggle-box'), pdet = document.getElementById('pos-detalle');
@@ -2580,6 +2589,23 @@ APP.calcCierre = function(){
   }
 };
 APP._guardandoCierre = false;
+/* Relee de la base las ventas de pescadería de la fecha del turno, sin
+   depender de cargas async previas que pudieron quedar viejas. Devuelve
+   total/costo/keys/det SOLO de ventas aún no selladas en otro cierre. */
+function leerVentasPescTurno(fecha, cb){
+  db.ref('ventasPesc').orderByChild('fecha').equalTo(fecha).once('value').then(function(snap){
+    var v = snap.val()||{};
+    var total = 0, costo = 0, keys = [], det = [];
+    Object.keys(v).forEach(function(k){
+      if(v[k].cerrada) return; /* ya sellada en otro cierre: no recontar */
+      total += (v[k].total||0);
+      costo += (v[k].totalCosto||0);
+      keys.push(k);
+      det.push({nombre:v[k].nombre, cant:v[k].cant, unidad:v[k].unidad, total:v[k].total||0});
+    });
+    cb({total:total, costo:costo, keys:keys, det:det});
+  }).catch(function(){ cb({total:0, costo:0, keys:[], det:[]}); });
+}
 APP.guardarCierre = function(){
   if(APP._guardandoCierre) return;
   var c = datosCierre();
@@ -2587,9 +2613,27 @@ APP.guardarCierre = function(){
   if(c.pos < 0){ toast('⚠️ El corte previo no puede ser mayor a la venta anotada'); return; }
   var d = APP.turnoData;
   if(!d || d.estado !== 'abierta'){ toast('⚠️ Este turno ya no está abierto'); return; }
+  /* Releer la venta de pescadería del turno JUSTO AHORA, garantizado, para
+     que el cierre no dependa de una carga async que pudo quedar vieja (bug
+     que hacía salir Pescadería $0 y dejaba las ventas sin sellar). */
+  var btnPre = document.getElementById('btn-cierre');
+  if(btnPre){ btnPre.disabled = true; btnPre.textContent = '⏳ Revisando ventas…'; }
+  leerVentasPescTurno(d.fecha || fechaOperativa(), function(fresco){
+    if(btnPre){ btnPre.disabled = false; btnPre.textContent = '✍️ Firmar y guardar cierre'; }
+    /* refrescar el estado con lo recién leído */
+    APP._ventasPescHoy = {total:fresco.total, costo:fresco.costo, n:fresco.keys.length, det:fresco.det};
+    APP._ventasPescKeys = fresco.keys;
+    APP.calcCierre();
+    continuarGuardarCierre(fresco);
+  });
+};
+function continuarGuardarCierre(fresco){
+  var c = datosCierre();
+  var d = APP.turnoData;
+  if(!d || d.estado !== 'abierta'){ toast('⚠️ Este turno ya no está abierto'); return; }
   /* Barrera anti-error: firmar con Total POS ~ pescadería casi siempre es un
      total copiado al campo equivocado. Confirmar antes de sellar. */
-  var estP = (APP._ventasPescHoy && APP._ventasPescHoy.total) || 0;
+  var estP = fresco.total || 0;
   if(estP > 0 && c.posAcum > 0 && Math.abs(c.posAcum - estP) <= Math.max(2000, estP*0.02)){
     if(!confirm('⚠️ El «Total POS restaurante» ('+fmtCOP(c.posAcum)+') es casi igual a lo vendido en pescadería ('+fmtCOP(estP)+').\n\nSi el día fue SOLO pescadería, ese campo debería ir VACÍO — si lo dejas, la venta se contará como restaurante.\n\n¿Seguro que el restaurante vendió eso por su POS y quieres firmar así?')){
       toast('Revisa el Total POS · bórralo si el día fue solo pescadería');
