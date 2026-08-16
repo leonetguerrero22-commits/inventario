@@ -702,6 +702,7 @@ select.inp{appearance:none;-webkit-appearance:none}
     <button class="btn" style="background:var(--noche,#3B5BA5);box-shadow:none;margin-bottom:12px" onclick="APP.cierreMes()">📄 Cierre de Mes para socios</button>
     <button class="btn" style="background:var(--mar-2,#14507E);box-shadow:none;margin-bottom:12px" onclick="APP.informeInventario()">📦 Inventario · valor y ganancia</button>
     <button class="btn" style="background:var(--manana);box-shadow:none;margin-bottom:12px" onclick="APP.abrirInfSemana()">🐟 Semana pescadería · comparativo</button>
+    <button class="btn" style="background:var(--mar);box-shadow:none;margin-bottom:12px" onclick="APP.abrirListaPrecios()">🏷️ Lista de precios · PDF</button>
     <div class="cats" id="inf-periodos"></div>
     <div id="inf-cont"><div class="cargando">Cargando datos…</div></div>
   </div>
@@ -719,6 +720,51 @@ select.inp{appearance:none;-webkit-appearance:none}
     <div class="cats" id="is-selsem"></div>
     <div id="is-cont"><div class="cargando">Armando el comparativo…</div></div>
     <button class="btn" style="background:#25D366;box-shadow:none;margin-top:8px" onclick="APP.compartirInfSemana()">📲 Compartir por WhatsApp</button>
+    <button class="btn sec" onclick="APP.abrirInformes()">← Volver a informes</button>
+  </div>
+</div>
+
+<!-- ══════════ LISTA DE PRECIOS · PDF ══════════ -->
+<div class="screen" id="s-listaprecios">
+  <div class="hd">
+    <button class="salir" onclick="APP.logout()">Salir</button>
+    <div class="mini">Generador para clientes</div>
+    <h1>🏷️ Lista de precios</h1>
+    <div class="sub">Arma el PDF para pasar por WhatsApp <span style="opacity:.55;font-size:10px">· v1.0</span></div>
+  </div>
+  <div class="wrap" style="margin-top:4px">
+    <div class="card">
+      <div class="lbl">💵 Moneda de la lista</div>
+      <div class="cats" id="lp-moneda"></div>
+      <div id="lp-tasa-box" style="display:none">
+        <div class="flabel" id="lp-tasa-lbl">Tasa</div>
+        <input class="inp" id="lp-tasa" type="number" inputmode="decimal" step="0.0001" style="text-align:right">
+        <div style="font-size:10px;color:var(--gris);margin-top:4px">Se toma la tasa de la app; puedes ajustarla solo para esta lista.</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="lbl">🏷️ Qué precios mostrar</div>
+      <div class="cats" id="lp-tipo"></div>
+      <div class="flabel" style="margin-top:8px">Descuento al mayor (%)</div>
+      <input class="inp" id="lp-desc" type="number" inputmode="decimal" min="0" max="90" step="1" value="15" style="text-align:right" oninput="APP.lpRefrescarProds()">
+      <div style="font-size:10px;color:var(--gris);margin-top:4px">Este % general aplica a todos. Puedes ajustar el % de un producto aparte en la lista de abajo.</div>
+    </div>
+    <div class="card">
+      <div class="lbl">✅ Productos <span id="lp-cont" style="color:var(--gris);font-weight:600"></span></div>
+      <div style="display:flex;gap:8px;margin:6px 0">
+        <button class="btn sec" style="flex:1;margin:0;padding:9px" onclick="APP.lpMarcarTodos(true)">✓ Todos</button>
+        <button class="btn sec" style="flex:1;margin:0;padding:9px" onclick="APP.lpMarcarTodos(false)">✗ Ninguno</button>
+      </div>
+      <input class="inp" id="lp-busca" type="text" placeholder="🔍 Buscar producto…" oninput="APP.lpRefrescarProds()" style="margin-bottom:8px">
+      <div style="font-size:10px;color:var(--gris);margin-bottom:6px">Marca los productos · pon cantidad si es un pedido (deja vacío para lista simple) · ✏️ ajusta el % de ese producto.</div>
+      <div id="lp-prods"></div>
+      <button class="btn sec" style="margin-top:8px" onclick="APP.agregarProdExtra()">➕ Agregar un producto a mano</button>
+    </div>
+    <div class="card">
+      <div class="lbl">📝 Nota al pie (condiciones)</div>
+      <textarea class="inp" id="lp-nota" rows="2" style="resize:none" placeholder="Ej: Precios sujetos a cambio. Mayor aplica desde 10 kg por producto."></textarea>
+    </div>
+    <button class="btn verde" onclick="APP.generarListaPDF()">📄 Generar PDF</button>
     <button class="btn sec" onclick="APP.abrirInformes()">← Volver a informes</button>
   </div>
 </div>
@@ -1072,6 +1118,7 @@ function atrasInterno(){
   if(p === 's-movinv' || p === 's-revision' || p === 's-ventapesc'){ APP.abrirAlmacen(); return true; }
   if(p === 's-salud'){ APP.abrirInformes(); return true; }
   if(p === 's-infsemana'){ APP.abrirInformes(); return true; }
+  if(p === 's-listaprecios'){ APP.abrirInformes(); return true; }
   if(p === 's-disponible'){ APP.abrirCuentas(); return true; }
   return false;
 }
@@ -1536,7 +1583,7 @@ function pintarNavBase(p){
   nav.style.display = 'flex';
 }
 APP.pintarNav = function(){
-  var mapa = {'s-apertura':'caja','s-caja':'caja','s-cierre':'caja','s-cerrado':'caja','s-historial':'historial','s-usuarios':'usuarios','s-linea':'linea','s-conteo':'linea','s-req':'linea','s-almacen':'almacen','s-movinv':'almacen','s-revision':'almacen','s-ventapesc':'almacen','s-informes':'informes','s-salud':'informes','s-infsemana':'informes','s-cuentas':'cuentas','s-disponible':'cuentas'};
+  var mapa = {'s-apertura':'caja','s-caja':'caja','s-cierre':'caja','s-cerrado':'caja','s-historial':'historial','s-usuarios':'usuarios','s-linea':'linea','s-conteo':'linea','s-req':'linea','s-almacen':'almacen','s-movinv':'almacen','s-revision':'almacen','s-ventapesc':'almacen','s-informes':'informes','s-salud':'informes','s-infsemana':'informes','s-listaprecios':'informes','s-cuentas':'cuentas','s-disponible':'cuentas'};
   var act = mapa[APP._pantalla]||'';
   document.querySelectorAll('#nav button').forEach(function(b){
     b.classList.toggle('on', b.id === 'nav-'+act);
@@ -6333,6 +6380,214 @@ APP.compartirInfSemana = function(){
   t += '   ('+fmtQty(ta.ventaKg)+' venta · '+fmtQty(ta.restKg)+' restaurante)';
   var url = 'https://wa.me/?text=' + encodeURIComponent(t);
   window.open(url, '_blank');
+};
+
+
+/* ═══════════ 🏷️ GENERADOR DE LISTA DE PRECIOS / COTIZACIÓN (PDF) ═══════════
+   Toma los productos con precio de venta de la app. Permite: elegir moneda
+   (COP/USD/VES, tasa ajustable), % de descuento al mayor general y por
+   producto, seleccionar cuáles productos salen, y poner cantidades para
+   convertir la lista en una cotización con totales. Genera hoja imprimible. */
+APP._lpMoneda = 'COP';
+APP._lpTipo = 'ambas';
+APP._lpExtra = [];
+APP._lpSel = {};    /* id → true/false (marcado) */
+APP._lpCant = {};   /* id → cantidad del pedido */
+APP._lpDescProd = {}; /* id → % descuento propio (si difiere del general) */
+var LP_NEGOCIO = 'Pescadería La Fría';
+APP.abrirListaPrecios = function(){
+  APP.goScreen('s-listaprecios');
+  APP._lpMoneda = 'COP'; APP._lpTipo = 'ambas';
+  if(!APP._lpExtra) APP._lpExtra = [];
+  APP._lpSel = {}; APP._lpCant = {}; APP._lpDescProd = {};
+  lpTodosIds().forEach(function(id){ APP._lpSel[id] = true; }); /* arranca todo marcado */
+  renderLPMoneda(); renderLPTipo(); syncLPTasa(); APP.lpRefrescarProds();
+};
+/* lista unificada de ids: productos de la app (con precio) + extra ('x0','x1'..) */
+function lpTodosIds(){
+  var ids = [];
+  prodsOrdenados().forEach(function(id){ var p = APP.prods[id]; if(p && p.venta>0) ids.push(id); });
+  (APP._lpExtra||[]).forEach(function(_, i){ ids.push('x'+i); });
+  return ids;
+}
+function lpProd(id){
+  if(id.charAt(0)==='x'){ var e = APP._lpExtra[parseInt(id.slice(1),10)]; return e ? {nombre:e.nombre, venta:e.venta, unidad:e.unidad, categoria:e.categoria||'➕ Otros'} : null; }
+  var p = APP.prods[id]; return p ? {nombre:p.nombre, venta:p.venta, unidad:p.unidad||'', categoria:p.categoria||'Otros'} : null;
+}
+function renderLPMoneda(){
+  var el = document.getElementById('lp-moneda'); if(!el) return;
+  var ops = [{k:'COP',t:'💵 Pesos'},{k:'USD',t:'💲 Dólares'},{k:'VES',t:'🇻🇪 Bolívares'}];
+  el.innerHTML = ops.map(function(o){ return '<button class="'+(APP._lpMoneda===o.k?'on':'')+'" onclick="APP.lpSetMoneda(\''+o.k+'\')">'+o.t+'</button>'; }).join('');
+}
+APP.lpSetMoneda = function(m){ APP._lpMoneda = m; renderLPMoneda(); syncLPTasa(); APP.lpRefrescarProds(); };
+function syncLPTasa(){
+  var box = document.getElementById('lp-tasa-box'), inp = document.getElementById('lp-tasa'), lbl = document.getElementById('lp-tasa-lbl');
+  if(!box) return;
+  if(APP._lpMoneda === 'COP'){ box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  if(APP._lpMoneda === 'USD'){ lbl.textContent = 'Tasa · 1 USD = ? COP'; inp.value = APP.tasas.usd||4200; }
+  else { lbl.textContent = 'Tasa · 1 VES = ? COP'; inp.value = APP.tasas.ves||0; }
+  inp.oninput = function(){ APP.lpRefrescarProds(); };
+}
+function renderLPTipo(){
+  var el = document.getElementById('lp-tipo'); if(!el) return;
+  var ops = [{k:'detal',t:'Detal'},{k:'mayor',t:'Mayor'},{k:'ambas',t:'Ambas'}];
+  el.innerHTML = ops.map(function(o){ return '<button class="'+(APP._lpTipo===o.k?'on':'')+'" onclick="APP.lpSetTipo(\''+o.k+'\')">'+o.t+'</button>'; }).join('');
+}
+APP.lpSetTipo = function(t){ APP._lpTipo = t; renderLPTipo(); APP.lpRefrescarProds(); };
+APP.lpMarcarTodos = function(v){ lpTodosIds().forEach(function(id){ APP._lpSel[id] = v; }); APP.lpRefrescarProds(); };
+APP.lpToggle = function(id){ APP._lpSel[id] = !APP._lpSel[id]; APP.lpRefrescarProds(); };
+APP.lpSetCant = function(id, val){ var n = parseFloat(val)||0; if(n>0) APP._lpCant[id]=n; else delete APP._lpCant[id]; lpActualizarTotal(); };
+APP.lpDescGeneral = function(){ var d = parseFloat((document.getElementById('lp-desc')||{}).value); return (isNaN(d)?15:d)/100; };
+function lpDescDe(id){ return APP._lpDescProd.hasOwnProperty(id) ? APP._lpDescProd[id]/100 : APP.lpDescGeneral(); }
+APP.lpEditarDescProd = function(id){
+  var p = lpProd(id); if(!p) return;
+  var actual = APP._lpDescProd.hasOwnProperty(id) ? APP._lpDescProd[id] : Math.round(APP.lpDescGeneral()*100);
+  var val = prompt('Descuento al mayor para «'+p.nombre+'» (%)\nDeja vacío para usar el general ('+Math.round(APP.lpDescGeneral()*100)+'%)', actual);
+  if(val === null) return;
+  val = (val||'').trim();
+  if(val === ''){ delete APP._lpDescProd[id]; }
+  else { var n = parseFloat(val); if(!isNaN(n) && n>=0 && n<90) APP._lpDescProd[id] = n; }
+  APP.lpRefrescarProds();
+};
+function lpConvertir(cop){
+  if(APP._lpMoneda === 'COP') return cop;
+  var t = parseFloat((document.getElementById('lp-tasa')||{}).value)||0;
+  if(t<=0) return cop;
+  return cop / t;
+}
+function lpFmt(cop){
+  var v = lpConvertir(cop);
+  if(APP._lpMoneda === 'COP') return '$'+Math.round(v).toLocaleString('es-CO');
+  if(APP._lpMoneda === 'USD') return '$'+(Math.round(v*100)/100).toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2});
+  return 'Bs '+Math.round(v).toLocaleString('es-CO');
+}
+APP.lpRefrescarProds = function(){
+  var cont = document.getElementById('lp-prods'); if(!cont) return;
+  var q = ((document.getElementById('lp-busca')||{}).value||'').toLowerCase().trim();
+  var ids = lpTodosIds();
+  var nSel = 0, h = '';
+  ids.forEach(function(id){
+    var p = lpProd(id); if(!p) return;
+    if(APP._lpSel[id]) nSel++;
+    if(q && p.nombre.toLowerCase().indexOf(q) < 0) return;
+    var marcado = !!APP._lpSel[id];
+    var may = Math.round(p.venta*(1-lpDescDe(id)));
+    var descPropio = APP._lpDescProd.hasOwnProperty(id);
+    h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--linea);opacity:'+(marcado?'1':'.5')+'">';
+    h += '<div onclick="APP.lpToggle(\''+id+'\')" style="width:26px;height:26px;border-radius:7px;border:2px solid '+(marcado?'var(--ok)':'var(--linea)')+';background:'+(marcado?'var(--ok)':'#fff')+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;flex:0 0 auto">'+(marcado?'✓':'')+'</div>';
+    h += '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escapa(p.nombre)+'</div>';
+    h += '<div style="font-size:11px;color:var(--gris)">'+lpFmt(p.venta)+' / '+escapa(p.unidad)+' · mayor '+lpFmt(may)+' <span onclick="APP.lpEditarDescProd(\''+id+'\')" style="color:var(--mar-2,#14507E);cursor:pointer;font-weight:700">'+(descPropio?'('+APP._lpDescProd[id]+'% ✏️)':'✏️%')+'</span></div></div>';
+    h += '<input type="number" inputmode="decimal" placeholder="cant" value="'+(APP._lpCant[id]||'')+'" oninput="APP.lpSetCant(\''+id+'\',this.value)" style="width:56px;text-align:center;border:1px solid var(--linea);border-radius:8px;padding:6px 4px;font-size:12px" '+(marcado?'':'disabled')+'>';
+    h += '</div>';
+  });
+  cont.innerHTML = h || '<div style="font-size:12px;color:var(--gris);padding:10px 0;text-align:center">Sin productos que coincidan</div>';
+  var cn = document.getElementById('lp-cont'); if(cn) cn.textContent = '· '+nSel+' de '+ids.length+' marcados';
+};
+function lpActualizarTotal(){ /* el total real se calcula al generar; aquí solo refresco contador si hiciera falta */ }
+APP.agregarProdExtra = function(){
+  var h = '';
+  h += '<div class="flabel">Nombre del producto</div><input class="inp" id="pe-nom" type="text" placeholder="Ej: Langostinos jumbo">';
+  h += '<div class="flabel">Precio al detal (en pesos)</div><input class="inp" id="pe-precio" type="number" inputmode="numeric" placeholder="0" style="text-align:right">';
+  h += '<div class="flabel">Unidad</div><input class="inp" id="pe-unidad" type="text" placeholder="kg, und, caja…" value="kg">';
+  h += '<button class="btn verde" style="margin-top:12px" onclick="APP.guardarProdExtra()">➕ Agregar a la lista</button>';
+  h += '<button class="btn sec" onclick="APP.cerrarModal()">Cancelar</button>';
+  abrirModal('➕ Producto a mano', h);
+};
+APP.guardarProdExtra = function(){
+  var nom = ((document.getElementById('pe-nom')||{}).value||'').trim();
+  var precio = parseFloat((document.getElementById('pe-precio')||{}).value)||0;
+  var unidad = ((document.getElementById('pe-unidad')||{}).value||'').trim()||'und';
+  if(!nom){ toast('Escribe el nombre'); return; }
+  if(precio<=0){ toast('Escribe el precio'); return; }
+  APP._lpExtra.push({nombre:nom, venta:precio, unidad:unidad, categoria:'➕ Otros'});
+  APP._lpSel['x'+(APP._lpExtra.length-1)] = true;
+  APP.cerrarModal(); APP.lpRefrescarProds();
+  toast('✅ Producto agregado');
+};
+APP.generarListaPDF = function(){
+  var ids = lpTodosIds().filter(function(id){ return APP._lpSel[id]; });
+  if(!ids.length){ toast('Marca al menos un producto'); return; }
+  var moneda = APP._lpMoneda, tipo = APP._lpTipo;
+  var hayCant = ids.some(function(id){ return APP._lpCant[id]>0; });
+  var nombreMon = moneda==='COP'?'Pesos (COP)':(moneda==='USD'?'Dólares (USD)':'Bolívares (VES)');
+  var nota = ((document.getElementById('lp-nota')||{}).value||'').trim();
+  var hoy = new Date(); var fechaTx = hoy.getDate()+'/'+(hoy.getMonth()+1)+'/'+hoy.getFullYear();
+  /* agrupar por categoría respetando orden */
+  var cats = [], porCat = {};
+  ids.forEach(function(id){
+    var p = lpProd(id); if(!p) return;
+    if(!porCat[p.categoria]){ porCat[p.categoria] = []; cats.push(p.categoria); }
+    porCat[p.categoria].push({id:id, p:p});
+  });
+  /* precio a mostrar según tipo; si hay cantidades, usa el precio "mayor" para el pedido */
+  var totalPedidoCOP = 0;
+  var colHead = '';
+  if(hayCant){ colHead = '<th class="pr">Precio</th><th class="pr">Cant</th><th class="pr">Subtotal</th>'; }
+  else if(tipo==='detal'){ colHead = '<th class="pr">Precio</th>'; }
+  else if(tipo==='mayor'){ colHead = '<th class="pr">Precio al mayor</th>'; }
+  else { colHead = '<th class="pr">Detal</th><th class="pr may">Mayor</th>'; }
+
+  var filas = '';
+  cats.forEach(function(cat){
+    var span = hayCant ? 5 : (tipo==='ambas'?4:3);
+    filas += '<tr class="cat"><td colspan="'+span+'">'+escapa(cat)+'</td></tr>';
+    porCat[cat].forEach(function(o){
+      var it = o.p, det = it.venta, may = Math.round(it.venta*(1-lpDescDe(o.id)));
+      var celdas = '';
+      if(hayCant){
+        var cant = APP._lpCant[o.id]||0;
+        var precioU = may; /* en modo pedido usamos el precio con descuento */
+        var sub = Math.round(precioU*cant);
+        totalPedidoCOP += sub;
+        celdas = '<td class="pr">'+lpFmt(precioU)+'</td><td class="pr">'+(cant?fmtQty(cant):'—')+'</td><td class="pr may">'+(cant?lpFmt(sub):'—')+'</td>';
+      } else if(tipo==='detal'){ celdas = '<td class="pr">'+lpFmt(det)+'</td>'; }
+      else if(tipo==='mayor'){ celdas = '<td class="pr">'+lpFmt(may)+'</td>'; }
+      else { celdas = '<td class="pr">'+lpFmt(det)+'</td><td class="pr may">'+lpFmt(may)+'</td>'; }
+      filas += '<tr><td class="nm">'+escapa(it.nombre)+'</td><td class="un">'+escapa(it.unidad)+'</td>'+celdas+'</tr>';
+    });
+  });
+  if(hayCant){
+    var spanTot = 4;
+    filas += '<tr class="tot"><td colspan="'+spanTot+'" style="text-align:right">TOTAL DEL PEDIDO</td><td class="pr may">'+lpFmt(totalPedidoCOP)+'</td></tr>';
+  }
+  var descG = Math.round(APP.lpDescGeneral()*100);
+
+  var css = '@page{margin:14mm}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    + 'body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#0F2230;margin:0;background:#fff}'
+    + '.hoja{max-width:720px;margin:0 auto;padding:8px}'
+    + '.enc{display:flex;align-items:center;gap:14px;border-bottom:3px solid #0B3050;padding-bottom:14px;margin-bottom:6px}'
+    + '.logo{width:58px;height:58px;border-radius:14px;background:linear-gradient(135deg,#0B3050,#17A9A0);display:flex;align-items:center;justify-content:center;font-size:30px;color:#fff;flex:0 0 auto}'
+    + '.enc h1{margin:0;font-size:24px;letter-spacing:-.5px;color:#0B3050}'
+    + '.enc .sub{font-size:12px;color:#85929C;margin-top:2px}'
+    + '.chip{display:inline-block;background:#EAF6F5;color:#0F8078;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700;margin:10px 6px 10px 0}'
+    + 'table{width:100%;border-collapse:collapse;margin-top:4px}'
+    + 'th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#85929C;padding:6px 8px;border-bottom:2px solid #EDF1F5}th.pr{text-align:right}'
+    + 'td{padding:8px;font-size:14px;border-bottom:1px solid #F1F4F7}td.nm{font-weight:600}td.un{color:#85929C;font-size:12px;width:52px}'
+    + 'td.pr{text-align:right;font-weight:700;color:#0B3050;white-space:nowrap}td.pr.may{color:#0F8078}'
+    + 'tr.cat td{background:#0B3050;color:#fff;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.05em;padding:7px 8px;border:none}'
+    + 'tr.tot td{background:#EAF6F5;color:#0B3050;font-weight:800;font-size:15px;padding:10px 8px;border:none}'
+    + '.pie{margin-top:16px;padding-top:12px;border-top:1px solid #EDF1F5;font-size:11px;color:#85929C;line-height:1.5}.pie b{color:#0F2230}'
+    + '@media print{.noprint{display:none}}';
+
+  var titulo = hayCant ? 'Cotización' : 'Lista de precios';
+  var html = '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+titulo+' · '+LP_NEGOCIO+'</title><style>'+css+'</style></head><body><div class="hoja">'
+    + '<div class="enc"><div class="logo">🐟</div><div><h1>'+LP_NEGOCIO+'</h1><div class="sub">'+titulo+' · '+fechaTx+'</div></div></div>'
+    + '<span class="chip">Precios en '+nombreMon+'</span>'
+    + (hayCant||tipo!=='detal' ? '<span class="chip" style="background:#FFF4E6;color:#B8721E">Mayor: '+descG+'% dcto</span>' : '')
+    + '<table><thead><tr><th>Producto</th><th>Und</th>'+colHead+'</tr></thead><tbody>'+filas+'</tbody></table>'
+    + '<div class="pie">'
+    + (!hayCant && tipo!=='detal' ? '<div><b>Precio al mayor:</b> '+descG+'% de descuento sobre el detal. Consulta las cantidades mínimas.</div>' : '')
+    + (nota ? '<div>'+escapa(nota).replace(/\n/g,'<br>')+'</div>' : '')
+    + '<div style="margin-top:6px">Precios sujetos a cambio sin previo aviso · Generado el '+fechaTx+'</div>'
+    + '</div>'
+    + '<div class="noprint" style="text-align:center;margin-top:20px"><button onclick="window.print()" style="background:#0B3050;color:#fff;border:none;border-radius:12px;padding:14px 28px;font-size:15px;font-weight:700;cursor:pointer">📄 Guardar como PDF / Imprimir</button><div style="font-size:11px;color:#85929C;margin-top:8px">En el diálogo elige «Guardar como PDF»</div></div>'
+    + '</div></body></html>';
+
+  var w = window.open('', '_blank');
+  if(!w){ toast('⚠️ Permite ventanas emergentes para ver el PDF'); return; }
+  w.document.write(html); w.document.close();
+  log('lista-precios', (hayCant?'Cotización':'Lista')+' · '+moneda+' · '+ids.length+' productos');
 };
 
 /* ═══════════ REVISIÓN FÍSICA · PLANILLA · KARDEX ═══════════ */
